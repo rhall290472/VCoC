@@ -8,7 +8,7 @@
       "name": "Launch Chrome",
       "request": "launch",
       "type": "chrome",
-      "url": "http://localhost/VCoC/aces/summerinvite/jump.html",
+      "url": "http://localhost/VCoC/aces/summerinvite/index.html",
       "webRoot": "${workspaceFolder}"
     },
     {
