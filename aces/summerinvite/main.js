@@ -1,5 +1,5 @@
 // main.js
-import { API_KEY, SPREADSHEET_ID, RANGE } from '../config/config.js';
+import { API_KEY, SPREADSHEET_ID, RANGE } from './config.js';
 
 async function fetchSheetData() {
   const websiteTitle = document.getElementById('website-title');

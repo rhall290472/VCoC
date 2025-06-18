@@ -53,7 +53,7 @@
             <a class="nav-link" href="day1.html">Add Coach Contact</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#button2">Prelim Scratch</a>
+            <a class="nav-link" href="day2.html">Prelim Scratch</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#button3">Finals Scratch</a>
@@ -111,9 +111,16 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const button1 = document.getElementById('button1');
+      const button2 = document.getElementById('button2');
+
       if (button1) {
         button1.addEventListener('click', () => {
           window.location.href = 'day1.html';
+        });
+      }
+      if (button2) {
+        button2.addEventListener('click', () => {
+          window.location.href = 'day2.html';
         });
       }
     });
