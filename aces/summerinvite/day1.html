@@ -100,16 +100,17 @@
         // Test the form URL validity
         fetch(formUrl, { method: 'HEAD' })
           .then(response => {
+            console.log('Fetch response status:', response.status);
             if (response.ok) {
               formIframe.src = formUrl;
             } else {
               console.error('Form URL is invalid or inaccessible:', response.status);
               formIframe.parentElement.innerHTML =
-                '<p class="text-danger">Error: Form is not accessible. Please check the form ID or permissions.</p>';
+                '<p class="text-danger">Error: Form is not accessible (Status: ' + response.status + '). Please check the form ID or permissions.</p>';
             }
           })
           .catch(error => {
-            console.error('Error checking form URL:', error);
+            console.error('Error checking form URL:', error.message);
             formIframe.parentElement.innerHTML =
               '<p class="text-danger">Error: Unable to load the form. Please try again later.</p>';
           });
