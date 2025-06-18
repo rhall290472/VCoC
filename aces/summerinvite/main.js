@@ -36,9 +36,9 @@ async function fetchSheetData() {
       MDEmail.textContent = data.values[11][1] || 'No MD Email'; // B6 - Meet Referee
 
 
-      button1.textContent = 'Add Coach Contact';
-      button2.textContent = 'Prelim Scratch';
-      button3.textContent = 'Finals Scratch';
+      button1.textContent = 'Day 1 Final Scratch';
+      button2.textContent = 'Day 2 Final Scratch';
+      button3.textContent = 'Day 3 Final Scratch';
 
     } else {
       throw new Error('No data found in the specified range.');

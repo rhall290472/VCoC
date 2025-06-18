@@ -92,15 +92,31 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const DAY_1_SCRATCH_FORM_ID = '1lYm3vo0DBg7Ux6G0OPEOalMVjpIdhtaHY5EsutnGjxE';
-      console.log('DAY_1_SCRATCH_FORM_ID:', DAY_1_SCRATCH_FORM_ID); // Debug log
+      console.log('DAY_1_SCRATCH_FORM_ID:', DAY_1_SCRATCH_FORM_ID);
       const formIframe = document.getElementById('googleForm');
       if (formIframe && DAY_1_SCRATCH_FORM_ID) {
         const formUrl = `https://docs.google.com/forms/d/e/${DAY_1_SCRATCH_FORM_ID}/viewform?embedded=true`;
-        console.log('Setting iframe src:', formUrl); // Debug log
-        formIframe.src = formUrl;
+        console.log('Setting iframe src:', formUrl);
+        // Test the form URL validity
+        fetch(formUrl, { method: 'HEAD' })
+          .then(response => {
+            if (response.ok) {
+              formIframe.src = formUrl;
+            } else {
+              console.error('Form URL is invalid or inaccessible:', response.status);
+              formIframe.parentElement.innerHTML =
+                '<p class="text-danger">Error: Form is not accessible. Please check the form ID or permissions.</p>';
+            }
+          })
+          .catch(error => {
+            console.error('Error checking form URL:', error);
+            formIframe.parentElement.innerHTML =
+              '<p class="text-danger">Error: Unable to load the form. Please try again later.</p>';
+          });
       } else {
         console.error('DAY_1_SCRATCH_FORM_ID is not defined or iframe not found');
-        formIframe.parentElement.innerHTML = '<p class="text-danger">Error: Unable to load the form. Please check the configuration.</p>';
+        formIframe.parentElement.innerHTML =
+          '<p class="text-danger">Error: Unable to load the form. Please check the configuration.</p>';
       }
     });
   </script>
