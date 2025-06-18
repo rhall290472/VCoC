@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Loading...</title>
+  <title>Day 1 - Meet Form</title>
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -32,6 +32,19 @@
         padding: 10px;
       }
     }
+
+    /* Style for Google Form iframe */
+    .google-form-container {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .google-form-container iframe {
+      width: 100%;
+      min-height: 800px;
+      border: none;
+    }
   </style>
 </head>
 
@@ -47,16 +60,16 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="#">Home</a>
+            <a class="nav-link" href="index.html">Home</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="day1.html">Add Coach Contact</a>
+            <a class="nav-link active" aria-current="page" href="day1.html">Day 1</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#button2">Prelim Scratch</a>
+            <a class="nav-link" href="#button2">Action 2</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#button3">Finals Scratch</a>
+            <a class="nav-link" href="#button3">Action 3</a>
           </li>
         </ul>
       </div>
@@ -66,38 +79,10 @@
   <div class="container my-5">
     <div class="card shadow-sm">
       <div class="card-body text-center">
-        <h1 id="website-title" class="card-title mb-3">Loading...</h1>
-        <h2 id="meetDates" class="card-subtitle mb-4 text-muted">Loading...</h2>
-        <h3 id="vcoc-title" class="mb-4">Loading...</h3>
-        <div id="errorMessage" class="alert alert-danger d-none" role="alert"></div>
-        <div class="d-flex justify-content-center gap-3">
-          <div class="col-4">
-            <p>Meet Referee</p>
-            <p id="MRName"></p>
-            <p id="MRPhone"></p>
-            <p id="MREmail"></p>
-          </div>
-          <div class="col-4">
-            <p>Admin Referee</p>
-            <p id="ARName"></p>
-            <p id="ARPhone"></p>
-            <p id="AREmail"></p>
-          </div>
-          <div class="col-4">
-            <p>Meet Director</p>
-            <p id="MDName"></p>
-            <p id="MDPhone"></p>
-            <p id="MDEmail"></p>
-          </div>
-        </div>
-        <div class="d-flex justify-content-center gap-3 mt-4">
-          <div class="col-6">
-            <button id="button1" class="btn btn-primary w-100">Loading...</button>
-          </div>
-          <div class="col-6">
-            <button id="button2" class="btn btn-primary w-100">Loading...</button>
-            <button id="button3" class="btn btn-primary w-100 mt-2">Loading...</button>
-          </div>
+        <h1 class="card-title mb-4">Day 1 Registration Form</h1>
+        <div class="google-form-container">
+          <iframe id="googleForm" width="640" height="800" frameborder="0" marginheight="0"
+            marginwidth="0">Loading…</iframe>
         </div>
       </div>
     </div>
@@ -107,19 +92,20 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
     crossorigin="anonymous"></script>
-  <!-- Inline script for button1 navigation -->
-  <script>
+  <!-- Script to load form ID from config.js -->
+  <script type="module">
+    import { DAY_1_SCRATCH_FORM_ID } from './config.js';
+
     document.addEventListener('DOMContentLoaded', () => {
-      const button1 = document.getElementById('button1');
-      if (button1) {
-        button1.addEventListener('click', () => {
-          window.location.href = 'day1.html';
-        });
+      const formIframe = document.getElementById('googleForm');
+      if (formIframe && DAY_1_SCRATCH_FORM_ID) {
+        formIframe.src = `https://docs.google.com/forms/d/e/${DAY_1_SCRATCH_FORM_ID}/viewform?embedded=true`;
+      } else {
+        console.error('DAY_1_SCRATCH_FORM_ID is not defined or iframe not found');
+        formIframe.parentElement.innerHTML = '<p class="text-danger">Error: Unable to load the form. Please check the configuration.</p>';
       }
     });
   </script>
-  <!-- Main script -->
-  <script type="module" src="main.js"></script>
 </body>
 
 </html>
