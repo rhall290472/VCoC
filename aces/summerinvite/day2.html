@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,29 +14,24 @@
       top: 0;
       width: 100%;
     }
-
     .navbar-toggler {
       border: 2px solid #fff;
     }
-
     .navbar-brand,
     .nav-link {
       color: #fff !important;
     }
-
     @media (max-width: 991.98px) {
       .navbar-collapse {
         background-color: #343a40;
         padding: 10px;
       }
     }
-
     .google-form-container {
       max-width: 100%;
       margin: 0 auto;
       padding: 20px;
     }
-
     .google-form-container iframe {
       width: 100%;
       min-height: 800px;
@@ -45,7 +39,6 @@
     }
   </style>
 </head>
-
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
@@ -60,10 +53,10 @@
             <a class="nav-link" href="index.html">Home</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="day1.html">Day 1</a>
+            <a class="nav-link" href="day1.html">Day 1</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="day2.html">Day 2</a>
+            <a class="nav-link active" aria-current="page" href="day2.html">Day 2</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#button3">Action 3</a>
@@ -72,38 +65,40 @@
       </div>
     </div>
   </nav>
-
   <div class="container my-5">
     <div class="card shadow-sm">
       <div class="card-body text-center">
-        <h1 class="card-title mb-4">Day 2 Registration Form</h1>
+        <h1 class="card-title mb-4">Day 2 Scratch Form</h1>
         <div class="google-form-container">
-          <iframe id="googleForm" width="640" height="800" frameborder="0" marginheight="0"
-            marginwidth="0">Loading…</iframe>
+          <iframe id="googleForm" width="100%" height="100%" frameborder="0" marginheight="0" marginwidth="0" title="Day 2 Scratch Form">Loading…</iframe>
         </div>
       </div>
     </div>
   </div>
-
   <!-- Bootstrap 5 JS (with Popper.js) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
     crossorigin="anonymous"></script>
-  <script>
+  <script type="module">
+    import { DAY_2_SCRATCH_FORM_ID } from './config.js';
     document.addEventListener('DOMContentLoaded', () => {
-      const DAY_2_SCRATCH_FORM_ID = '1lYm3vo0DBg7Ux6G0OPEOalMVjpIdhtaHY5EsutnGjxE';
-      console.log('DAY_2SCRATCH_FORM_ID:', DAY_2_SCRATCH_FORM_ID); // Debug log
+      console.log('DAY_2_SCRATCH_FORM_ID:', DAY_2_SCRATCH_FORM_ID); // Debug log
       const formIframe = document.getElementById('googleForm');
       if (formIframe && DAY_2_SCRATCH_FORM_ID) {
         const formUrl = `https://docs.google.com/forms/d/e/${DAY_2_SCRATCH_FORM_ID}/viewform?embedded=true`;
         console.log('Setting iframe src:', formUrl); // Debug log
         formIframe.src = formUrl;
+        // Add error handling for iframe loading
+        formIframe.onerror = () => {
+          formIframe.parentElement.innerHTML = '<p class="text-danger">Error: Failed to load form. Please check form ID or permissions.</p>';
+        };
       } else {
         console.error('DAY_2_SCRATCH_FORM_ID is not defined or iframe not found');
-        formIframe.parentElement.innerHTML = '<p class="text-danger">Error: Unable to load the form. Please check the configuration.</p>';
+        if (formIframe) {
+          formIframe.parentElement.innerHTML = '<p class="text-danger">Error: Unable to load the form. Please check the configuration.</p>';
+        }
       }
     });
   </script>
 </body>
-
 </html>
