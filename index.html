@@ -48,12 +48,12 @@
         async function fetchTeams() {
             const status = document.getElementById('status');
             try {
-                const response = await fetch('http://localhost/api/teams.php');
+                const response = await fetch('http://localhost/VCoC/api/teams.php');
                 if (!response.ok) {
                     throw new Error('Failed to fetch teams');
                 }
                 const teamDatabase = await response.json();
-                return teamDatabase; // e.g., { engineering: ["alice@example.com"], ... }
+                return teamDatabase; // e.g., { engineering: ["alice@example.com", ...], ... }
             } catch (error) {
                 status.textContent = 'Error loading teams: ' + error.message;
                 status.classList.add('text-red-600');
