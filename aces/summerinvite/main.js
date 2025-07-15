@@ -5,6 +5,7 @@ async function fetchSheetData() {
   const websiteTitle = document.getElementById('website-title');
   const meetDates = document.getElementById('meetDates');
   const vcocTitle = document.getElementById('vcoc-title');
+  const button0 = document.getElementById('button0');
   const button1 = document.getElementById('button1');
   const button2 = document.getElementById('button2');
   const button3 = document.getElementById('button3');
@@ -36,6 +37,7 @@ async function fetchSheetData() {
       MDEmail.textContent = data.values[11][1] || 'No MD Email'; // B6 - Meet Referee
 
 
+      button0.textContent = 'Scratch from Prelims';
       button1.textContent = 'Day 1 Final Scratch';
       button2.textContent = 'Day 2 Final Scratch';
       button3.textContent = 'Day 3 Final Scratch';

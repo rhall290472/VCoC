@@ -1,164 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meet Referee Email Generator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Loading...</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        /* Ensure navbar is visible and not hidden */
+        .navbar {
+            z-index: 1000;
+            position: sticky;
+            top: 0;
+            width: 100%;
+        }
+
+        .navbar-toggler {
+            border: 2px solid #fff;
+        }
+
+        .navbar-brand,
+        .nav-link {
+            color: #fff !important;
+        }
+
+        @media (max-width: 991.98px) {
+            .navbar-collapse {
+                background-color: #343a40;
+                padding: 10px;
+            }
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
-        <h1 class="text-2xl font-bold mb-6 text-center">Team Email Generator</h1>
-       
-        <div class="mb-4">
-            <label for="teamSelect" class="block text-sm font-medium text-gray-700">Select Teams</label>
-            <select id="teamSelect" multiple class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-                <!-- Options will be populated dynamically -->
-            </select>
-            <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple teams</p>
-        </div>
 
-        <div class="mb-4">
-            <label for="replyTo" class="block text-sm font-medium text-gray-700">Reply-To Email</label>
-            <input type="email" id="replyTo" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="Enter reply-to email">
+<body>
+    <!-- Navbar for mobile devices -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Meet Info</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="#">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="prelim.html">Prelim's Scratch Form</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="day1.html">Day 1 Final Scratch Form</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="day2.html">Day 1 Final Scratch Form</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#button3">Day 1 Final Scratch Form</a>
+                    </li>
+                </ul>
+            </div>
         </div>
+    </nav>
 
-        <div class="mb-4">
-            <label for="subject" class="block text-sm font-medium text-gray-700">Email Subject</label>
-            <input type="text" id="subject" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="Enter email subject">
+    <div class="container my-5">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h1 id="website-title" class="card-title mb-3">Loading...</h1>
+                <h2 id="meetDates" class="card-subtitle mb-4 text-muted">Loading...</h2>
+                <h3 id="vcoc-title" class="mb-4">Loading...</h3>
+                <div id="errorMessage" class="alert alert-danger d-none" role="alert"></div>
+                <div class="d-flex justify-content-center gap-3">
+                    <div class="col-4">
+                        <p>Meet Referee</p>
+                        <p id="MRName"></p>
+                        <p id="MRPhone"></p>
+                        <p id="MREmail"></p>
+                    </div>
+                    <div class="col-4">
+                        <p>Admin Referee</p>
+                        <p id="ARName"></p>
+                        <p id="ARPhone"></p>
+                        <p id="AREmail"></p>
+                    </div>
+                    <div class="col-4">
+                        <p>Meet Director</p>
+                        <p id="MDName"></p>
+                        <p id="MDPhone"></p>
+                        <p id="MDEmail"></p>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    <div class="col-6">
+                        <button id="button0" class="btn btn-primary w-100">Loading...</button>
+                        <button id="button1" class="btn btn-primary w-100">Loading...</button>
+                    </div>
+                    <div class="col-6">
+                        <button id="button2" class="btn btn-primary w-100">Loading...</button>
+                        <button id="button3" class="btn btn-primary w-100 mt-2">Loading...</button>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="mb-4">
-            <label for="message" class="block text-sm font-medium text-gray-700">Email Message</label>
-            <textarea id="message" rows="5" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="Enter your email message"></textarea>
-        </div>
-
-        <div class="mb-4">
-            <label for="attachments" class="block text-sm font-medium text-gray-700">Attachments</label>
-            <input type="file" id="attachments" multiple class="mt-1 block w-full p-2 border border-gray-300 rounded-md" accept=".pdf,.doc,.docx,.txt,.jpg,.png">
-            <p class="text-xs text-gray-500 mt-1">Select multiple files (PDF, DOC, TXT, JPG, PNG)</p>
-        </div>
-
-        <button id="sendEmail" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Send Email</button>
-        <p id="status" class="mt-4 text-center text-sm text-gray-600"></p>
     </div>
 
+    <!-- Bootstrap 5 JS (with Popper.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <!-- Inline script for button1 navigation -->
     <script>
-        // Function to fetch teams from the PHP backend
-        async function fetchTeams() {
-            const status = document.getElementById('status');
-            try {
-                const response = await fetch('http://localhost/api/teams.php');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch teams');
-                }
-                const teamDatabase = await response.json();
-                return teamDatabase; // e.g., { engineering: ["alice@example.com"], ... }
-            } catch (error) {
-                status.textContent = 'Error loading teams: ' + error.message;
-                status.classList.add('text-red-600');
-                status.classList.remove('text-green-600');
-                return null;
+        document.addEventListener('DOMContentLoaded', () => {
+            const button0 = document.getElementById('button0');
+            const button1 = document.getElementById('button1');
+            const button2 = document.getElementById('button2');
+
+            if (button0) {
+                button0.addEventListener('click', () => {
+                    window.location.href = 'prelimscrform.html';
+                });
             }
-        }
-
-        // Function to populate team select dropdown
-        async function populateTeamSelect() {
-            const teamSelect = document.getElementById('teamSelect');
-            const teamDatabase = await fetchTeams();
-            if (!teamDatabase) return;
-
-            teamSelect.innerHTML = ''; // Clear existing options
-            Object.keys(teamDatabase).forEach(team => {
-                const option = document.createElement('option');
-                option.value = team;
-                option.textContent = team.charAt(0).toUpperCase() + team.slice(1);
-                teamSelect.appendChild(option);
-            });
-        }
-
-        // Initialize team select on page load
-        populateTeamSelect();
-
-        document.getElementById('sendEmail').addEventListener('click', async () => {
-            const teamSelect = document.getElementById('teamSelect');
-            const teams = Array.from(teamSelect.selectedOptions).map(option => option.value);
-            const replyTo = document.getElementById('replyTo').value;
-            const subject = document.getElementById('subject').value;
-            const message = document.getElementById('message').value;
-            const attachments = document.getElementById('attachments').files;
-            const status = document.getElementById('status');
-
-            // Validate inputs
-            if (teams.length === 0 || !subject || !message || !replyTo) {
-                status.textContent = 'Please fill out all fields and select at least one team.';
-                status.classList.add('text-red-600');
-                status.classList.remove('text-green-600');
-                return;
+            if (button1) {
+                button1.addEventListener('click', () => {
+                    window.location.href = 'day1.html';
+                });
             }
-
-            // Validate reply-to email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(replyTo)) {
-                status.textContent = 'Please enter a valid reply-to email address.';
-                status.classList.add('text-red-600');
-                status.classList.remove('text-green-600');
-                return;
+            if (button2) {
+                button2.addEventListener('click', () => {
+                    window.location.href = 'day2.html';
+                });
             }
-
-            // Validate attachments (e.g., size limit of 10MB total)
-            const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-            let totalSize = 0;
-            const attachmentNames = [];
-            for (const file of attachments) {
-                totalSize += file.size;
-                attachmentNames.push(file.name);
-            }
-            if (totalSize > maxSize) {
-                status.textContent = 'Total attachment size exceeds 10MB limit.';
-                status.classList.add('text-red-600');
-                status.classList.remove('text-green-600');
-                return;
-            }
-
-            // Fetch team data for recipients
-            const teamDatabase = await fetchTeams();
-            if (!teamDatabase) return;
-
-            // Collect unique recipients from selected teams
-            const recipients = new Set();
-            teams.forEach(team => {
-                if (teamDatabase[team]) {
-                    teamDatabase[team].forEach(email => recipients.add(email));
-                }
-            });
-
-            if (recipients.size === 0) {
-                status.textContent = 'No valid teams selected.';
-                status.classList.add('text-red-600');
-                status.classList.remove('text-green-600');
-                return;
-            }
-
-            // Simulate sending email with attachments
-            console.log(`Sending email to teams: ${teams.join(', ')}`);
-            console.log(`Reply-To: ${replyTo}`);
-            console.log(`Subject: ${subject}`);
-            console.log(`Message: ${message}`);
-            console.log(`Attachments: ${attachmentNames.length > 0 ? attachmentNames.join(', ') : 'None'}`);
-            console.log(`Recipients (hidden): ${recipients.size} team members`);
-
-            status.textContent = `Email sent to ${teams.join(', ')} teams (${recipients.size} recipients) with reply-to ${replyTo} and ${attachmentNames.length} attachment(s).`;
-            status.classList.remove('text-red-600');
-            status.classList.add('text-green-600');
-
-            // Clear form
-            teamSelect.value = '';
-            document.getElementById('replyTo').value = '';
-            document.getElementById('subject').value = '';
-            document.getElementById('message').value = '';
-            document.getElementById('attachments').value = '';
         });
     </script>
+    <!-- Main script -->
+    <script type="module" src="main.js"></script>
 </body>
+
 </html>
