@@ -1,0 +1,689 @@
+/**
+ * 
+ * Virtual Clerk of  Course App Scripts
+ * 
+ * Version: 22Jul25 - Added rerank swimmers.
+ * 
+ * 
+ */
+
+/**
+ * Trigger on script installation
+ * 
+ */
+function onInstall(e) {
+  try {
+    onOpen(e);
+  } catch (error) {
+    Logger.log("Error in onInstall: " + error.message);
+    SpreadsheetApp.getUi().alert("Error during installation: " + error.message);
+  }
+}
+
+/**
+ * Create custom menu on spreadsheet open
+ * 
+ */
+function onOpen(e) {
+  try {
+    var ui = SpreadsheetApp.getUi();
+    if (!ui) {
+      throw new Error("Unable to access UI.");
+    }
+    ui.createMenu('VCoC')
+      .addItem('Expand All Rows and delete row 1', 'expandAllRows')
+      .addSeparator()
+      .addItem('Scr current swimmer', 'scrSwimmer')
+      .addItem('Intent to Scratch', 'IntentscrSwimmer')
+      .addItem('Unscratch swimmer', 'UnscratchSwimmer')
+      .addItem('Rerank swimmers', 'renumberRankings')
+      .addSeparator()
+      .addItem('Draw heat line', 'drawHeatLine')
+      .addItem('Remove all heat lines', 'removeAllBorders')
+      .addSeparator()
+      .addItem('Mark event Closed', 'MarkEventClosed')
+      .addItem('Mark event Revised', 'MarkEventRevised')
+      .addSeparator()
+      .addItem('Announced time', 'insertTimesImageOverSheet')
+      .addToUi();
+  } catch (error) {
+    Logger.log("Error in onOpen: " + error.message);
+    SpreadsheetApp.getUi().alert("Error setting up menu: " + error.message);
+  }
+}
+
+/**
+ * Expands all rows in the active sheet, deletes the first row if data exists,
+ * removes empty rows, sets uniform row height, and removes borders.
+ * @throws {Error} If critical operations fail
+ */
+function expandAllRows() {
+  const DEFAULT_ROW_HEIGHT = 21;
+  
+  try {
+    // Get active spreadsheet and sheet with null checks
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    if (!spreadsheet) throw new Error("No active spreadsheet found");
+
+    const sheet = spreadsheet.getActiveSheet();
+    if (!sheet) throw new Error("No active sheet found");
+
+    // Get data range and validate
+    let lastRow = sheet.getLastRow();
+    if (lastRow === 0) {
+      Logger.log("Sheet is empty; no action taken");
+      return; // Early return for empty sheet
+    }
+
+    // Delete first row if data exists
+    if (lastRow >= 1) {
+      sheet.deleteRow(1);
+      lastRow = sheet.getLastRow(); // Update lastRow after deletion
+    }
+
+    // Delete empty rows
+    if (lastRow > 0) {
+      const range = sheet.getRange(1, 1, lastRow, sheet.getLastColumn());
+      const values = range.getValues();
+      let rowsToDelete = [];
+
+      // Identify empty rows (all cells in row are empty)
+      for (let i = values.length - 1; i >= 0; i--) {
+        const isRowEmpty = values[i].every(cell => cell === "");
+        if (isRowEmpty) {
+          rowsToDelete.push(i + 1); // Row numbers are 1-based
+        }
+      }
+
+      // Delete empty rows from bottom to top to avoid index shifting
+      rowsToDelete.forEach(rowIndex => {
+        sheet.deleteRow(rowIndex);
+      });
+
+      Logger.log(`Deleted ${rowsToDelete.length} empty rows`);
+    }
+
+    // Set row heights for remaining rows
+    const remainingRows = sheet.getLastRow();
+    if (remainingRows > 0) {
+      sheet.setRowHeightsForced(1, remainingRows, DEFAULT_ROW_HEIGHT);
+    } else {
+      Logger.log("No rows remain after deletions");
+    }
+
+    // Check and call removeAllBorders if defined
+    if (typeof removeAllBorders === "function") {
+      removeAllBorders(sheet); // Pass sheet for better encapsulation
+    } else {
+      Logger.log("removeAllBorders function not defined; skipping border removal");
+    }
+
+    // Ensure changes are applied
+    SpreadsheetApp.flush();
+
+  } catch (error) {
+    // Enhanced error handling
+    const errorMessage = `Error in expandAllRows: ${error.message}\nStack: ${error.stack}`;
+    Logger.log(errorMessage);
+    try {
+      SpreadsheetApp.getUi().alert("Operation Failed", errorMessage, SpreadsheetApp.getUi().ButtonSet.OK);
+    } catch (uiError) {
+      Logger.log(`UI alert failed: ${uiError.message}`);
+    }
+    throw error; // Re-throw to allow calling function to handle if needed
+  }
+}
+
+/**
+ * Scratch the current swimmer
+ * 
+ */
+function scrSwimmer() {
+  try {
+    var sheet = SpreadsheetApp.getActiveSheet();
+    if (!sheet) {
+      throw new Error("No active sheet found.");
+    }
+
+    var cell = sheet.getActiveCell();
+    if (!cell) {
+      throw new Error("No active cell selected.");
+    }
+
+    var row = cell.getRow();
+    if (row < 1) {
+      throw new Error("Invalid row selected.");
+    }
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow < row) {
+      throw new Error("Selected row is beyond the last used row.");
+    }
+
+    sheet.getRange(row, 1, 1, 2).clearContent();
+
+    var lastColumn = sheet.getLastColumn();
+    if (lastColumn < 1) {
+      throw new Error("Sheet has no columns.");
+    }
+
+    sheet.getRange(row, 1, 1, lastColumn).setBackground("orange");
+
+    if (typeof findLastUsedColumn !== "function") {
+      throw new Error("Function findLastUsedColumn is not defined.");
+    }
+    var lastUsedColumn = findLastUsedColumn();
+    if (lastUsedColumn < 1 || lastUsedColumn > lastColumn) {
+      throw new Error("Invalid last used column: " + lastUsedColumn);
+    }
+
+    sheet.getRange(row, lastUsedColumn).setValue("Scr");
+
+    SpreadsheetApp.flush();
+  } catch (error) {
+    Logger.log("Error in scrSwimmer: " + error.message);
+    SpreadsheetApp.getUi().alert("Error: " + error.message);
+  }
+  renumberRankings();
+}
+
+/**
+ * Unscratch the current swimmer
+ * 
+ */
+function UnscratchSwimmer() {
+  try {
+    var sheet = SpreadsheetApp.getActiveSheet();
+    if (!sheet) {
+      throw new Error("No active sheet found.");
+    }
+
+    var cell = sheet.getActiveCell();
+    if (!cell) {
+      throw new Error("No active cell selected.");
+    }
+
+    var row = cell.getRow();
+    if (row < 1) {
+      throw new Error("Invalid row selected.");
+    }
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow < row) {
+      throw new Error("Selected row is beyond the last used row.");
+    }
+
+    sheet.getRange(row, 1, 1, 2).clearContent();
+
+    var lastColumn = sheet.getLastColumn();
+    if (lastColumn < 1) {
+      throw new Error("Sheet has no columns.");
+    }
+
+    sheet.getRange(row, 1, 1, lastColumn).setBackground(null);
+
+    if (typeof findLastUsedColumn !== "function") {
+      throw new Error("Function findLastUsedColumn is not defined.");
+    }
+    var lastUsedColumn = findLastUsedColumn();
+    if (lastUsedColumn < 1 || lastUsedColumn > lastColumn) {
+      throw new Error("Invalid last used column: " + lastUsedColumn);
+    }
+
+    sheet.getRange(row, lastUsedColumn).setValue("");
+
+    SpreadsheetApp.flush();
+  } catch (error) {
+    Logger.log("Error in UnscratchSwimmer: " + error.message);
+    SpreadsheetApp.getUi().alert("Error: " + error.message);
+  }
+  renumberRankings();
+}
+
+/**
+ * Intent to scratch the current swimmer
+ * 
+ */
+function IntentscrSwimmer() {
+  try {
+    var ui = SpreadsheetApp.getUi();
+    if (!ui) {
+      throw new Error("Unable to access UI.");
+    }
+
+    var result = ui.prompt(
+      'Event Number Entry',
+      'Please enter the swimmer\'s last event number:',
+      ui.ButtonSet.OK_CANCEL
+    );
+
+    var button = result.getSelectedButton();
+    var eventNumber = result.getResponseText();
+
+    if (button === ui.Button.OK) {
+      if (!eventNumber || isNaN(eventNumber) || eventNumber.trim() === "") {
+        throw new Error("Please enter a valid number.");
+      }
+
+      var sheet = SpreadsheetApp.getActiveSheet();
+      if (!sheet) {
+        throw new Error("No active sheet found.");
+      }
+
+      var cell = sheet.getActiveCell();
+      if (!cell) {
+        throw new Error("No active cell selected.");
+      }
+
+      var row = cell.getRow();
+      if (row < 1) {
+        throw new Error("Invalid row selected.");
+      }
+
+      var lastRow = sheet.getLastRow();
+      if (lastRow < row) {
+        throw new Error("Selected row is beyond the last used row.");
+      }
+
+      var lastColumn = sheet.getLastColumn();
+      if (lastColumn < 1) {
+        throw new Error("Sheet has no columns.");
+      }
+
+      sheet.getRange(row, 1, 1, lastColumn).setBackground("cyan");
+
+      if (typeof findLastUsedColumn !== "function") {
+        throw new Error("Function findLastUsedColumn is not defined.");
+      }
+      var lastUsedColumn = findLastUsedColumn();
+      if (lastUsedColumn < 1 || lastUsedColumn > lastColumn) {
+        throw new Error("Invalid last used column: " + lastUsedColumn);
+      }
+
+      sheet.getRange(row, lastUsedColumn)
+        .setValue("Intent " + eventNumber)
+        .setHorizontalAlignment("left");
+
+      SpreadsheetApp.flush();
+    } else if (button === ui.Button.CANCEL) {
+      Logger.log("Intent scratch operation cancelled.");
+    }
+  } catch (error) {
+    Logger.log("Error in IntentscrSwimmer: " + error.message);
+    SpreadsheetApp.getUi().alert("Error: " + error.message);
+  }
+}
+
+/**
+ * Draw heat divider line below the selected swimmer
+ * 
+ */
+function drawHeatLine() {
+  try {
+    var sheet = SpreadsheetApp.getActiveSheet();
+    if (!sheet) {
+      throw new Error("No active sheet found.");
+    }
+
+    var range = sheet.getActiveRange();
+    if (!range) {
+      throw new Error("No active range selected.");
+    }
+
+    var row = range.getRow();
+    if (row < 1) {
+      throw new Error("Invalid row selected.");
+    }
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow < row) {
+      throw new Error("Selected row is beyond the last used row.");
+    }
+
+    var numColumns = sheet.getLastColumn();
+    if (numColumns < 1) {
+      throw new Error("Sheet has no columns.");
+    }
+
+    var rowRange = sheet.getRange(row, 1, 1, numColumns);
+    rowRange.setBorder(
+      false, false, true, false, false, false,
+      "black", SpreadsheetApp.BorderStyle.SOLID
+    );
+
+    SpreadsheetApp.flush();
+  } catch (error) {
+    Logger.log("Error in drawHeatLine: " + error.message);
+    SpreadsheetApp.getUi().alert("Error: " + error.message);
+  }
+}
+
+/**
+ * Find the last used column in the current row
+ * 
+ */
+function findLastUsedColumn() {
+  try {
+    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    if (!spreadsheet) {
+      throw new Error("No active spreadsheet found.");
+    }
+
+    var sheet = spreadsheet.getActiveSheet();
+    if (!sheet) {
+      throw new Error("No active sheet found.");
+    }
+
+    var currentRow = sheet.getActiveCell().getRow();
+    if (currentRow < 1) {
+      throw new Error("Invalid active row.");
+    }
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow < currentRow) {
+      throw new Error("Active row is beyond the last used row.");
+    }
+
+    var lastColumn = sheet.getLastColumn();
+    if (lastColumn < 1) {
+      throw new Error("Sheet has no columns.");
+    }
+
+    var rowData = sheet.getRange(currentRow, 1, 1, lastColumn).getValues()[0];
+    var lastUsedColumn = 1;
+    for (var i = rowData.length - 1; i >= 0; i--) {
+      if (rowData[i] !== "" && rowData[i] !== null) {
+        lastUsedColumn = i + 1;
+        break;
+      }
+    }
+
+    sheet.setColumnWidth(lastUsedColumn, 33);
+    return lastUsedColumn;
+  } catch (error) {
+    Logger.log("Error in findLastUsedColumn: " + error.message);
+    throw error; // Rethrow to be caught by calling function
+  }
+}
+
+/**
+ * Remove all borders from the sheet
+ * 
+ */
+function removeAllBorders() {
+  try {
+    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    if (!spreadsheet) {
+      throw new Error("No active spreadsheet found.");
+    }
+
+    var sheet = spreadsheet.getActiveSheet();
+    if (!sheet) {
+      throw new Error("No active sheet found.");
+    }
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 1) {
+      throw new Error("Sheet is empty or has no data rows.");
+    }
+
+    var lastColumn = sheet.getLastColumn();
+    if (lastColumn < 1) {
+      throw new Error("Sheet has no columns.");
+    }
+
+    var range = sheet.getRange(1, 1, lastRow, lastColumn);
+    range.setBorder(false, false, false, false, false, false);
+
+    SpreadsheetApp.flush();
+  } catch (error) {
+    Logger.log("Error in removeAllBorders: " + error.message);
+    SpreadsheetApp.getUi().alert("Error: " + error.message);
+  }
+}
+
+/**
+ * Helper function to convert column letter to column index
+ * 
+ */
+function columnLetterToIndex(columnLetter) {
+  try {
+    if (!columnLetter || typeof columnLetter !== "string" || columnLetter.trim() === "") {
+      throw new Error("Column letter must be a non-empty string.");
+    }
+    columnLetter = columnLetter.toUpperCase();
+    var index = 0;
+    for (var i = 0; i < columnLetter.length; i++) {
+      var charCode = columnLetter.charCodeAt(i);
+      if (charCode < 65 || charCode > 90) {
+        throw new Error("Invalid column letter: " + columnLetter);
+      }
+      index *= 26;
+      index += (charCode - "A".charCodeAt(0) + 1);
+    }
+    if (index < 1) {
+      throw new Error("Calculated column index is invalid: " + index);
+    }
+    return index;
+  } catch (error) {
+    Logger.log("Error in columnLetterToIndex: " + error.message);
+    throw error; // Rethrow to be caught by calling function
+  }
+}
+
+/**
+ * MarkEventClosed
+ * 
+ */
+function MarkEventClosed() {
+  // Define the spreadsheet and sheet
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = SpreadsheetApp.getActiveSheet();
+  
+  // Define the cell position (e.g., B2 -> column 2, row 2)
+  var column = 1;
+  var row = 1;
+  
+  
+  /**
+   * Insert image from Google Drive
+   * 
+   */
+  var fileId = "1YBIydDBt0aB7qOPXx4GGxrHY3DmZHC54"; // Replace with your Google Drive file ID
+  try {
+    var file = DriveApp.getFileById(fileId);
+    var blob = file.getBlob();
+    sheet.insertImage(blob, column, row);
+  } catch (e) {
+    SpreadsheetApp.getUi().alert("Error inserting image from Google Drive: " + e.message);
+  }
+}
+
+/**
+ * Mark Event Revised
+ * 
+ */
+function MarkEventRevised() {
+  // Define the spreadsheet and sheet
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = SpreadsheetApp.getActiveSheet();
+  
+  // Define the cell position (e.g., B2 -> column 2, row 2)
+  var column = 1;
+  var row = 1;
+  
+  
+  // Method 2: Insert image from Google Drive (uncomment to use)
+  
+  var fileId = "1yYFXZL6fHdxvJS6LrpQ9wiMSooZCrmmY"; // Replace with your Google Drive file ID
+  try {
+    var file = DriveApp.getFileById(fileId);
+    var blob = file.getBlob();
+    sheet.insertImage(blob, column, row);
+  } catch (e) {
+    SpreadsheetApp.getUi().alert("Error inserting image from Google Drive: " + e.message);
+  }
+}
+
+/**
+ * Insert the Announcemnt time and clacuate the close time
+ * 
+ */
+function insertTimesImageOverSheet() {
+  // Get the active spreadsheet and sheet
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getActiveSheet();
+  
+  // Prompt user for announced time
+  var ui = SpreadsheetApp.getUi();
+  var response1 = ui.prompt('Enter Announced time (e.g., 10:30 AM):', ui.ButtonSet.OK_CANCEL);
+  if (response1.getSelectedButton() !== ui.Button.OK) return;
+  var time1 = response1.getResponseText();
+  
+  // Calculate time2 by adding 30 minutes to time1
+  var time2 = addThirtyMinutes(time1);
+  
+  try {
+    // Write times to a temporary range for chart data
+    sheet.getRange('A131:B133').setValues([
+      ['Announced:', 'Time'],
+      ['Read:    ', time1],
+      ['Closes:  ', time2]
+    ]);
+    
+    // Create a data table chart
+    var chart = sheet.newChart()
+      .setChartType(Charts.ChartType.TABLE)
+      .addRange(sheet.getRange('A131:B133')) // Updated range to match data
+      .setPosition(5, 5, 0, 0) // Temporary position
+      .setOption('width', 200)
+      .setOption('height', 100)
+      .build();
+    
+    // Insert the chart temporarily to get its image
+    sheet.insertChart(chart);
+    
+    // Get the chart as a blob
+    var imageBlob = chart.getBlob();
+    
+    // Remove the temporary chart
+    sheet.removeChart(chart);
+    
+    // Clear temporary data
+    sheet.getRange('A131:B133').clearContent();
+    
+    // Insert the image over the sheet at column 2, row 2
+    var image = sheet.insertImage(imageBlob, 2, 2);
+    
+    // Set image size
+    image.setWidth(200).setHeight(100);
+  } catch (e) {
+    ui.alert('Error creating image: ' + e.message);
+
+    // Force sheet to re-render
+    SpreadsheetApp.flush();
+
+    return;
+  }
+}
+
+function renumberRankings() {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getActiveSheet();
+  var sheetName = sheet.getName();
+  
+  // Process only if the active sheet is named "Event X"
+  if (!sheetName.match(/^Event \d+$/)) {
+    SpreadsheetApp.getUi().alert("Active sheet is not an 'Event' sheet! Please select a sheet named 'Event X'.");
+    return;
+  }
+
+  var data = sheet.getDataRange().getValues();
+  var prelimRow = -1;
+  
+  // Find the "Preliminaries" row
+  for (var row = 0; row < data.length; row++) {
+    if (data[row][0] === "Preliminaries") {
+      prelimRow = row;
+      break;
+    }
+  }
+  
+  if (prelimRow === -1) {
+    SpreadsheetApp.getUi().alert("No 'Preliminaries' row found in the active sheet!");
+    return;
+  }
+  
+  var rankColumn = 0; // Column B (0-based index)
+  var timeColumn1 = 25; // Prelim Time (0-based index)
+  var timeColumn2 = 40; // Alternate Prelim Time
+  var scrColumn1 = 33; // Scr column
+  var scrColumn2 = 47; // Alternate Scr column
+  var timeColumn, scrColumn;
+
+  // Determine which time and scr columns to use based on last column
+  var lastColumn = sheet.getLastColumn();
+  if (lastColumn > 40) {
+    timeColumn = timeColumn2;
+    scrColumn = scrColumn2;
+  } else {
+    timeColumn = timeColumn1;
+    scrColumn = scrColumn1;
+  }
+
+  var currentRank = 1;
+  var lastTime = null;
+  var tiedRows = []; // Track rows with the same time for ranking and highlighting
+
+  // Process rows starting from the row after "Preliminaries"
+  for (var row = prelimRow + 1; row < data.length; row++) {
+    var timeCell = data[row][timeColumn];
+    var scrCell = data[row][scrColumn];
+    var rankCell = data[row][rankColumn];
+    
+    // Skip rows with no time or marked as Scr, DFS, DQ, NS
+    if (!timeCell || timeCell === "" || scrCell === "Scr" || timeCell === "DFS" || timeCell === "DQ" || timeCell === "NS") {
+      if (rankCell !== "") {
+        sheet.getRange(row + 1, rankColumn + 1).setValue(""); // Clear rank
+      }
+      continue;
+    }
+    
+    // Check for tie (same time as previous valid row)
+    if (lastTime !== null && timeCell === lastTime) {
+      tiedRows.push(row); // Add to tied group
+    } else {
+      // Process previous tied group, if any
+      if (tiedRows.length > 1) {
+        // Assign asterisk and current rank to all tied rows, highlight in yellow
+        for (var tiedRow of tiedRows) {
+          sheet.getRange(tiedRow + 1, rankColumn + 1).setValue("*" + currentRank);
+          sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground("yellow");
+        }
+        currentRank += tiedRows.length; // Increment rank by number of tied rows
+      } else if (tiedRows.length === 1) {
+        // Single row (no tie), assign rank without asterisk
+        sheet.getRange(tiedRows[0] + 1, rankColumn + 1).setValue(currentRank);
+        sheet.getRange(tiedRows[0] + 1, 1, 1, lastColumn).setBackground(null); // Clear highlighting
+        currentRank += 1; // Increment rank by 1 for non-tied row
+      }
+      // Start new tied group with current row
+      tiedRows = [row];
+    }
+    
+    lastTime = timeCell;
+  }
+
+  // Process the final tied group, if any
+  if (tiedRows.length > 1) {
+    for (var tiedRow of tiedRows) {
+      sheet.getRange(tiedRow + 1, rankColumn + 1).setValue("*" + currentRank);
+      sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground("yellow");
+    }
+    currentRank += tiedRows.length; // Increment rank for completeness
+  } else if (tiedRows.length === 1) {
+    sheet.getRange(tiedRows[0] + 1, rankColumn + 1).setValue(currentRank);
+    sheet.getRange(tiedRows[0] + 1, 1, 1, lastColumn).setBackground(null); // Clear highlighting
+    currentRank += 1; // Increment rank for completeness
+  }
+}
