@@ -587,6 +587,10 @@ function insertTimesImageOverSheet() {
   }
 }
 
+/**
+ * Renumber the swimmer with lots of conditions
+ *
+ */
 function renumberRankings() {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getActiveSheet();
@@ -601,7 +605,7 @@ function renumberRankings() {
   var data = sheet.getDataRange().getValues();
   var prelimRow = -1;
   
-  // Find the "Preliminaries" row
+  // Find the first "Preliminaries" row
   for (var row = 0; row < data.length; row++) {
     if (data[row][0] === "Preliminaries") {
       prelimRow = row;
@@ -620,23 +624,75 @@ function renumberRankings() {
   var scrColumn1 = 33; // Scr column
   var scrColumn2 = 47; // Alternate Scr column
   var timeColumn, scrColumn;
-
-  // Determine which time and scr columns to use based on last column
   var lastColumn = sheet.getLastColumn();
-  if (lastColumn > 40) {
-    timeColumn = timeColumn2;
-    scrColumn = scrColumn2;
-  } else {
-    timeColumn = timeColumn1;
-    scrColumn = scrColumn1;
-  }
 
+  // Initialize variables
   var currentRank = 1;
   var lastTime = null;
-  var tiedRows = []; // Track rows with the same time for ranking and highlighting
+  var tiedRows = [];
 
-  // Process rows starting from the row after "Preliminaries"
+  // Function to find the time column with a period
+  function findTimeColumnWithPeriod(activeRow, lastColumn) {
+    var rowValues = sheet.getRange(activeRow, 1, 1, lastColumn).getValues()[0];
+    for (var col = lastColumn - 1; col >= 0; col--) {
+      var value = rowValues[col];
+      if (value && value.toString().includes('.')) {
+        timeColumn = col;
+        switch (col) {
+          case 40:
+            scrColumn = 47;
+            break;
+          case 25:
+            scrColumn = 33;
+            break;
+          case 35:
+            scrColumn = 43;
+            break;
+          default:
+            scrColumn = null; // Handle unexpected columns
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Process rows starting from the row after the first "Preliminaries"
   for (var row = prelimRow + 1; row < data.length; row++) {
+    // Check for another "Preliminaries" row
+    if (data[row][0] === "Preliminaries") {
+      // Process any pending tied rows
+      if (tiedRows.length > 1) {
+        for (var tiedRow of tiedRows) {
+          sheet.getRange(tiedRow + 1, rankColumn + 1).setValue("*" + currentRank);
+          sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground("yellow");
+        }
+        currentRank += tiedRows.length;
+      } else if (tiedRows.length === 1) {
+        sheet.getRange(tiedRows[0] + 1, rankColumn + 1).setValue(currentRank);
+        sheet.getRange(tiedRows[0] + 1, 1, 1, lastColumn).setBackground(null);
+        currentRank += 1;
+      }
+      // Reset rank and tied rows for new section
+      currentRank = 1;
+      lastTime = null;
+      tiedRows = [];
+      // Find new time and scr columns for this section
+      if (!findTimeColumnWithPeriod(row + 2, lastColumn)) {
+        SpreadsheetApp.getUi().alert("No valid time column found after 'Preliminaries' at row " + (row + 1));
+        return;
+      }
+      continue;
+    }
+
+    // Find time and scr columns for the first section
+    if (row === prelimRow + 1) {
+      if (!findTimeColumnWithPeriod(row + 1, lastColumn)) {
+        SpreadsheetApp.getUi().alert("No valid time column found after 'Preliminaries' at row " + (prelimRow + 1));
+        return;
+      }
+    }
+
     var timeCell = data[row][timeColumn];
     var scrCell = data[row][scrColumn];
     var rankCell = data[row][rankColumn];
@@ -665,25 +721,22 @@ function renumberRankings() {
         // Single row (no tie), assign rank without asterisk
         sheet.getRange(tiedRows[0] + 1, rankColumn + 1).setValue(currentRank);
         sheet.getRange(tiedRows[0] + 1, 1, 1, lastColumn).setBackground(null); // Clear highlighting
-        currentRank += 1; // Increment rank by 1 for non-tied row
+        currentRank += 1;
       }
-      // Start new tied group with current row
-      tiedRows = [row];
+      tiedRows = [row]; // Start new group with current row
     }
     
-    lastTime = timeCell;
+    lastTime = timeCell; // Update lastTime for next iteration
   }
 
-  // Process the final tied group, if any
+  // Process any remaining tied rows
   if (tiedRows.length > 1) {
     for (var tiedRow of tiedRows) {
       sheet.getRange(tiedRow + 1, rankColumn + 1).setValue("*" + currentRank);
       sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground("yellow");
     }
-    currentRank += tiedRows.length; // Increment rank for completeness
   } else if (tiedRows.length === 1) {
     sheet.getRange(tiedRows[0] + 1, rankColumn + 1).setValue(currentRank);
-    sheet.getRange(tiedRows[0] + 1, 1, 1, lastColumn).setBackground(null); // Clear highlighting
-    currentRank += 1; // Increment rank for completeness
+    sheet.getRange(tiedRows[0] + 1, 1, 1, lastColumn).setBackground(null);
   }
 }
