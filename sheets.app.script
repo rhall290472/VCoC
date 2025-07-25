@@ -3,6 +3,8 @@
  * Virtual Clerk of  Course App Scripts
  * 
  * Version: 22Jul25 - Added rerank swimmers.
+ * Version: 23Jul25 - More work on renumber swimmers
+ * Version: 25Jul25 - Added back deleted addthirtyminutes function
  * 
  * 
  */
@@ -613,7 +615,6 @@ function addThirtyMinutes(timeStr) {
   // Format the time string
   return hours + ":" + (minutes < 10 ? "0" + minutes : minutes) + " " + period;
 }
-
 
 /**
  * Renumber the swimmer with lots of conditions
