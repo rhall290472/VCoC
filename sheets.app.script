@@ -586,6 +586,34 @@ function insertTimesImageOverSheet() {
     return;
   }
 }
+function addThirtyMinutes(timeStr) {
+  // Parse the input time string
+  var parts = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!parts) return "Invalid time format";
+  
+  var hours = parseInt(parts[1]);
+  var minutes = parseInt(parts[2]);
+  var period = parts[3].toUpperCase();
+  
+  // Add 30 minutes
+  minutes += 30;
+  
+  // Handle minute overflow
+  if (minutes >= 60) {
+    minutes -= 60;
+    hours += 1;
+  }
+  
+  // Handle hour overflow and AM/PM switch
+  if (hours >= 12) {
+    if (hours > 12) hours -= 12;
+    period = (period === "AM") ? "PM" : "AM";
+  }
+  
+  // Format the time string
+  return hours + ":" + (minutes < 10 ? "0" + minutes : minutes) + " " + period;
+}
+
 
 /**
  * Renumber the swimmer with lots of conditions
