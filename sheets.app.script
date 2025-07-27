@@ -5,6 +5,7 @@
  * Version: 22Jul25 - Added rerank swimmers.
  * Version: 23Jul25 - More work on renumber swimmers
  * Version: 25Jul25 - Added back deleted addthirtyminutes function
+ * Version: 27Jul25 - Call rerankswimmer after delet adn expand
  * 
  * 
  */
@@ -122,6 +123,7 @@ function expandAllRows() {
 
     // Ensure changes are applied
     SpreadsheetApp.flush();
+    renumberRankings();
 
   } catch (error) {
     // Enhanced error handling
