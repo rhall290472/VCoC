@@ -5,10 +5,18 @@
  * Version: 22Jul25 - Added rerank swimmers.
  * Version: 23Jul25 - More work on renumber swimmers
  * Version: 25Jul25 - Added back deleted addthirtyminutes function
- * Version: 27Jul25 - Call rerankswimmer after delet adn expand
+ * Version: 27Jul25 - Added color code for all execptions
  * 
  * 
  */
+
+const COLOR_TIE = "#FF66FF"; // Color for ties
+const COLOR_DQ  = "Pink";    // Color for DQ
+const COLOR_NS  = "Green";   // Color for NS
+const COLOR_SCR = "Yellow";  // Color for Scr
+const COLOR_DFS = "Orange";  // Color for DFS
+const COLOR_INTENT = "Cyan"; // Color for Intent to Scr
+
 
 /**
  * Trigger on script installation
@@ -171,7 +179,7 @@ function scrSwimmer() {
       throw new Error("Sheet has no columns.");
     }
 
-    sheet.getRange(row, 1, 1, lastColumn).setBackground("orange");
+    sheet.getRange(row, 1, 1, lastColumn).setBackground(COLOR_SCR);
 
     if (typeof findLastUsedColumn !== "function") {
       throw new Error("Function findLastUsedColumn is not defined.");
@@ -294,7 +302,7 @@ function IntentscrSwimmer() {
         throw new Error("Sheet has no columns.");
       }
 
-      sheet.getRange(row, 1, 1, lastColumn).setBackground("cyan");
+      sheet.getRange(row, 1, 1, lastColumn).setBackground(COLOR_INTENT);
 
       if (typeof findLastUsedColumn !== "function") {
         throw new Error("Function findLastUsedColumn is not defined.");
@@ -696,7 +704,7 @@ function renumberRankings() {
       if (tiedRows.length > 1) {
         for (var tiedRow of tiedRows) {
           sheet.getRange(tiedRow + 1, rankColumn + 1).setValue("*" + currentRank);
-          sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground("yellow");
+          sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground(COLOR_TIE);
         }
         currentRank += tiedRows.length;
       } else if (tiedRows.length === 1) {
@@ -728,13 +736,30 @@ function renumberRankings() {
     var scrCell = data[row][scrColumn];
     var rankCell = data[row][rankColumn];
     
-    // Skip rows with no time or marked as Scr, DFS, DQ, NS
-    if (!timeCell || timeCell === "" || scrCell === "Scr" || timeCell === "DFS" || timeCell === "DQ" || timeCell === "NS") {
-      if (rankCell !== "") {
-        sheet.getRange(row + 1, rankColumn + 1).setValue(""); // Clear rank
-      }
-      continue;
-    }
+// Skip rows with no time or marked as Scr, DFS, DQ, NS
+if (!timeCell || timeCell === "" || scrCell === "Scr" || timeCell === "DFS" || timeCell === "DQ" || timeCell === "NS" || timeCell === "DNF") {
+  // Clear rank if it exists
+  if (rankCell !== "") {
+    sheet.getRange(row + 1, rankColumn + 1).setValue("");
+  }
+  // Set background colors for DFS, DQ, DNF, NS, Scr
+  var normalizedTimeCell = timeCell ? timeCell.toString().trim().toUpperCase() : "";
+  var normalizedScrCell = scrCell ? scrCell.toString().trim().toUpperCase() : "";
+  if (normalizedTimeCell === "DFS") {
+    sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_DFS);
+  } else if (normalizedTimeCell === "DQ") {
+    sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_DQ);
+  } else if (normalizedTimeCell === "DNF") {
+    sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_DQ);
+  } else if (normalizedTimeCell === "NS") {
+    sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_NS);
+  } else if(normalizedScrCell === "SCR") {
+    sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_SCR);
+  }
+  continue;
+}
+
+    
     
     // Check for tie (same time as previous valid row)
     if (lastTime !== null && timeCell === lastTime) {
@@ -745,7 +770,7 @@ function renumberRankings() {
         // Assign asterisk and current rank to all tied rows, highlight in yellow
         for (var tiedRow of tiedRows) {
           sheet.getRange(tiedRow + 1, rankColumn + 1).setValue("*" + currentRank);
-          sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground("yellow");
+          sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground(COLOR_TIE);
         }
         currentRank += tiedRows.length; // Increment rank by number of tied rows
       } else if (tiedRows.length === 1) {
@@ -764,7 +789,7 @@ function renumberRankings() {
   if (tiedRows.length > 1) {
     for (var tiedRow of tiedRows) {
       sheet.getRange(tiedRow + 1, rankColumn + 1).setValue("*" + currentRank);
-      sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground("yellow");
+      sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground(COLOR_TIE);
     }
   } else if (tiedRows.length === 1) {
     sheet.getRange(tiedRows[0] + 1, rankColumn + 1).setValue(currentRank);
