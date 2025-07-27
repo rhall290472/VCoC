@@ -50,7 +50,7 @@
                         <a class="nav-link active" aria-current="page" href="#">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="prelim.html">Prelim's Scratch Form</a>
+                        <a class="nav-link" href="prelimscrform.html">Prelim's Scratch Form</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="day1.html">Day 1 Final Scratch Form</a>
@@ -96,7 +96,7 @@
                 <div class="d-flex justify-content-center gap-3 mt-4">
                     <div class="col-6">
                         <button id="button0" class="btn btn-primary w-100">Loading...</button>
-                        <button id="button1" class="btn btn-primary w-100">Loading...</button>
+                        <button id="button1" class="btn btn-primary w-100 mt-2">Loading...</button>
                     </div>
                     <div class="col-6">
                         <button id="button2" class="btn btn-primary w-100">Loading...</button>
@@ -117,6 +117,7 @@
             const button0 = document.getElementById('button0');
             const button1 = document.getElementById('button1');
             const button2 = document.getElementById('button2');
+            const button3 = document.getElementById('button3');
 
             if (button0) {
                 button0.addEventListener('click', () => {
@@ -131,6 +132,11 @@
             if (button2) {
                 button2.addEventListener('click', () => {
                     window.location.href = 'day2.html';
+                });
+            }
+            if (button3) {
+                button2.addEventListener('click', () => {
+                    window.location.href = 'day3.html';
                 });
             }
         });
