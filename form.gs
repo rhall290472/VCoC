@@ -1,3 +1,11 @@
+/**
+ * 
+ * Virtual Clerk of Course App Scripts - FORMS
+ * 
+ * Version: 27Jul25 - Start
+ * 
+ * 
+ */
 // Global constant for the spreadsheet URL
 const MEET_DATA_URL = 'https://docs.google.com/spreadsheets/d/1zGuiBwQCNarAin85FHNt7dS-oB1X-npWBkJJQ9XXIkE/edit?gid=0#gid=0';
                        
