@@ -3,12 +3,18 @@
  * Virtual Clerk of Course App Scripts - FORMS
  * 
  * Version: 27Jul25 - Start
+ * Version: 30Jul25 - Added trigger to stop accepting responses
  * 
  * 
  */
 // Global constant for the spreadsheet URL
 const MEET_DATA_URL = 'https://docs.google.com/spreadsheets/d/1zGuiBwQCNarAin85FHNt7dS-oB1X-npWBkJJQ9XXIkE/edit?gid=0#gid=0';
-                       
+// Form ID form trigger to turn off responses.
+const FORM_ID = '18Hvt5HCGnexIg0ZNOO1Xk9n3QKt9MQpJ424td0JwDp8'; 
+// Set the date and time to stop accepting responses (YYYY, MM-1, DD, HH, MM)
+const stopDateTime = new Date(2025, 6, 30, 19, 40); // Example: July 31, 2025, 09:40 PM
+
+
 // Trigger to initialize form
 function openForm() {
   try {
@@ -26,6 +32,8 @@ function openForm() {
     Logger.log("Error in openForm: " + error.message);
     FormApp.getUi().alert("Error initializing form: " + error.message);
   }
+
+  setFormStopTrigger();
 }
 
 /**************************************************************************/
@@ -338,5 +346,35 @@ function onFormSubmit(e) {
     if (error.message.includes('Service invoked too many times')) {
       Logger.log('Possible email quota issue. Check MailApp.getRemainingDailyQuota().');
     }
+  }
+}
+
+
+function setFormStopTrigger() {
+  // Replace with your Google Form ID
+  const form = FormApp.openById(FORM_ID);
+  
+  
+  // Check if current time is past the stop date
+  if (new Date() >= stopDateTime) {
+    form.setAcceptingResponses(false);
+    Logger.log('Form stopped accepting responses at: ' + stopDateTime);
+    // Delete all triggers to prevent further execution
+    deleteAllTriggers();
+    return;
+  }
+  
+  // Create a time-based trigger to run this function again
+  ScriptApp.newTrigger('setFormStopTrigger')
+    .timeBased()
+    .at(stopDateTime)
+    .create();
+}
+
+// Function to delete all triggers to clean up
+function deleteAllTriggers() {
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i++) {
+    ScriptApp.deleteTrigger(triggers[i]);
   }
 }
