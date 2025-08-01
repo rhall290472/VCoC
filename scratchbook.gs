@@ -5,6 +5,10 @@
 // Configurable source sheet name
 const SOURCE_SHEET_NAME = 'Sheet1'; // Change to your sheet name
 const COLOR_SCR = "Yellow";  // Color for Scr
+const DEFAULT_ROW_HEIGHT = 21;
+const ROW_HEIGHT = 21; // Default row height in pixels
+const COLUMN_A_WIDTH = 60; // Width for column A in pixels
+const COLUMN_F_WIDTH = 20; // Width for column F in pixels
 
 
 /**
@@ -40,27 +44,30 @@ function onOpen(e) {
     SpreadsheetApp.getUi().alert("Error setting up menu: " + error.message);
   }
 }
-
-
+/*
+*
+*
+*
+*/
 function breakOutByEvent() {
-  // Get the active spreadsheet
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const sourceSheet = spreadsheet.getSheetByName(SOURCE_SHEET_NAME);
+
   if (!sourceSheet) {
     Logger.log(`Source sheet "${SOURCE_SHEET_NAME}" not found!`);
-    SpreadsheetApp.getUi().alert(`Source sheet "${SOURCE_SHEET_NAME}" not found! Please check the sheet name in the spreadsheet tabs.`);
+    SpreadsheetApp.getUi().alert(`Source sheet "${SOURCE_SHEET_NAME}" not found!`);
     return;
   }
 
-  // Get all data from the source sheet
-  const data = sourceSheet.getDataRange().getValues();
+  const lastRow = sourceSheet.getLastRow();
+  const lastColumn = sourceSheet.getLastColumn();
+  const data = sourceSheet.getRange(1, 1, lastRow, lastColumn).getValues();
   if (data.length < 1) {
     Logger.log('No data found in source sheet!');
     SpreadsheetApp.getUi().alert('No data found in source sheet!');
     return;
   }
 
-  // Log first 20 rows of first column for debugging
   Logger.log('First 20 rows of first column:');
   let logMessage = 'First 10 rows of first column (for alert):\n';
   for (let i = 0; i < Math.min(20, data.length); i++) {
@@ -71,244 +78,342 @@ function breakOutByEvent() {
     }
   }
 
-  // Initialize variables
   let currentEvent = null;
   let eventData = [];
   let allEvents = [];
-  let seenEventNumbers = new Set(); // Track event numbers to skip duplicates
+  let seenEventNumbers = new Set();
 
-  // Parse data to group by events
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const firstCell = row[0] ? row[0].toString().trim() : '';
 
-    // Skip completely empty rows
     if (row.every(cell => !cell || cell.toString().trim() === '')) {
       continue;
     }
 
-    // Check if row starts a new event (e.g., "Event 1", "Event 15")
-    if (firstCell.match(/^Event\s*\d+/i)) {
-      // Extract event number (e.g., "Event 15")
-      const eventNumber = firstCell.match(/^Event\s*\d+/i)[0].replace(/\s+/g, ' ').trim();
-      const eventNum = eventNumber.match(/\d+/)[0]; // Extract just the number (e.g., "15")
+    if (firstCell.match(/^Event\s*\d+\b/i)) {
+      const eventNumber = firstCell.match(/^Event\s*\d+\b/i)[0].replace(/\s+/g, ' ').trim();
+      const eventNum = eventNumber.match(/\d+/)[0];
+      Logger.log(`Row ${i + 1}: Detected event "${eventNumber}" (number: ${eventNum}), raw: "${firstCell}"`);
 
-      // Check for duplicate event
       if (seenEventNumbers.has(eventNum)) {
         Logger.log(`Skipping duplicate event at row ${i + 1}: ${firstCell}`);
-        continue; // Skip this event
+        continue;
       }
-      seenEventNumbers.add(eventNum); // Mark event as seen
+      seenEventNumbers.add(eventNum);
 
-      // Save previous event data if exists
       if (currentEvent && eventData.length > 0) {
         allEvents.push({ eventName: currentEvent, data: eventData });
+        Logger.log(`Saved event: ${currentEvent}, rows: ${eventData.length}`);
       }
-      // Start new event
-      currentEvent = eventNumber; // Use exact event number (e.g., "Event 15")
-      eventData = [row]; // Start with event title row
-      Logger.log(`Detected event at row ${i + 1}: ${firstCell}`);
+      currentEvent = eventNumber;
+      eventData = [row];
       continue;
     }
 
-    // Add all rows to current event (including blank rows and headers)
     if (currentEvent) {
       eventData.push(row);
+      if (currentEvent.match(/\d+/) && currentEvent.match(/\d+/)[0] === '58') {
+        Logger.log(`Adding row ${i + 1} to Event 58: ${JSON.stringify(row)}`);
+      }
     }
   }
 
-  // Save the last event
   if (currentEvent && eventData.length > 0) {
     const eventNum = currentEvent.match(/\d+/)[0];
+    Logger.log(`Saving last event: ${currentEvent} (number: ${eventNum}), rows: ${eventData.length}`);
     if (!seenEventNumbers.has(eventNum)) {
       allEvents.push({ eventName: currentEvent, data: eventData });
       seenEventNumbers.add(eventNum);
     }
   }
 
-  // Log if no valid events were found
   if (allEvents.length === 0) {
     Logger.log('No valid events found in the data!');
     SpreadsheetApp.getUi().alert(
       `No valid events found in "${SOURCE_SHEET_NAME}"!\n` +
-      `Expected rows in Column A starting with "Event " followed by a number (e.g., "Event 1 Girls...").\n` +
-      `Please check:\n1. Sheet name is "${SOURCE_SHEET_NAME}".\n2. Column A has event titles like "Event 1", "Event 15", etc.\n3. No extra spaces or hidden characters.\n` +
-      `Share the log output from View > Logs with your support contact.\n` +
+      `Expected rows in Column A starting with "Event " followed by a number.\n` +
       `${logMessage}`
     );
     return;
   }
 
-  // Create a new sheet for each event
   allEvents.forEach((event, index) => {
-    let sheetName = event.eventName; // Use exact event number (e.g., "Event 15")
+    const eventNum = event.eventName.match(/\d+/)[0]; // Extract just the number
+    let sheetName = eventNum; // Use only the number for sheet name
     let newSheet = spreadsheet.getSheetByName(sheetName);
 
-    // If sheet exists, clear it; otherwise, create new
     if (newSheet) {
       newSheet.clear();
     } else {
       newSheet = spreadsheet.insertSheet(sheetName);
     }
 
-    // Determine maximum column count for this event's data
     const maxColumns = Math.max(...event.data.map(row => row.filter(cell => cell && cell.toString().trim() !== '').length));
-
-    // Write event data to the sheet
     try {
-      // Pad rows to ensure consistent column count
+      // Ensure at least 6 columns for column F
+      let currentMaxColumns = newSheet.getMaxColumns();
+      if (currentMaxColumns < 6) {
+        newSheet.insertColumnsAfter(currentMaxColumns, 6 - currentMaxColumns);
+        currentMaxColumns = newSheet.getMaxColumns();
+        if (currentMaxColumns < 6) {
+          throw new Error("Failed to add columns to reach column F.");
+        }
+      }
+
       const paddedData = event.data.map(row => {
         const paddedRow = [...row];
         while (paddedRow.length < maxColumns) {
           paddedRow.push('');
         }
-        return paddedRow.slice(0, maxColumns); // Trim any extra columns
+        return paddedRow.slice(0, maxColumns);
       });
       newSheet.getRange(1, 1, paddedData.length, maxColumns).setValues(paddedData);
-
-      // Merge columns A-F in row 1 (event title)
       newSheet.getRange(1, 1, 1, Math.min(6, maxColumns)).mergeAcross();
 
-      // Auto-resize all columns to fit contents (except Column A)
-      if (maxColumns > 1) {
-        newSheet.autoResizeColumns(2, maxColumns - 1); // Auto-resize columns B onward
+      // Set all row heights to 21 pixels
+      if (paddedData.length > 0) {
+        newSheet.setRowHeights(1, paddedData.length, ROW_HEIGHT);
       }
-      // Set Column A to 60 pixels
-      newSheet.setColumnWidth(1, 60);
 
-      // Apply basic formatting
-      newSheet.getRange(1, 1, 1, maxColumns).setFontWeight('bold'); // Event title
-      if (paddedData.length > 2) {
-        newSheet.getRange(3, 1, 1, maxColumns).setFontWeight('bold'); // Headers (if present)
+      // Auto-resize all columns, then set specific widths for A and F
+      if (maxColumns > 0) {
+        newSheet.autoResizeColumns(1, maxColumns);
+        newSheet.setColumnWidth(1, COLUMN_A_WIDTH); // Column A to 60 pixels
+        if (maxColumns >= 6) {
+          newSheet.setColumnWidth(6, COLUMN_F_WIDTH); // Column F to 20 pixels
+        }
       }
+
+//      newSheet.getRange(1, 1, 1, maxColumns).setFontWeight('bold');
+//      if (paddedData.length > 2) {
+//        newSheet.getRange(3, 1, 1, maxColumns).setFontWeight('bold');
+//      }
+
+    placeEventSummaryTable();
     } catch (e) {
       Logger.log(`Error processing sheet ${sheetName}: ${e.message}`);
       SpreadsheetApp.getUi().alert(`Error processing sheet ${sheetName}: ${e.message}`);
     }
   });
-
-  SpreadsheetApp.getUi().alert('Sheets created successfully for each event!');
 }
 
-function deleteAllSheetsExceptSource() {
-  // Get the active spreadsheet
+/*
+*
+*
+*
+*/
+function placeEventSummaryTable() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const sourceSheet = spreadsheet.getSheetByName(SOURCE_SHEET_NAME);
-  if (!sourceSheet) {
-    Logger.log(`Source sheet "${SOURCE_SHEET_NAME}" not found!`);
-    SpreadsheetApp.getUi().alert(`Source sheet "${SOURCE_SHEET_NAME}" not found! No sheets were deleted.`);
-    return;
-  }
+  const sheet = spreadsheet.getActiveSheet();
+  const ROW_HEIGHT = 21; // Default row height in pixels
+  const COLUMN_A_WIDTH = 60; // Width for column A in pixels
+  const COLUMN_F_WIDTH = 20; // Width for column F in pixels
+  const TABLE_START_ROW = 2; // Start at row 2
+  const TABLE_START_COLUMN = 10; // Start at column J (10)
+  const BORDER_START_ROW = 4; // Border range starts at J4
+  const BORDER_START_COLUMN = 10; // Border range column J (10)
+  const BORDER_NUM_ROWS = 4; // J4:K7 spans 5 rows
+  const BORDER_NUM_COLUMNS = 2; // J4:K7 spans 2 columns
 
-  // Log initial sheet count
-  let allSheets = spreadsheet.getSheets();
-  Logger.log(`Initial sheet count: ${allSheets.length}`);
+  try {
+    if (!sheet) {
+      throw new Error("No active sheet found.");
+    }
 
-  // Process sheets in batches
-  const batchSize = 5; // Process up to 5 sheets per batch
-  const maxRetries = 2; // Retry up to 2 times per sheet
-  while (allSheets.length > 1) { // Continue until only the source sheet remains
-    const batch = allSheets.slice(0, Math.min(batchSize, allSheets.length));
-    let deletedInBatch = false;
+    // Define the table data
+    const tableData = [
+      ["Lanes", "8"],
+      ["", ""],
+      ["Entered", "105"],
+      ["Scratches", "6"],
+      ["Scratches", "6"],
+      ["Seeded", "99"],
+      ["", ""],
+      ["HEATS", "13"],
+      ["FULL", "12"],
+      ["1 @", "3"],
+      ["-", "105"],
+      ["", ""],
+      ["Circle Seed", ""],
+      ["HEATS", "13"],
+      ["Heat 1", "8"],
+      ["Heat 2", "8"],
+      ["Heat 3", "83"],
+      ["", ""],
+      ["Timed Final", ""],
+      ["HEATS", "13"],
+      ["FULL", "12"],
+      ["1 @", "3"],
+      ["-", "-"]
+    ];
 
-    for (const sheet of batch) {
-      if (sheet.getName() !== SOURCE_SHEET_NAME) {
-        let retries = 0;
-        let success = false;
-        while (retries <= maxRetries && !success) {
-          try {
-            // Verify sheet still exists
-            const sheetToDelete = spreadsheet.getSheetByName(sheet.getName());
-            if (sheetToDelete) {
-              Logger.log(`Attempting to delete sheet: ${sheet.getName()} (ID: ${sheetToDelete.getSheetId()}) (Retry ${retries})`);
-              spreadsheet.deleteSheet(sheetToDelete);
-              Logger.log(`Deleted sheet: ${sheet.getName()}`);
-              deletedInBatch = true;
-              success = true;
-            } else {
-              Logger.log(`Sheet ${sheet.getName()} no longer exists.`);
-              success = true; // Skip if already gone
-            }
-          } catch (e) {
-            Logger.log(`Error deleting sheet ${sheet.getName()} (ID: ${sheet.getSheetId()}) (Retry ${retries}): ${e.message}`);
-            retries++;
-            if (retries > maxRetries) {
-              Logger.log(`Failed to delete sheet ${sheet.getName()} after ${maxRetries} retries. Skipping.`);
-            }
-            Utilities.sleep(500); // Short delay before retry
-          }
-        }
+    const numRows = tableData.length;
+    const numColumns = 2; // Table has 2 columns (Label, Value)
+
+    // Ensure enough columns for table (J:K) and column F
+    const minColumnsRequired = Math.max(6, TABLE_START_COLUMN + numColumns - 1); // At least 6 for F, or 11 for J:K
+    let currentMaxColumns = sheet.getMaxColumns();
+    if (currentMaxColumns < minColumnsRequired) {
+      const columnsToAdd = minColumnsRequired - currentMaxColumns;
+      sheet.insertColumnsAfter(currentMaxColumns, columnsToAdd);
+      currentMaxColumns = sheet.getMaxColumns();
+      if (currentMaxColumns < minColumnsRequired) {
+        throw new Error("Failed to add columns to accommodate table and column F.");
       }
     }
 
-    // Refresh sheet list after batch
-    allSheets = spreadsheet.getSheets();
-    if (!deletedInBatch) {
-      Logger.log('No sheets deleted in this batch; exiting loop.');
-      break;
+    // Ensure border range is within sheet bounds
+    if (BORDER_START_ROW + BORDER_NUM_ROWS - 1 > sheet.getMaxRows()) {
+      sheet.insertRowsAfter(sheet.getMaxRows(), (BORDER_START_ROW + BORDER_NUM_ROWS - 1) - sheet.getMaxRows());
     }
 
-    // Delay after each batch
-    Utilities.sleep(1000);
-  }
+    // Write the table data to the sheet starting at J2
+    if (numRows > 0 && numColumns > 0) {
+      sheet.getRange(TABLE_START_ROW, TABLE_START_COLUMN, numRows, numColumns).setValues(tableData);
+    } else {
+      throw new Error("Table data is empty.");
+    }
 
-  // Log final sheet count
-  Logger.log(`Final sheet count: ${allSheets.length}`);
-  SpreadsheetApp.getUi().alert(`All sheets except "${SOURCE_SHEET_NAME}" have been deleted.`);
+    // Set row heights to 21 pixels for table rows (2 to 2+numRows-1)
+    if (numRows > 0) {
+      sheet.setRowHeights(TABLE_START_ROW, numRows, ROW_HEIGHT);
+    }
+
+    // Auto-resize table columns (J:K), set widths for A and F
+    if (currentMaxColumns > 0) {
+      // Auto-resize only table columns (J:K)
+      sheet.autoResizeColumns(TABLE_START_COLUMN, numColumns);
+      // Set column A width
+      sheet.setColumnWidth(1, COLUMN_A_WIDTH);
+      // Set column F width if available
+      if (currentMaxColumns >= 6) {
+        sheet.setColumnWidth(6, COLUMN_F_WIDTH);
+      }
+    }
+
+    // Bold the first row of the table and section headers
+    if (numRows > 0) {
+      // Bold first row of table (J2:K2)
+      sheet.getRange(TABLE_START_ROW, TABLE_START_COLUMN, 1, numColumns).setFontWeight("bold");
+      // Bold section headers (relative rows: 1, 8, 13, 19)
+      const headerRowsRelative = [1, 8, 13, 19]; // Relative to table start
+      headerRowsRelative.forEach(relativeRow => {
+        const actualRow = TABLE_START_ROW + relativeRow - 1;
+        if (actualRow <= TABLE_START_ROW + numRows - 1) {
+          sheet.getRange(actualRow, TABLE_START_COLUMN, 1, numColumns).setFontWeight("bold");
+        }
+      });
+    }
+
+    // Add border around J4:K8
+    sheet.getRange(BORDER_START_ROW, BORDER_START_COLUMN, BORDER_NUM_ROWS, BORDER_NUM_COLUMNS)
+      .setBorder(true, true, true, true, true, true, "black", SpreadsheetApp.BorderStyle.SOLID);
+
+    SpreadsheetApp.flush();
+  } catch (error) {
+    Logger.log(`Error in placeEventSummaryTable: ${error.message}`);
+    SpreadsheetApp.getUi().alert(`Error in placeEventSummaryTable: ${error.message}`);
+  }
 }
 
-
+/*
+*
+*
+*
+*/
+function deleteAllSheetsExceptSource() {
+  try {
+    // Get the active spreadsheet
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    
+    // Check if the source sheet exists
+    const sourceSheet = spreadsheet.getSheetByName(SOURCE_SHEET_NAME);
+    if (!sourceSheet) {
+      Logger.log(`Error: Source sheet "${SOURCE_SHEET_NAME}" not found!`);
+      return;
+    }
+    
+    // Get all sheets in the spreadsheet
+    const sheets = spreadsheet.getSheets();
+    
+    // Check if there's only one sheet
+    if (sheets.length === 1) {
+      Logger.log("Only one sheet exists. No sheets will be deleted.");
+      return;
+    }
+    
+    // Loop through all sheets and delete those that aren't the source sheet
+    sheets.forEach(sheet => {
+      if (sheet.getName() !== SOURCE_SHEET_NAME) {
+        spreadsheet.deleteSheet(sheet);
+      }
+    });
+    
+    Logger.log(`All sheets deleted except "${SOURCE_SHEET_NAME}"`);
+    
+  } catch (error) {
+    Logger.log(`Error: ${error.message}`);
+  }
+}
 /**
  * Scratch the current swimmer
  * 
  */
 function scrSwimmer() {
   try {
-    var sheet = SpreadsheetApp.getActiveSheet();
+    const sheet = SpreadsheetApp.getActiveSheet();
     if (!sheet) {
       throw new Error("No active sheet found.");
     }
 
-    var cell = sheet.getActiveCell();
+    const cell = sheet.getActiveCell();
     if (!cell) {
       throw new Error("No active cell selected.");
     }
 
-    var row = cell.getRow();
+    const row = cell.getRow();
     if (row < 1) {
       throw new Error("Invalid row selected.");
     }
 
-    var lastRow = sheet.getLastRow();
+    const lastRow = sheet.getLastRow();
     if (lastRow < row) {
       throw new Error("Selected row is beyond the last used row.");
     }
 
-//    sheet.getRange(row, 1, 1, 2).clearContent();
+    // Check and ensure at least 7 columns exist
+    const scratchColumn = 7; // Column G
+    let maxColumns = sheet.getMaxColumns();
+    if (maxColumns < scratchColumn) {
+      const columnsToAdd = scratchColumn - maxColumns;
+      sheet.insertColumnsAfter(maxColumns, columnsToAdd);
+      maxColumns = sheet.getMaxColumns(); // Update maxColumns after adding
+      if (maxColumns < scratchColumn) {
+        throw new Error("Failed to add columns to reach column G.");
+      }
+    }
 
-    var lastColumn = sheet.getLastColumn();
+    // Get the last column with data, but ensure it includes at least 7 columns
+    const lastColumn = Math.max(sheet.getLastColumn(), scratchColumn);
     if (lastColumn < 1) {
       throw new Error("Sheet has no columns.");
     }
 
+    // Set background color for the entire row
     sheet.getRange(row, 1, 1, lastColumn).setBackground(COLOR_SCR);
 
-    if (typeof findLastUsedColumn !== "function") {
-      throw new Error("Function findLastUsedColumn is not defined.");
-    }
-    var lastUsedColumn = findLastUsedColumn();
-    if (lastUsedColumn < 1 || lastUsedColumn > lastColumn) {
-      throw new Error("Invalid last used column: " + lastUsedColumn);
-    }
-
-    sheet.getRange(row, lastUsedColumn).setValue("Scr");
+    // Set "Scratch" in column G
+    sheet.getRange(row, scratchColumn).setValue("Scratch");
 
     SpreadsheetApp.flush();
   } catch (error) {
     Logger.log("Error in scrSwimmer: " + error.message);
-    SpreadsheetApp.getUi().alert("Error: " + error.message);
+    SpreadsheetApp.getUi().alert("Error in scrSwimmer: " + error.message);
   }
 }
+
+
 
 /**
  * Unscratch the current swimmer
@@ -366,46 +471,41 @@ function UnscratchSwimmer() {
  * Find the last used column in the current row
  * 
  */
-function findLastUsedColumn() {
+function findLastUsedColumn(rowNumber = null, columnWidth = 33) {
   try {
-    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    if (!spreadsheet) {
-      throw new Error("No active spreadsheet found.");
-    }
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    if (!spreadsheet) throw new Error("No active spreadsheet found.");
 
-    var sheet = spreadsheet.getActiveSheet();
-    if (!sheet) {
-      throw new Error("No active sheet found.");
-    }
+    const sheet = spreadsheet.getActiveSheet();
+    if (!sheet) throw new Error("No active sheet found.");
 
-    var currentRow = sheet.getActiveCell().getRow();
-    if (currentRow < 1) {
-      throw new Error("Invalid active row.");
-    }
+    // Use provided row number or fall back to active cell's row
+    const currentRow = rowNumber !== null ? rowNumber : sheet.getActiveCell().getRow();
+    if (currentRow < 1) throw new Error("Invalid row number.");
 
-    var lastRow = sheet.getLastRow();
-    if (lastRow < currentRow) {
-      throw new Error("Active row is beyond the last used row.");
-    }
+    const lastRow = sheet.getLastRow();
+    if (lastRow < currentRow) throw new Error("Row is beyond the last used row.");
 
-    var lastColumn = sheet.getLastColumn();
-    if (lastColumn < 1) {
-      throw new Error("Sheet has no columns.");
-    }
+    const lastColumn = sheet.getLastColumn();
+    if (lastColumn < 1) return 0; // Return 0 for empty sheet
 
-    var rowData = sheet.getRange(currentRow, 1, 1, lastColumn).getValues()[0];
-    var lastUsedColumn = 1;
-    for (var i = rowData.length - 1; i >= 0; i--) {
-      if (rowData[i] !== "" && rowData[i] !== null) {
+    const rowData = sheet.getRange(currentRow, 1, 1, lastColumn).getValues()[0];
+    let lastUsedColumn = 0; // Default to 0 if row is empty
+
+    for (let i = rowData.length - 1; i >= 0; i--) {
+      if (rowData[i] !== "") {
         lastUsedColumn = i + 1;
         break;
       }
     }
 
-    sheet.setColumnWidth(lastUsedColumn, 33);
+    if (lastUsedColumn > 0) {
+      sheet.setColumnWidth(lastUsedColumn, columnWidth);
+    }
+
     return lastUsedColumn;
   } catch (error) {
-    Logger.log("Error in findLastUsedColumn: " + error.message);
-    throw error; // Rethrow to be caught by calling function
+    Logger.log(`Error in findLastUsedColumn: ${error.message}`);
+    throw error; // Rethrow for calling function
   }
 }
