@@ -228,7 +228,7 @@ function placeEventSummaryTable() {
       ["Lanes", "8"], // K2: Number of lanes
       ["=MOD(K8,K4)", ""], // J5: Remainder of swimmers after heats
       ["Entered", "=COUNTA(B3:B1000)"], // K5: Count of entries in B3:B1000
-      ["Scratches", "=COUNTA(G3:G1000)"], // K6: Count of scratches in G3:G1000
+      ["Scratches", "=COUNTA(H3:H1000)"], // K6: Count of scratches in G3:G1000
       ["Seeded", "=IFERROR(K6-K7,0)"], // K7: Entered - Scratches
       ["", ""], // Spacer
       ["HEATS", "=(IF(K8/K4<1,0,ROUNDUP(K8/K4,0)))"], 
@@ -309,7 +309,9 @@ function placeEventSummaryTable() {
     SpreadsheetApp.flush();
 
     placeFormula();
-
+    protectCellsJ4K24();
+    hideCellJ5();
+    
   } catch (error) {
     Logger.log(`Error in placeEventSummaryTable: ${error.message}`);
     SpreadsheetApp.getUi().alert(`Error in placeEventSummaryTable: ${error.message}`);
@@ -456,6 +458,58 @@ var targetCell = 'K11';  // Target cell where the formula will be placed
   sheet.setColumnWidth(11, 30);   // Column K
 }
 
+
+/*
+*
+*
+*
+*/
+function protectCellsJ4K24() {
+  // Get the active spreadsheet and sheet
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getActiveSheet();
+  
+  // Define the range to protect (J4:K24)
+  const range = sheet.getRange('J4:K24');
+  
+  // Create a protection object for the range
+  const protection = range.protect().setDescription('Protected Range J4:K24');
+  
+  // Ensure the current user retains edit access
+  const me = Session.getEffectiveUser();
+  protection.addEditor(me);
+  
+  // Remove all other editors from the protected range
+  protection.removeEditors(protection.getEditors());
+  
+  // Disable domain-wide editing if applicable
+  if (protection.canDomainEdit()) {
+    protection.setDomainEdit(false);
+  }
+}
+/*
+*
+*
+*
+*
+*/
+function hideCellJ5() {
+  // Get the active spreadsheet and sheet
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getActiveSheet();
+  
+  // Define the range for cell J5
+  const range = sheet.getRange('J5');
+  
+  // Option 1: Set font color to match background (e.g., white) to hide content
+  range.setFontColor('#FFFFFF'); // Assumes white background
+  range.setBackground('#FFFFFF'); // Ensure background is white for consistency
+  
+  // Option 2 (alternative): Clear the cell content and move it to a note
+  // const cellValue = range.getValue();
+  // range.clearContent();
+  // range.setNote('Hidden content: ' + cellValue);
+}
 /*
 *
 *
