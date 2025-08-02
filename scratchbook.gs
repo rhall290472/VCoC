@@ -235,9 +235,6 @@ function placeEventSummaryTable() {
       ["FULL", "=IF(AND(J5<3,J5>0),K10-2,IF(J5=0,K10,IF(K10-1<0, 0, K10-1)))"], 
       ["1 @", ""], 
       ["Partial", ""], 
-    ];
-
-/*
       ["", ""], 
       ["Circle Seed", ""], // Header
       ["HEATS", "=K10"], // K16: Mirror total heats
@@ -250,13 +247,13 @@ function placeEventSummaryTable() {
       ["FULL", ""], // K23: Mirror full heats
       ["Partial", ""], // K24: Mirror partial heat
       ["", ""], // Spacer
+    ];
 
-*/
     const numRows = tableData.length;
     const numColumns = 2; // Table has 2 columns (Label, Value)
 
     // Ensure enough columns for table (J:K) and column F
-    const minColumnsRequired = Math.max(6, TABLE_START_COLUMN + numColumns - 1);
+    const minColumnsRequired = Math.max(6, TABLE_START_COLUMN + numColumns);
     let currentMaxColumns = sheet.getMaxColumns();
     if (currentMaxColumns < minColumnsRequired) {
       sheet.insertColumnsAfter(currentMaxColumns, minColumnsRequired - currentMaxColumns);
@@ -264,7 +261,7 @@ function placeEventSummaryTable() {
     }
 
     // Ensure enough rows for table
-    if (TABLE_START_ROW + numRows - 1 > sheet.getMaxRows()) {
+    if (TABLE_START_ROW + numRows > sheet.getMaxRows()) {
       sheet.insertRowsAfter(sheet.getMaxRows(), (TABLE_START_ROW + numRows - 1) - sheet.getMaxRows());
     }
 
@@ -295,20 +292,20 @@ function placeEventSummaryTable() {
       }
     });
 
-/*
+
     // Define and apply borders for table sections
     const borderRanges = [
-      { startRow: 4, numRows: 4 }, // J4:K7 (Lanes to Seeded)
-      { startRow: 8, numRows: 3 }, // J8:K10 (HEATS to Partial)
-      { startRow: 13, numRows: 4 }, // J13:K16 (Circle Seed to Heat 3)
-      { startRow: 19, numRows: 3 }, // J19:K21 (Timed Final to Partial)
+      { startRow: 4, numRows: 5 }, // J4:K7 (Lanes to Seeded)
+      { startRow: 10, numRows: 4 }, // J8:K10 (HEATS to Partial)
+      { startRow: 15, numRows: 5 }, // J13:K16 (Circle Seed to Heat 3)
+      { startRow: 21, numRows: 4 }, // J19:K21 (Timed Final to Partial)
     ];
 
     borderRanges.forEach(range => {
       sheet.getRange(range.startRow, TABLE_START_COLUMN, range.numRows, numColumns)
         .setBorder(true, true, true, true, true, true, "black", SpreadsheetApp.BorderStyle.SOLID);
     });
-*/
+
     SpreadsheetApp.flush();
 
     placeFormula();
@@ -323,6 +320,19 @@ function placeFormula() {
   var formula1 = '=IF(AND($J$5<3,$J$5>0),$K$10-2,IF($J$5=0,$K$10,IF($K$10-1<0, 0, $K$10-1)))';
   var formula2 = '=IF(AND($J$5<3,$J$5>0),$K$4-(3-$J$5),IF($J$5=0,"-",$J$5))';
   var formula3 = '=IF(AND(J5<3,J5>0),3,"-")';
+  var formula4 = '=IF(J5<3,"1 @","-")';
+  var formula5 = '=ROUNDUP(K8/K16,0)';
+  var formula5a = '=IF(AND(K8<K4*3,K8>K4*2),3,ROUNDUP(K8/K4,0))';
+  var formula6 = '=IF(K16=1,0,ROUND((K8-L36-0.5)/(K16),0))';
+  var formula7 = '=ROUNDDOWN((K8-K17-K18),0)';
+
+  var formula30  = '=(IF($K$8/$K$4<1,0,ROUNDUP($K$8/$K$4,0)))';
+  var formula31  = '=IF(AND($J$5<3,$J$5>0),$K$10-2,IF($J$5=0,$K$10,IF($K$10-1<0, 0, $K$10-1)))';
+  var formula32  = '=IF(AND($J$5<3,$J$5>0),$K$4-(3-$J$5),IF($J$5=0,"-",$J$5))';
+  var formula33a = '=IF(J5<3,"1 @","-")';
+  var formula33  = '=IF(AND($J$5<3,$J$5>0),3,"-")';
+
+  
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getActiveSheet();
 
@@ -344,6 +354,15 @@ var targetCell = 'K11';  // Target cell where the formula will be placed
     Logger.log('Error placing formula: ' + e.message);
   }
 
+  var targetCell = 'J13';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula4);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
+
   var targetCell = 'K13';  // Target cell where the formula will be placed
   try {
     var cell = sheet.getRange(targetCell);
@@ -353,6 +372,85 @@ var targetCell = 'K11';  // Target cell where the formula will be placed
     Logger.log('Error placing formula: ' + e.message);
   }
 
+  var targetCell = 'K16';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula5a);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
+
+  var targetCell = 'K17';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula5);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
+
+  var targetCell = 'K18';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula6);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
+  var targetCell = 'K19';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula7);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
+
+  var targetCell = 'K22';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula30);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
+
+  var targetCell = 'K23';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula31);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
+
+  var targetCell = 'K19';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula32);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
+
+  var targetCell = 'J24';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula33a);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
+
+  var targetCell = 'K24';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula33);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
 
   sheet.setColumnWidth(10, 70);   // Column J
   sheet.setColumnWidth(11, 30);   // Column K
@@ -424,7 +522,7 @@ function scrSwimmer() {
     }
 
     // Check and ensure at least 7 columns exist
-    const scratchColumn = 7; // Column G
+    const scratchColumn = 8; // Column H
     let maxColumns = sheet.getMaxColumns();
     if (maxColumns < scratchColumn) {
       const columnsToAdd = scratchColumn - maxColumns;
@@ -489,8 +587,8 @@ function UnscratchSwimmer() {
     if (lastColumn < 1) {
       throw new Error("Sheet has no columns.");
     }
-
-    sheet.getRange(row, 1, 1, 7).setBackground(null);
+    lastColumn = 8;
+    sheet.getRange(row, 1, 1, 8).setBackground(null);
 
     if (typeof findLastUsedColumn !== "function") {
       throw new Error("Function findLastUsedColumn is not defined.");
