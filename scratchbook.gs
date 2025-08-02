@@ -183,6 +183,12 @@ function breakOutByEvent() {
         if (maxColumns >= 6) {
           newSheet.setColumnWidth(6, COLUMN_F_WIDTH); // Column F to 20 pixels
         }
+        if (maxColumns >= 7) {
+          newSheet.setColumnWidth(7, COLUMN_F_WIDTH); // Column G to 20 pixels
+        }
+        if (maxColumns >= 8) {
+          newSheet.setColumnWidth(8, COLUMN_F_WIDTH); // Column H to 20 pixels
+        }
       }
 
 //      newSheet.getRange(1, 1, 1, maxColumns).setFontWeight('bold');
@@ -209,63 +215,57 @@ function placeEventSummaryTable() {
   const ROW_HEIGHT = 21; // Default row height in pixels
   const COLUMN_A_WIDTH = 60; // Width for column A in pixels
   const COLUMN_F_WIDTH = 20; // Width for column F in pixels
-  const TABLE_START_ROW = 2; // Start at row 2
+  const TABLE_START_ROW = 4; // Start at row 2
   const TABLE_START_COLUMN = 10; // Start at column J (10)
-  const BORDER_START_ROW = 4; // Border range starts at J4
-  const BORDER_START_COLUMN = 10; // Border range column J (10)
-  const BORDER_NUM_ROWS = 4; // J4:K7 spans 5 rows
-  const BORDER_NUM_COLUMNS = 2; // J4:K7 spans 2 columns
 
   try {
     if (!sheet) {
       throw new Error("No active sheet found.");
     }
 
-    // Define the table data
+    // Define the table data with corrected formulas
     const tableData = [
-      ["Lanes", "8"],
-      ["", ""],
-      ["Entered", "105"],
-      ["Scratches", "6"],
-      ["Scratches", "6"],
-      ["Seeded", "99"],
-      ["", ""],
-      ["HEATS", "13"],
-      ["FULL", "12"],
-      ["1 @", "3"],
-      ["-", "105"],
-      ["", ""],
-      ["Circle Seed", ""],
-      ["HEATS", "13"],
-      ["Heat 1", "8"],
-      ["Heat 2", "8"],
-      ["Heat 3", "83"],
-      ["", ""],
-      ["Timed Final", ""],
-      ["HEATS", "13"],
-      ["FULL", "12"],
-      ["1 @", "3"],
-      ["-", "-"]
+      ["Lanes", "8"], // K2: Number of lanes
+      ["=MOD(K8,K4)", ""], // J5: Remainder of swimmers after heats
+      ["Entered", "=COUNTA(B3:B1000)"], // K5: Count of entries in B3:B1000
+      ["Scratches", "=COUNTA(G3:G1000)"], // K6: Count of scratches in G3:G1000
+      ["Seeded", "=IFERROR(K6-K7,0)"], // K7: Entered - Scratches
+      ["", ""], // Spacer
+      ["HEATS", "=(IF(K8/K4<1,0,ROUNDUP(K8/K4,0)))"], 
+      ["FULL", "=IF(AND(J5<3,J5>0),K10-2,IF(J5=0,K10,IF(K10-1<0, 0, K10-1)))"], 
+      ["1 @", ""], 
+      ["Partial", ""], 
     ];
 
+/*
+      ["", ""], 
+      ["Circle Seed", ""], // Header
+      ["HEATS", "=K10"], // K16: Mirror total heats
+      ["Heat 1", ""], // K17: Swimmers in Heat 1
+      ["Heat 2", ""], // K18: Swimmers in Heat 2
+      ["Heat 3", ""], // K19: Swimmers in Heat 3
+      ["", ""], // Spacer
+      ["Timed Final", ""], // Header
+      ["HEATS", "=K10"], // K22: Mirror total heats
+      ["FULL", ""], // K23: Mirror full heats
+      ["Partial", ""], // K24: Mirror partial heat
+      ["", ""], // Spacer
+
+*/
     const numRows = tableData.length;
     const numColumns = 2; // Table has 2 columns (Label, Value)
 
     // Ensure enough columns for table (J:K) and column F
-    const minColumnsRequired = Math.max(6, TABLE_START_COLUMN + numColumns - 1); // At least 6 for F, or 11 for J:K
+    const minColumnsRequired = Math.max(6, TABLE_START_COLUMN + numColumns - 1);
     let currentMaxColumns = sheet.getMaxColumns();
     if (currentMaxColumns < minColumnsRequired) {
-      const columnsToAdd = minColumnsRequired - currentMaxColumns;
-      sheet.insertColumnsAfter(currentMaxColumns, columnsToAdd);
+      sheet.insertColumnsAfter(currentMaxColumns, minColumnsRequired - currentMaxColumns);
       currentMaxColumns = sheet.getMaxColumns();
-      if (currentMaxColumns < minColumnsRequired) {
-        throw new Error("Failed to add columns to accommodate table and column F.");
-      }
     }
 
-    // Ensure border range is within sheet bounds
-    if (BORDER_START_ROW + BORDER_NUM_ROWS - 1 > sheet.getMaxRows()) {
-      sheet.insertRowsAfter(sheet.getMaxRows(), (BORDER_START_ROW + BORDER_NUM_ROWS - 1) - sheet.getMaxRows());
+    // Ensure enough rows for table
+    if (TABLE_START_ROW + numRows - 1 > sheet.getMaxRows()) {
+      sheet.insertRowsAfter(sheet.getMaxRows(), (TABLE_START_ROW + numRows - 1) - sheet.getMaxRows());
     }
 
     // Write the table data to the sheet starting at J2
@@ -275,46 +275,87 @@ function placeEventSummaryTable() {
       throw new Error("Table data is empty.");
     }
 
-    // Set row heights to 21 pixels for table rows (2 to 2+numRows-1)
-    if (numRows > 0) {
-      sheet.setRowHeights(TABLE_START_ROW, numRows, ROW_HEIGHT);
-    }
+    // Set row heights to 21 pixels for table rows
+    sheet.setRowHeights(TABLE_START_ROW, numRows, ROW_HEIGHT);
 
     // Auto-resize table columns (J:K), set widths for A and F
-    if (currentMaxColumns > 0) {
-      // Auto-resize only table columns (J:K)
-      sheet.autoResizeColumns(TABLE_START_COLUMN, numColumns);
-      // Set column A width
-      sheet.setColumnWidth(1, COLUMN_A_WIDTH);
-      // Set column F width if available
-      if (currentMaxColumns >= 6) {
-        sheet.setColumnWidth(6, COLUMN_F_WIDTH);
+    sheet.autoResizeColumns(TABLE_START_COLUMN, numColumns);
+    sheet.setColumnWidth(1, COLUMN_A_WIDTH);
+    if (currentMaxColumns >= 6) {
+      sheet.setColumnWidth(6, COLUMN_F_WIDTH);
+    }
+
+    // Bold the first row and section headers
+    sheet.getRange(TABLE_START_ROW, TABLE_START_COLUMN, 1, numColumns).setFontWeight("bold");
+    const headerRowsRelative = [7, 12, 18]; // J7, J12, J18 (HEATS, Circle Seed, Timed Final)
+    headerRowsRelative.forEach(relativeRow => {
+      const actualRow = TABLE_START_ROW + relativeRow - 1;
+      if (actualRow <= TABLE_START_ROW + numRows - 1) {
+        sheet.getRange(actualRow, TABLE_START_COLUMN, 1, numColumns).setFontWeight("bold");
       }
-    }
+    });
 
-    // Bold the first row of the table and section headers
-    if (numRows > 0) {
-      // Bold first row of table (J2:K2)
-      sheet.getRange(TABLE_START_ROW, TABLE_START_COLUMN, 1, numColumns).setFontWeight("bold");
-      // Bold section headers (relative rows: 1, 8, 13, 19)
-      const headerRowsRelative = [1, 8, 13, 19]; // Relative to table start
-      headerRowsRelative.forEach(relativeRow => {
-        const actualRow = TABLE_START_ROW + relativeRow - 1;
-        if (actualRow <= TABLE_START_ROW + numRows - 1) {
-          sheet.getRange(actualRow, TABLE_START_COLUMN, 1, numColumns).setFontWeight("bold");
-        }
-      });
-    }
+/*
+    // Define and apply borders for table sections
+    const borderRanges = [
+      { startRow: 4, numRows: 4 }, // J4:K7 (Lanes to Seeded)
+      { startRow: 8, numRows: 3 }, // J8:K10 (HEATS to Partial)
+      { startRow: 13, numRows: 4 }, // J13:K16 (Circle Seed to Heat 3)
+      { startRow: 19, numRows: 3 }, // J19:K21 (Timed Final to Partial)
+    ];
 
-    // Add border around J4:K8
-    sheet.getRange(BORDER_START_ROW, BORDER_START_COLUMN, BORDER_NUM_ROWS, BORDER_NUM_COLUMNS)
-      .setBorder(true, true, true, true, true, true, "black", SpreadsheetApp.BorderStyle.SOLID);
-
+    borderRanges.forEach(range => {
+      sheet.getRange(range.startRow, TABLE_START_COLUMN, range.numRows, numColumns)
+        .setBorder(true, true, true, true, true, true, "black", SpreadsheetApp.BorderStyle.SOLID);
+    });
+*/
     SpreadsheetApp.flush();
+
+    placeFormula();
+
   } catch (error) {
     Logger.log(`Error in placeEventSummaryTable: ${error.message}`);
     SpreadsheetApp.getUi().alert(`Error in placeEventSummaryTable: ${error.message}`);
   }
+}
+
+function placeFormula() {
+  var formula1 = '=IF(AND($J$5<3,$J$5>0),$K$10-2,IF($J$5=0,$K$10,IF($K$10-1<0, 0, $K$10-1)))';
+  var formula2 = '=IF(AND($J$5<3,$J$5>0),$K$4-(3-$J$5),IF($J$5=0,"-",$J$5))';
+  var formula3 = '=IF(AND(J5<3,J5>0),3,"-")';
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getActiveSheet();
+
+var targetCell = 'K11';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula1);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
+
+  var targetCell = 'K12';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula2);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
+
+  var targetCell = 'K13';  // Target cell where the formula will be placed
+  try {
+    var cell = sheet.getRange(targetCell);
+    cell.setFormula(formula3);
+    Logger.log('Formula placed successfully in ' + targetCell);
+  } catch (e) {
+    Logger.log('Error placing formula: ' + e.message);
+  }
+
+
+  sheet.setColumnWidth(10, 70);   // Column J
+  sheet.setColumnWidth(11, 30);   // Column K
 }
 
 /*
@@ -395,7 +436,8 @@ function scrSwimmer() {
     }
 
     // Get the last column with data, but ensure it includes at least 7 columns
-    const lastColumn = Math.max(sheet.getLastColumn(), scratchColumn);
+    //const lastColumn = Math.max(sheet.getLastColumn(), scratchColumn);
+    const lastColumn = 7;
     if (lastColumn < 1) {
       throw new Error("Sheet has no columns.");
     }
@@ -448,7 +490,7 @@ function UnscratchSwimmer() {
       throw new Error("Sheet has no columns.");
     }
 
-    sheet.getRange(row, 1, 1, lastColumn).setBackground(null);
+    sheet.getRange(row, 1, 1, 7).setBackground(null);
 
     if (typeof findLastUsedColumn !== "function") {
       throw new Error("Function findLastUsedColumn is not defined.");
