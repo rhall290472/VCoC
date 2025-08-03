@@ -10,6 +10,10 @@ const ROW_HEIGHT = 21; // Default row height in pixels
 const COLUMN_A_WIDTH = 60; // Width for column A in pixels
 const COLUMN_F_WIDTH = 20; // Width for column F in pixels
 
+const COLUMN_F = 6;
+const COLUMN_G = 7;
+const COLUMN_H = 8;
+
 
 /**
  * Trigger on script installation
@@ -306,12 +310,12 @@ function placeEventSummaryTable() {
         .setBorder(true, true, true, true, true, true, "black", SpreadsheetApp.BorderStyle.SOLID);
     });
 
-    SpreadsheetApp.flush();
+        SpreadsheetApp.flush();
 
     placeFormula();
-    protectCellsJ4K24();
-    hideCellJ5();
-    
+    protectAndHideJ4K24J5();
+        SpreadsheetApp.flush();
+
   } catch (error) {
     Logger.log(`Error in placeEventSummaryTable: ${error.message}`);
     SpreadsheetApp.getUi().alert(`Error in placeEventSummaryTable: ${error.message}`);
@@ -459,57 +463,33 @@ var targetCell = 'K11';  // Target cell where the formula will be placed
 }
 
 
-/*
-*
-*
-*
-*/
-function protectCellsJ4K24() {
-  // Get the active spreadsheet and sheet
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getActiveSheet();
-  
-  // Define the range to protect (J4:K24)
-  const range = sheet.getRange('J4:K24');
-  
-  // Create a protection object for the range
-  const protection = range.protect().setDescription('Protected Range J4:K24');
-  
-  // Ensure the current user retains edit access
-  const me = Session.getEffectiveUser();
-  protection.addEditor(me);
-  
-  // Remove all other editors from the protected range
-  protection.removeEditors(protection.getEditors());
-  
-  // Disable domain-wide editing if applicable
-  if (protection.canDomainEdit()) {
-    protection.setDomainEdit(false);
+/**
+ * Protects range J4:K24 and hides contents of cell J5 in the active sheet.
+ * Version: 02Aug25
+ */
+function protectAndHideJ4K24J5() {
+  try {
+    const sheet = SpreadsheetApp.getActiveSheet();
+    if (!sheet) throw new Error('No active sheet found');
+
+    // Protect range J4:K24
+    const rangeToProtect = sheet.getRange('J4:K24');
+    const protection = rangeToProtect.protect().setDescription('Protected Range J4:K24');
+    const me = Session.getEffectiveUser();
+    protection.addEditor(me);
+    protection.removeEditors(protection.getEditors());
+    if (protection.canDomainEdit()) protection.setDomainEdit(false);
+
+    // Hide cell J5 by setting font color to match background
+    const rangeJ5 = sheet.getRange('J5');
+    rangeJ5.setFontColor('#FFFFFF').setBackground('#FFFFFF');
+
+  } catch (error) {
+    Logger.log(`Error: ${error.message}`);
+    SpreadsheetApp.getUi().alert(`Error: ${error.message}`);
   }
 }
-/*
-*
-*
-*
-*
-*/
-function hideCellJ5() {
-  // Get the active spreadsheet and sheet
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getActiveSheet();
-  
-  // Define the range for cell J5
-  const range = sheet.getRange('J5');
-  
-  // Option 1: Set font color to match background (e.g., white) to hide content
-  range.setFontColor('#FFFFFF'); // Assumes white background
-  range.setBackground('#FFFFFF'); // Ensure background is white for consistency
-  
-  // Option 2 (alternative): Clear the cell content and move it to a note
-  // const cellValue = range.getValue();
-  // range.clearContent();
-  // range.setNote('Hidden content: ' + cellValue);
-}
+
 /*
 *
 *
@@ -575,30 +555,30 @@ function scrSwimmer() {
       throw new Error("Selected row is beyond the last used row.");
     }
 
-    // Check and ensure at least 7 columns exist
-    const scratchColumn = 8; // Column H
+    // Check and ensure at least H columns exist
+    const scratchColumn = COLUMN_H; // Column H
     let maxColumns = sheet.getMaxColumns();
     if (maxColumns < scratchColumn) {
       const columnsToAdd = scratchColumn - maxColumns;
       sheet.insertColumnsAfter(maxColumns, columnsToAdd);
       maxColumns = sheet.getMaxColumns(); // Update maxColumns after adding
       if (maxColumns < scratchColumn) {
-        throw new Error("Failed to add columns to reach column G.");
+        throw new Error("Failed to add columns to reach column H.");
       }
     }
 
     // Get the last column with data, but ensure it includes at least 7 columns
     //const lastColumn = Math.max(sheet.getLastColumn(), scratchColumn);
-    const lastColumn = 7;
+    const lastColumn = COLUMN_H;
     if (lastColumn < 1) {
       throw new Error("Sheet has no columns.");
     }
 
     // Set background color for the entire row
-    sheet.getRange(row, 1, 1, lastColumn).setBackground(COLOR_SCR);
+    sheet.getRange(row, 1, 1, COLUMN_H).setBackground(COLOR_SCR);
 
-    // Set "Scratch" in column G
-    sheet.getRange(row, scratchColumn).setValue("Scratch");
+    // Set "Scratch" in column H
+    sheet.getRange(row, COLUMN_H).setValue("Scratch");
 
     SpreadsheetApp.flush();
   } catch (error) {
@@ -635,24 +615,10 @@ function UnscratchSwimmer() {
       throw new Error("Selected row is beyond the last used row.");
     }
 
-//    sheet.getRange(row, 1, 1, 2).clearContent();
+    lastColumn = COLUMN_H;
+    sheet.getRange(row, 1, 1, COLUMN_H).setBackground(null);
 
-    var lastColumn = sheet.getLastColumn();
-    if (lastColumn < 1) {
-      throw new Error("Sheet has no columns.");
-    }
-    lastColumn = 8;
-    sheet.getRange(row, 1, 1, 8).setBackground(null);
-
-    if (typeof findLastUsedColumn !== "function") {
-      throw new Error("Function findLastUsedColumn is not defined.");
-    }
-    var lastUsedColumn = findLastUsedColumn();
-    if (lastUsedColumn < 1 || lastUsedColumn > lastColumn) {
-      throw new Error("Invalid last used column: " + lastUsedColumn);
-    }
-
-    sheet.getRange(row, lastUsedColumn).setValue("");
+    sheet.getRange(row, COLUMN_H).setValue("");
 
     SpreadsheetApp.flush();
   } catch (error) {
