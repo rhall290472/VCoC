@@ -106,6 +106,27 @@ function onOpen(e) {
   }
 }
 
+function onEdit(e) {
+  const sheet = e.source.getActiveSheet();
+  const range = e.range;
+  const editedColumn = range.getColumn();
+  const editedRow = range.getRow();
+
+  // Check if edit is in B3:B1000 (entries), H3:H1000 (scratches), or K4 (lanes)
+  if ((editedColumn === 2 || editedColumn === 8) && editedRow >= 3 && editedRow <= 1000 || 
+      (editedColumn === 11 && editedRow === 4)) {
+    Logger.log(`Edit detected in column ${editedColumn}, row ${editedRow}. Updating event summary table.`);
+    
+    // Get numLanes from K4, default to 6 if invalid
+    const numLanes = Number(sheet.getRange("K4").getValue()) || 6;
+    if (!Number.isFinite(numLanes) || numLanes <= 0) {
+      Logger.log(`Invalid numLanes from K4: ${numLanes}. Using default: 6.`);
+    }
+    
+    placeEventSummaryTable(sheet, numLanes);
+  }
+}
+
 /**
  * Breaks out data by event into separate sheets
  */
@@ -278,11 +299,6 @@ function breakOutByEvent() {
  * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - The target sheet
  * @param {number} numLanes - Number of lanes provided by the user
  */
-/**
- * Places the event summary table on the specified sheet
- * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - The target sheet
- * @param {number} numLanes - Number of lanes provided by the user
- */
 function placeEventSummaryTable(sheet, numLanes) {
   const ROW_HEIGHT = 21;
   const COLUMN_A_WIDTH = 60;
@@ -298,43 +314,79 @@ function placeEventSummaryTable(sheet, numLanes) {
       throw new Error("No active sheet provided.");
     }
 
-    // Calculate seeded swimmers (Entered - Scratches)
+    // Get values for K4 (numLanes) and calculate seeded swimmers
+    const numLanesValue = Number(sheet.getRange("K4").getValue()) || numLanes;
     const entered = sheet.getRange("B3:B1000").getValues().filter(cell => cell[0]).length;
     const scratches = sheet.getRange("H3:H1000").getValues().filter(cell => cell[0]).length;
-    const seeded = entered - scratches;
+    const seededSwimmers = Math.max(0, entered - scratches); // Ensure non-negative
+
+    // Validate inputs
+    let isValidInput = true;
+    if (!Number.isFinite(numLanesValue) || numLanesValue <= 0) {
+      Logger.log(`Invalid number of lanes in K4: ${numLanesValue}. Using default value: ${numLanes}.`);
+      isValidInput = false;
+    }
+    if (!Number.isFinite(seededSwimmers) || seededSwimmers < 0) {
+      Logger.log(`Invalid number of seeded swimmers: ${seededSwimmers}. Using default value: 0.`);
+      isValidInput = false;
+    }
+
+    // Calculate swimmers per lane and remainder
+    const swimmersPerLane = isValidInput && numLanesValue > 0 ? seededSwimmers / numLanesValue : 0;
+    const remainderSwimmers = isValidInput && numLanesValue > 0 ? seededSwimmers % numLanesValue : 0;
 
     const tableData = [
       ["Lanes", numLanes.toString()], // J4/K4: Number of lanes
-      ["=MOD(K8,K4)", ""], // J5: Remainder of swimmers after dividing by lanes
+      ["=MOD(K8,K4)", ""], // J5/K5: Remainder of swimmers after dividing by lanes
       ["Entered", "=COUNTA(B3:B1000)"], // J6/K6: Count of entries
-      ["Scratches", "=COUNTA(H3:H1000)"], // J6/K7: Count of scratches
+      ["Scratches", "=COUNTA(H3:H1000)"], // J7/K7: Count of scratches
       ["Seeded", "=IFERROR(K6-K7,0)"], // J8/K8: Entered - Scratches
-      ["", ""], // Spacer
-      ["HEATS", "=(IF(K8/K4<1,0,ROUNDUP(K8/K4,0)))"], // J10/K10: Total heats, ensuring at least 3 swimmers per heat
-      ["FULL", "=IF(AND(J5<3,J5>0),K10-2,IF(J5=0,K10,IF(K10-1<0, 0, K10-1)))"], // J11/K11: Full heats, reduce by 1 if partial heat < 3
-      ["1 @", "=IF(AND(J5<3,J5>0),K4-(3-J5),IF(J5=0,"-",J5))"], // J12/K12: Indicate if partial heat has fewer than 3 swimmers
-      ["Partial", "=IF(AND(J5<3,J5>0),3,"-")"], // J13/K13: Swimmers in partial heat, 0 if < 3
-      ["", ""], // Spacer
+      ["", ""], // J9/K9: Spacer
+      ["HEATS", "=(IF(K8/K4<1,0,ROUNDUP(K8/K4,0)))"], // J10/K10: Total heats
+      ["FULL", "=IF(AND(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0),K10-2,IF(J5=0,K10,IF(K10-1<0,0,K10-1)))"], // J11/K11: Full heats
+      ["1 @", "=IF(AND(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0),K4-(3-J5),IF(J5=0,\"-\",J5))"], // J12/K12: Swimmers in partial heat
+      ["Partial", "=IF(AND(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0),3,\"-\")"], // J13/K13: Swimmers in partial heat
+      ["", ""], // J14/K14: Spacer
     ];
 
-    const tableCircleSeed = [
-      ["Circle Seed", ""], // Header
-      ["HEATS", "=K10"], // K16: Mirror total heats
-      ["Heat 1", "=IF(K16=0,0,IF(K16=1,K8,IF(K16=2,CEILING(K8/2,1),IF(AND(K8<=K4*3,K8>K4*2),K4,CEILING(K8/K16,1)))))"], // K17: Swimmers in Heat 1, ensuring at least 3
-      ["Heat 2", "=IF(K16<=1,0,IF(K16=2,K8-K17,IF(AND(K8<=K4*3,K8>K4*2),K4,IF((K8-K17)/(K16-1)<" + MIN_SWIMMERS_PER_HEAT + ",0,CEILING((K8-K17)/(K16-1),1)))))"], // K18: Swimmers in Heat 2, 0 if < 3
-      ["Heat 3", "=IF(K16<=2,0,IF(K8-K17-K18<" + MIN_SWIMMERS_PER_HEAT + ",0,K8-K17-K18))"], // K19: Swimmers in Heat 3, 0 if < 3
-      ["", ""], // Spacer
+    // Write main table and flush to ensure J5 and K8 calculate
+    sheet.getRange(TABLE_START_ROW, TABLE_START_COLUMN, tableData.length, 2).setValues(tableData);
+    SpreadsheetApp.flush();
+
+    // Verify J5 value
+    const j5Value = sheet.getRange("J5").getValue();
+    if (!Number.isFinite(j5Value) || j5Value < 0) {
+      Logger.log(`Warning: J5 (=MOD(K8,K4)) has invalid value: ${j5Value}. Using calculated remainder: ${remainderSwimmers}.`);
+    }
+
+    // Dynamically populate circle seed table if K8/K4 < 3 and K8 > 0
+    const tableCircleSeed = (isValidInput && swimmersPerLane < MIN_SWIMMERS_PER_HEAT && seededSwimmers > 0) ? [
+      ["Circle Seed", ""], // J15/K15: Header
+      ["HEATS", "=K10"], // J16/K16: Mirror total heats
+      ["Heat 1", "=IF(K16=0,0,IF(K16=1,K8,IF(K16=2,CEILING(K8/2,1),IF(AND(K8<=K4*3,K8>K4*2),K4,CEILING(K8/K16,1)))))"], // J17/K17: Swimmers in Heat 1
+      ["Heat 2", "=IF(K16<=1,0,IF(K16=2,K8-K17,IF(AND(K8<=K4*3,K8>K4*2),K4,IF((K8-K17)/(K16-1)<" + MIN_SWIMMERS_PER_HEAT + ",0,CEILING((K8-K17)/(K16-1),1)))))"], // J18/K18: Swimmers in Heat 2
+      ["Heat 3", "=IF(K16<=2,0,IF(K8-K17-K18<" + MIN_SWIMMERS_PER_HEAT + ",0,K8-K17-K18))"], // J19/K19: Swimmers in Heat 3
+      ["", ""], // J20/K20: Spacer
+    ] : [
+      ["", ""], // J15/K15: Empty
+      ["", ""], // J16/K16: Empty
+      ["", ""], // J17/K17: Empty
+      ["", ""], // J18/K18: Empty
+      ["", ""], // J19/K19: Empty
+      ["", ""], // J20/K20: Spacer
     ];
 
     const tableTimedFinals = [
-      ["Timed Final", ""], // Header
-      ["HEATS", "=K10"], // K22: Mirror total heats
-      ["FULL", "=IF(K10=0,0,IF(J5<" + MIN_SWIMMERS_PER_HEAT + " AND J5>0,K10-1,K10))"], // K23: Mirror full heats
-      ["Partial", "=IF(AND(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0),0,J5)"], // K24: Mirror partial heat, 0 if < 3
-      ["", ""], // Spacer
+      ["Timed Final", ""], // J21/K21: Header
+      ["HEATS", "=K10"], // J22/K22: Mirror total heats
+      ["FULL", "=IF(K10=0,0,IF(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0,K10-1,K10))"], // J23/K23: Mirror full heats
+      ["Partial", "=IF(AND(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0),0,J5)"], // J24/K24: Mirror partial heat
+      ["", ""], // J25/K25: Spacer
     ];
 
-    const numRows = tableData.length + tableCircleSeed.length + tableTimedFinals.length;
+    // Combine remaining tables
+    const tablesToWrite = [tableCircleSeed, tableTimedFinals];
+    const numRows = tableData.length + tablesToWrite.reduce((sum, table) => sum + table.length, 0);
     const numColumns = 2;
 
     // Ensure enough columns
@@ -350,15 +402,16 @@ function placeEventSummaryTable(sheet, numLanes) {
       sheet.insertRowsAfter(sheet.getMaxRows(), (TABLE_START_ROW + numRows - 1) - sheet.getMaxRows());
     }
 
-    // Write table data
-    if (numRows > 0 && numColumns > 0) {
-      sheet.getRange(TABLE_START_ROW, TABLE_START_COLUMN, tableData.length, numColumns).setValues(tableData);
-    } else {
-      throw new Error("Table data is empty.");
-    }
-
-    // Circle seeded data if we need it
-    
+    // Write circle seed and timed finals tables
+    let currentRow = TABLE_START_ROW + tableData.length;
+    tablesToWrite.forEach(table => {
+      if (table.length > 0 && numColumns > 0) {
+        sheet.getRange(currentRow, TABLE_START_COLUMN, table.length, numColumns).setValues(table);
+        currentRow += table.length;
+      } else {
+        throw new Error("Table data is empty.");
+      }
+    });
 
     // Set row heights
     sheet.setRowHeights(TABLE_START_ROW, numRows, ROW_HEIGHT);
@@ -367,10 +420,10 @@ function placeEventSummaryTable(sheet, numLanes) {
     sheet.autoResizeColumns(TABLE_START_COLUMN, numColumns);
     sheet.setColumnWidth(1, COLUMN_A_WIDTH);
     if (currentMaxColumns >= 6) {
-      sheet.setColumnWidth(6, COLUMN_F_WIDTH); 
+      sheet.setColumnWidth(6, COLUMN_F_WIDTH);
     }
-    sheet.setColumnWidth(COLUMN_J, 70);
-    sheet.setColumnWidth(COLUMN_K, 30);
+    sheet.setColumnWidth(TABLE_START_COLUMN, 70);
+    sheet.setColumnWidth(TABLE_START_COLUMN + 1, 30);
 
     // Bold headers
     sheet.getRange(TABLE_START_ROW, TABLE_START_COLUMN, 1, numColumns).setFontWeight("bold");
@@ -384,82 +437,57 @@ function placeEventSummaryTable(sheet, numLanes) {
 
     // Apply borders
     const borderRanges = [
-      { startRow: 4, numRows: 5 },
-      { startRow: 10, numRows: 4 },
-      { startRow: 15, numRows: 5 },
-      { startRow: 21, numRows: 4 },
+      { startRow: 4, numRows: 5 }, // Main table (J4:K8)
+      { startRow: 10, numRows: 4 }, // Heats section (J10:K13)
+      { startRow: 15, numRows: 5 }, // Circle Seed section (J15:K19)
+      { startRow: 21, numRows: 4 }, // Timed Finals section (J21:K24)
     ];
-
     borderRanges.forEach(range => {
       sheet.getRange(range.startRow, TABLE_START_COLUMN, range.numRows, numColumns)
         .setBorder(true, true, true, true, true, true, "black", SpreadsheetApp.BorderStyle.SOLID);
     });
 
-  const formulas = [
-    {
-      cell: 'K12',
-      formula: '=IF(AND(J5<3,J5>0),K4-(3-J5),IF(J5=0,"-",J5))'
-    },
-    {
-      cell: 'J13',
-      formula: '=IF(J5<3,"1 @","-")'
-    },
-    {
-      cell: 'K13',
-      formula: '=IF(AND(J5<3,J5>0),3,"-")'
-    }
-  ];
+    // Update formulas
+    const formulas = [
+      {
+        cell: 'K12',
+        formula: '=IF(AND(J5<' + MIN_SWIMMERS_PER_HEAT + ',J5>0),K4-(3-J5),IF(J5=0,"-",J5))'
+      },
+      {
+        cell: 'J13',
+        formula: '=IF(J5<' + MIN_SWIMMERS_PER_HEAT + ',"1 @","-")'
+      },
+      {
+        cell: 'K13',
+        formula: '=IF(AND(J5<' + MIN_SWIMMERS_PER_HEAT + ',J5>0),3,"-")'
+      }
+    ];
 
-  formulas.forEach(({cell, formula}) => {
-    try {
-      sheet.getRange(cell).setFormula(formula);
-    } catch (e) {
-      Logger.log(`Error placing formula in ${cell}: ${e.message}`);
-    }
-  });
-
-
-
+    formulas.forEach(({cell, formula}) => {
+      try {
+        sheet.getRange(cell).setFormula(formula);
+      } catch (e) {
+        Logger.log(`Error placing formula in ${cell}: ${e.message}`);
+      }
+    });
 
     SpreadsheetApp.flush();
-    protectAndHideJ4K24J5();
-    SpreadsheetApp.flush();
+
+      // Log circle seeding status
+    if (!isValidInput) {
+      Logger.log("Circle seeding data not populated due to invalid inputs.");
+      SpreadsheetApp.getUi().alert("Warning: Circle seeding data not populated due to invalid number of lanes (K4) or swimmers (K8). Please check values.");
+    } else if (!(swimmersPerLane < MIN_SWIMMERS_PER_HEAT && seededSwimmers > 0)) {
+      Logger.log(`Circle seeding data not populated: K8/K4 = ${swimmersPerLane.toFixed(2)} (must be < ${MIN_SWIMMERS_PER_HEAT}) or K8 = ${seededSwimmers} (must be > 0).`);
+    } else {
+      Logger.log("Circle seeding data populated in J15:K19.");
+    }
   } catch (error) {
     Logger.log(`Error in placeEventSummaryTable: ${error.message}`);
     SpreadsheetApp.getUi().alert(`Error in placeEventSummaryTable: ${error.message}`);
   }
 }
-
-
 /**
- * Protects range J4:K24 and hides contents of cell J5 in the active sheet.
- * Version: 02Aug25
- */
-function protectAndHideJ4K24J5() {
-  try {
-    const sheet = SpreadsheetApp.getActiveSheet();
-    if (!sheet) throw new Error('No active sheet found');
-
-    // Protect range J4:K24
-    const rangeToProtect = sheet.getRange('J4:K24');
-    const protection = rangeToProtect.protect().setDescription('Protected Range J4:K24');
-    const me = Session.getEffectiveUser();
-    protection.addEditor(me);
-    protection.removeEditors(protection.getEditors());
-    if (protection.canDomainEdit()) protection.setDomainEdit(false);
-
-    // Hide cell J5 by setting font color to match background
-    const rangeJ5 = sheet.getRange('J5');
-    rangeJ5.setFontColor('#FFFFFF').setBackground('#FFFFFF');
-
-  } catch (error) {
-    Logger.log(`Error: ${error.message}`);
-    SpreadsheetApp.getUi().alert(`Error: ${error.message}`);
-  }
-}
-
-/*
-*
 *
 *
 */
