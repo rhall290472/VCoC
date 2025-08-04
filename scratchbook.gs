@@ -109,7 +109,7 @@ function onOpen(e) {
 function breakOutByEvent() {
   try {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    const sourceSheet = getValidSheet(CONFIG.sourceSheetName);
+    const sourceSheet = getValidSheet('Sheet1'); // Adjust to match CONFIG.sourceSheetName
     const ui = SpreadsheetApp.getUi();
 
     // Prompt user for number of lanes
@@ -214,12 +214,31 @@ function breakOutByEvent() {
       if (maxColumns >= CONFIG.columns.H) newSheet.setColumnWidth(CONFIG.columns.H, CONFIG.columnWidths.H);
 
       placeEventSummaryTable(newSheet, numLanes);
+
+      // Protect range J4:K25
+      const range = newSheet.getRange('J4:K25');
+      const protection = range.protect().setDescription(`Protected Range J4:K25 on ${sheetName}`);
+      protection.removeEditors(protection.getEditors());
+//      protection.addEditor(Session.getActiveUser()); // Owner only
+      // Ensure warning is shown for non-editors
+      protection.setWarningOnly(false); // Strict protection (not warning-only)
+
+      // Set text color to white for cell J5
+      newSheet.getRange('J5').setFontColor('#FFFFFF');   
+
+      //Check if we need a circle seed if so blank out the heat seeding and show circle seed data
+     const k10Value = newSheet.getRange('K10').getValue();
+      if (k10Value < 3) {
+        newSheet.getRange('J10:K13').setFontColor('#FFFFFF');
+      } else {
+        newSheet.getRange('J15:K19').setFontColor('#FFFFFF');
+      }
+
     });
   } catch (error) {
     handleError(error.message, 'breakOutByEvent');
   }
 }
-
 /**
  * Places the event summary table on the specified sheet
  * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - The target sheet
