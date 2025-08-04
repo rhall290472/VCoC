@@ -27,6 +27,7 @@ const CONFIG = {
 
 const SOURCE_SHEET_NAME = 'Sheet1'; // Change to your sheet name
 const COLOR_SCR = "Yellow";  // Color for Scr
+const COLOR_TOP = "#b7e1cd";
 const DEFAULT_ROW_HEIGHT = 21;
 const ROW_HEIGHT = 21; // Default row height in pixels
 const COLUMN_A_WIDTH = 60; // Width for column A in pixels
@@ -99,6 +100,8 @@ function onOpen(e) {
       .addItem('Delete all sheets except source', 'deleteAllSheetsExceptSource')
       .addSeparator()
       .addItem('Scratch current swimmer', 'scrSwimmer')
+      .addItem('Top 8', 'Top8')
+      .addItem('Top 16', 'Top16')
       .addItem('Unscratch swimmer', 'UnscratchSwimmer')
       .addToUi();
   } catch (error) {
@@ -106,26 +109,6 @@ function onOpen(e) {
   }
 }
 
-function onEdit(e) {
-  const sheet = e.source.getActiveSheet();
-  const range = e.range;
-  const editedColumn = range.getColumn();
-  const editedRow = range.getRow();
-
-  // Check if edit is in B3:B1000 (entries), H3:H1000 (scratches), or K4 (lanes)
-  if ((editedColumn === 2 || editedColumn === 8) && editedRow >= 3 && editedRow <= 1000 || 
-      (editedColumn === 11 && editedRow === 4)) {
-    Logger.log(`Edit detected in column ${editedColumn}, row ${editedRow}. Updating event summary table.`);
-    
-    // Get numLanes from K4, default to 6 if invalid
-    const numLanes = Number(sheet.getRange("K4").getValue()) || 6;
-    if (!Number.isFinite(numLanes) || numLanes <= 0) {
-      Logger.log(`Invalid numLanes from K4: ${numLanes}. Using default: 6.`);
-    }
-    
-    placeEventSummaryTable(sheet, numLanes);
-  }
-}
 
 /**
  * Breaks out data by event into separate sheets
@@ -310,8 +293,9 @@ function placeEventSummaryTable(sheet, numLanes) {
   const MIN_SWIMMERS_PER_HEAT = 3;
 
   try {
-    if (!sheet) {
-      throw new Error("No active sheet provided.");
+    // Validate sheet object
+    if (!sheet || typeof sheet.getRange !== 'function') {
+      throw new Error("Invalid sheet object. Ensure a valid SpreadsheetApp.Sheet is provided.");
     }
 
     // Get values for K4 (numLanes) and calculate seeded swimmers
@@ -360,19 +344,12 @@ function placeEventSummaryTable(sheet, numLanes) {
     }
 
     // Dynamically populate circle seed table if K8/K4 < 3 and K8 > 0
-    const tableCircleSeed = (isValidInput && swimmersPerLane < MIN_SWIMMERS_PER_HEAT && seededSwimmers > 0) ? [
+    const tableCircleSeed = [
       ["Circle Seed", ""], // J15/K15: Header
       ["HEATS", "=K10"], // J16/K16: Mirror total heats
       ["Heat 1", "=IF(K16=0,0,IF(K16=1,K8,IF(K16=2,CEILING(K8/2,1),IF(AND(K8<=K4*3,K8>K4*2),K4,CEILING(K8/K16,1)))))"], // J17/K17: Swimmers in Heat 1
       ["Heat 2", "=IF(K16<=1,0,IF(K16=2,K8-K17,IF(AND(K8<=K4*3,K8>K4*2),K4,IF((K8-K17)/(K16-1)<" + MIN_SWIMMERS_PER_HEAT + ",0,CEILING((K8-K17)/(K16-1),1)))))"], // J18/K18: Swimmers in Heat 2
       ["Heat 3", "=IF(K16<=2,0,IF(K8-K17-K18<" + MIN_SWIMMERS_PER_HEAT + ",0,K8-K17-K18))"], // J19/K19: Swimmers in Heat 3
-      ["", ""], // J20/K20: Spacer
-    ] : [
-      ["", ""], // J15/K15: Empty
-      ["", ""], // J16/K16: Empty
-      ["", ""], // J17/K17: Empty
-      ["", ""], // J18/K18: Empty
-      ["", ""], // J19/K19: Empty
       ["", ""], // J20/K20: Spacer
     ];
 
@@ -380,8 +357,8 @@ function placeEventSummaryTable(sheet, numLanes) {
       ["Timed Final", ""], // J21/K21: Header
       ["HEATS", "=K10"], // J22/K22: Mirror total heats
       ["FULL", "=IF(K10=0,0,IF(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0,K10-1,K10))"], // J23/K23: Mirror full heats
-      ["Partial", "=IF(AND(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0),0,J5)"], // J24/K24: Mirror partial heat
-      ["", ""], // J25/K25: Spacer
+      ["1@", "=IF(AND(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0),0,J5)"], // J24/K24: Mirror partial heat
+      ["Partial", ""], // J25/K25: Spacer
     ];
 
     // Combine remaining tables
@@ -440,7 +417,7 @@ function placeEventSummaryTable(sheet, numLanes) {
       { startRow: 4, numRows: 5 }, // Main table (J4:K8)
       { startRow: 10, numRows: 4 }, // Heats section (J10:K13)
       { startRow: 15, numRows: 5 }, // Circle Seed section (J15:K19)
-      { startRow: 21, numRows: 4 }, // Timed Finals section (J21:K24)
+      { startRow: 21, numRows: 5 }, // Timed Finals section (J21:K24)
     ];
     borderRanges.forEach(range => {
       sheet.getRange(range.startRow, TABLE_START_COLUMN, range.numRows, numColumns)
@@ -460,7 +437,28 @@ function placeEventSummaryTable(sheet, numLanes) {
       {
         cell: 'K13',
         formula: '=IF(AND(J5<' + MIN_SWIMMERS_PER_HEAT + ',J5>0),3,"-")'
+      },
+      {
+        cell: 'K22',
+        formula: '=(IF(K8/K4<1,0,ROUNDUP(K8/K4,0)))'
+      },
+      {
+        cell: 'K23',
+        formula: '=IF(AND(J5<3,J5>0),K10-2,IF(J5=0,K10,IF(K10-1<0, 0, K10-1)))'
+      },
+      {
+        cell: 'K24',
+        formula: '=IF(AND(J5<3,J5>0),K4-(3-J5),IF(J5=0,"-",J5))'
+      },
+      {
+        cell: 'J25',
+        formula: '=IF(J5<3,"1 @","-")'
+      },
+      {
+        cell: 'K25',
+        formula: '=IF(AND(J5<3,J5>0),3,"-")'
       }
+
     ];
 
     formulas.forEach(({cell, formula}) => {
@@ -473,15 +471,6 @@ function placeEventSummaryTable(sheet, numLanes) {
 
     SpreadsheetApp.flush();
 
-      // Log circle seeding status
-    if (!isValidInput) {
-      Logger.log("Circle seeding data not populated due to invalid inputs.");
-      SpreadsheetApp.getUi().alert("Warning: Circle seeding data not populated due to invalid number of lanes (K4) or swimmers (K8). Please check values.");
-    } else if (!(swimmersPerLane < MIN_SWIMMERS_PER_HEAT && seededSwimmers > 0)) {
-      Logger.log(`Circle seeding data not populated: K8/K4 = ${swimmersPerLane.toFixed(2)} (must be < ${MIN_SWIMMERS_PER_HEAT}) or K8 = ${seededSwimmers} (must be > 0).`);
-    } else {
-      Logger.log("Circle seeding data populated in J15:K19.");
-    }
   } catch (error) {
     Logger.log(`Error in placeEventSummaryTable: ${error.message}`);
     SpreadsheetApp.getUi().alert(`Error in placeEventSummaryTable: ${error.message}`);
@@ -575,6 +564,112 @@ function scrSwimmer() {
 
     // Set "Scratch" in column H
     sheet.getRange(row, COLUMN_H).setValue("Scratch");
+
+    SpreadsheetApp.flush();
+  } catch (error) {
+    Logger.log("Error in scrSwimmer: " + error.message);
+    SpreadsheetApp.getUi().alert("Error in scrSwimmer: " + error.message);
+  }
+}
+function Top8() {
+  try {
+    const sheet = SpreadsheetApp.getActiveSheet();
+    if (!sheet) {
+      throw new Error("No active sheet found.");
+    }
+
+    const cell = sheet.getActiveCell();
+    if (!cell) {
+      throw new Error("No active cell selected.");
+    }
+
+    const row = cell.getRow();
+    if (row < 1) {
+      throw new Error("Invalid row selected.");
+    }
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow < row) {
+      throw new Error("Selected row is beyond the last used row.");
+    }
+
+    // Check and ensure at least H columns exist
+    const scratchColumn = COLUMN_H; // Column H
+    let maxColumns = sheet.getMaxColumns();
+    if (maxColumns < scratchColumn) {
+      const columnsToAdd = scratchColumn - maxColumns;
+      sheet.insertColumnsAfter(maxColumns, columnsToAdd);
+      maxColumns = sheet.getMaxColumns(); // Update maxColumns after adding
+      if (maxColumns < scratchColumn) {
+        throw new Error("Failed to add columns to reach column H.");
+      }
+    }
+
+    // Get the last column with data, but ensure it includes at least 7 columns
+    //const lastColumn = Math.max(sheet.getLastColumn(), scratchColumn);
+    const lastColumn = COLUMN_H;
+    if (lastColumn < 1) {
+      throw new Error("Sheet has no columns.");
+    }
+
+    // Set background color for the entire row
+    sheet.getRange(row, 1, 1, COLUMN_H).setBackground(COLOR_TOP);
+
+    // Set "Scratch" in column H
+    sheet.getRange(row, COLUMN_H).setValue("Top 8");
+
+    SpreadsheetApp.flush();
+  } catch (error) {
+    Logger.log("Error in scrSwimmer: " + error.message);
+    SpreadsheetApp.getUi().alert("Error in scrSwimmer: " + error.message);
+  }
+}
+function Top16() {
+  try {
+    const sheet = SpreadsheetApp.getActiveSheet();
+    if (!sheet) {
+      throw new Error("No active sheet found.");
+    }
+
+    const cell = sheet.getActiveCell();
+    if (!cell) {
+      throw new Error("No active cell selected.");
+    }
+
+    const row = cell.getRow();
+    if (row < 1) {
+      throw new Error("Invalid row selected.");
+    }
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow < row) {
+      throw new Error("Selected row is beyond the last used row.");
+    }
+
+    // Check and ensure at least H columns exist
+    const scratchColumn = COLUMN_H; // Column H
+    let maxColumns = sheet.getMaxColumns();
+    if (maxColumns < scratchColumn) {
+      const columnsToAdd = scratchColumn - maxColumns;
+      sheet.insertColumnsAfter(maxColumns, columnsToAdd);
+      maxColumns = sheet.getMaxColumns(); // Update maxColumns after adding
+      if (maxColumns < scratchColumn) {
+        throw new Error("Failed to add columns to reach column H.");
+      }
+    }
+
+    // Get the last column with data, but ensure it includes at least 7 columns
+    //const lastColumn = Math.max(sheet.getLastColumn(), scratchColumn);
+    const lastColumn = COLUMN_H;
+    if (lastColumn < 1) {
+      throw new Error("Sheet has no columns.");
+    }
+
+    // Set background color for the entire row
+    sheet.getRange(row, 1, 1, COLUMN_H).setBackground(COLOR_TOP);
+
+    // Set "Scratch" in column H
+    sheet.getRange(row, COLUMN_H).setValue("Top 16");
 
     SpreadsheetApp.flush();
   } catch (error) {
