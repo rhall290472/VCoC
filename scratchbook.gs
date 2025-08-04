@@ -8,7 +8,9 @@ const CONFIG = {
   sourceSheetName: 'Sheet1',
   colors: { 
     scratch: 'Yellow',
-    top: '#b7e1cd'
+    top: '#b7e1cd',
+    white: '#FFFFFF',
+    circle: '#92d050'
   },
   rowHeight: 21,
   columnWidths: {
@@ -224,14 +226,15 @@ function breakOutByEvent() {
       protection.setWarningOnly(false); // Strict protection (not warning-only)
 
       // Set text color to white for cell J5
-      newSheet.getRange('J5').setFontColor('#FFFFFF');   
+      newSheet.getRange('J5').setFontColor(CONFIG.colors.white);   
 
       //Check if we need a circle seed if so blank out the heat seeding and show circle seed data
      const k10Value = newSheet.getRange('K10').getValue();
       if (k10Value < 3) {
-        newSheet.getRange('J10:K13').setFontColor('#FFFFFF');
+        newSheet.getRange('J10:K13').setFontColor(CONFIG.colors.white);
+        newSheet.getRange('J15:K19').setBackground(CONFIG.colors.circle);
       } else {
-        newSheet.getRange('J15:K19').setFontColor('#FFFFFF');
+        newSheet.getRange('J15:K19').setFontColor(CONFIG.colors.white);
       }
 
     });
@@ -471,42 +474,5 @@ function UnscratchSwimmer() {
     SpreadsheetApp.flush();
   } catch (error) {
     handleError(error.message, 'UnscratchSwimmer');
-  }
-}
-
-/**
- * Finds the last used column in the specified row
- * @param {number} [rowNumber] - Optional row number
- * @param {number} [columnWidth=33] - Width to set for the last used column
- * @returns {number} The last used column index
- */
-function findLastUsedColumn(rowNumber = null, columnWidth = 33) {
-  try {
-    const sheet = getValidSheet();
-    const currentRow = rowNumber !== null ? rowNumber : sheet.getActiveCell().getRow();
-    if (currentRow < 1) throw new Error('Invalid row number.');
-    if (currentRow > sheet.getLastRow()) throw new Error('Row is beyond the last used row.');
-
-    const lastColumn = sheet.getLastColumn();
-    if (lastColumn < 1) return 0;
-
-    const rowData = sheet.getRange(currentRow, 1, 1, lastColumn).getValues()[0];
-    let lastUsedColumn = 0;
-
-    for (let i = rowData.length - 1; i >= 0; i--) {
-      if (rowData[i] !== '') {
-        lastUsedColumn = i + 1;
-        break;
-      }
-    }
-
-    if (lastUsedColumn > 0) {
-      sheet.setColumnWidth(lastUsedColumn, columnWidth);
-    }
-
-    return lastUsedColumn;
-  } catch (error) {
-    handleError(error.message, 'findLastUsedColumn');
-    throw error;
   }
 }
