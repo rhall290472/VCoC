@@ -6,7 +6,10 @@
 // Configuration
 const CONFIG = {
   sourceSheetName: 'Sheet1',
-  colors: { scratch: 'Yellow' },
+  colors: { 
+    scratch: 'Yellow',
+    top: '#b7e1cd'
+  },
   rowHeight: 21,
   columnWidths: {
     A: 60,
@@ -16,30 +19,23 @@ const CONFIG = {
     J: 70,
     K: 30
   },
-  columns: { F: 6, G: 7, H: 8 },
+  columns: { 
+    F: 6, 
+    G: 7, 
+    H: 8,
+    I: 9,
+    J: 10,
+    K: 11
+  },
   table: {
     startRow: 4,
+    circleRow: 15,
+    tfRow: 21,
     startColumn: 10,
-    numColumns: 2
+    numColumns: 2,
+    minSwimmersPerHeat: 3
   }
 };
-
-
-const SOURCE_SHEET_NAME = 'Sheet1'; // Change to your sheet name
-const COLOR_SCR = "Yellow";  // Color for Scr
-const COLOR_TOP = "#b7e1cd";
-const DEFAULT_ROW_HEIGHT = 21;
-const ROW_HEIGHT = 21; // Default row height in pixels
-const COLUMN_A_WIDTH = 60; // Width for column A in pixels
-const COLUMN_F_WIDTH = 20; // Width for column F in pixels
-
-const COLUMN_F = 6;
-const COLUMN_G = 7;
-const COLUMN_H = 8;
-const COLUMN_I = 9;
-const COLUMN_J = 10;
-const COLUMN_K = 11;
-
 
 /**
  * Utility to handle errors consistently
@@ -75,7 +71,6 @@ function ensureColumns(sheet, requiredColumns) {
   }
 }
 
-
 /**
  * Trigger on script installation
  */
@@ -83,8 +78,7 @@ function onInstall(e) {
   try {
     onOpen(e);
   } catch (error) {
-    Logger.log("Error in onInstall: " + error.message);
-    SpreadsheetApp.getUi().alert("Error during installation: " + error.message);
+    handleError(error.message, 'onInstall');
   }
 }
 
@@ -109,172 +103,121 @@ function onOpen(e) {
   }
 }
 
-
-/**
- * Breaks out data by event into separate sheets
- */
 /**
  * Breaks out event data into separate sheets and creates a summary table
  */
 function breakOutByEvent() {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const sourceSheet = spreadsheet.getSheetByName(SOURCE_SHEET_NAME);
-  const ui = SpreadsheetApp.getUi();
+  try {
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const sourceSheet = getValidSheet(CONFIG.sourceSheetName);
+    const ui = SpreadsheetApp.getUi();
 
-  // Prompt user for number of lanes
-  const response = ui.prompt(
-    'Enter Number of Lanes',
-    'Please enter the number of lanes (1-16):',
-    ui.ButtonSet.OK_CANCEL
-  );
+    // Prompt user for number of lanes
+    const response = ui.prompt(
+      'Enter Number of Lanes',
+      'Please enter the number of lanes (1-16):',
+      ui.ButtonSet.OK_CANCEL
+    );
 
-  if (response.getSelectedButton() !== ui.Button.OK) {
-    ui.alert('Operation cancelled by user.');
-    Logger.log('User cancelled the lanes prompt.');
-    return;
-  }
-
-  const numLanes = parseInt(response.getResponseText());
-  if (isNaN(numLanes) || numLanes < 1 || numLanes > 16) {
-    ui.alert('Invalid input. Please enter a number between 1 and 16.');
-    Logger.log(`Invalid number of lanes: ${response.getResponseText()}`);
-    return;
-  }
-
-  if (!sourceSheet) {
-    Logger.log(`Source sheet "${SOURCE_SHEET_NAME}" not found!`);
-    ui.alert(`Source sheet "${SOURCE_SHEET_NAME}" not found!`);
-    return;
-  }
-
-  const lastRow = sourceSheet.getLastRow();
-  const lastColumn = sourceSheet.getLastColumn();
-  const data = sourceSheet.getRange(1, 1, lastRow, lastColumn).getValues();
-  if (data.length < 1) {
-    Logger.log('No data found in source sheet!');
-    ui.alert('No data found in source sheet!');
-    return;
-  }
-
-  let currentEvent = null;
-  let eventData = [];
-  let allEvents = [];
-  let seenEventNumbers = new Set();
-
-  for (let i = 0; i < data.length; i++) {
-    const row = data[i];
-    const firstCell = row[0] ? row[0].toString().trim() : '';
-
-    if (row.every(cell => !cell || cell.toString().trim() === '')) {
-      continue;
+    if (response.getSelectedButton() !== ui.Button.OK) {
+      ui.alert('Operation cancelled by user.');
+      Logger.log('User cancelled the lanes prompt.');
+      return;
     }
 
-    if (firstCell.match(/^Event\s*\d+\b/i)) {
-      const eventNumber = firstCell.match(/^Event\s*\d+\b/i)[0].replace(/\s+/g, ' ').trim();
-      const eventNum = eventNumber.match(/\d+/)[0];
-      Logger.log(`Row ${i + 1}: Detected event "${eventNumber}" (number: ${eventNum}), raw: "${firstCell}"`);
+    const numLanes = parseInt(response.getResponseText());
+    if (isNaN(numLanes) || numLanes < 1 || numLanes > 16) {
+      ui.alert('Invalid input. Please enter a number between 1 and 16.');
+      Logger.log(`Invalid number of lanes: ${response.getResponseText()}`);
+      return;
+    }
 
-      if (seenEventNumbers.has(eventNum)) {
-        Logger.log(`Skipping duplicate event at row ${i + 1}: ${firstCell}`);
+    const lastRow = sourceSheet.getLastRow();
+    const lastColumn = sourceSheet.getLastColumn();
+    const data = sourceSheet.getRange(1, 1, lastRow, lastColumn).getValues();
+    if (data.length < 1) {
+      throw new Error('No data found in source sheet!');
+    }
+
+    let currentEvent = null;
+    let eventData = [];
+    let allEvents = [];
+    let seenEventNumbers = new Set();
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const firstCell = row[0] ? row[0].toString().trim() : '';
+
+      if (row.every(cell => !cell || cell.toString().trim() === '')) continue;
+
+      if (firstCell.match(/^Event\s*\d+\b/i)) {
+        const eventNumber = firstCell.match(/^Event\s*\d+\b/i)[0].replace(/\s+/g, ' ').trim();
+        const eventNum = eventNumber.match(/\d+/)[0];
+
+        if (seenEventNumbers.has(eventNum)) {
+          Logger.log(`Skipping duplicate event at row ${i + 1}: ${firstCell}`);
+          continue;
+        }
+        seenEventNumbers.add(eventNum);
+
+        if (currentEvent && eventData.length > 0) {
+          allEvents.push({ eventName: currentEvent, data: eventData });
+        }
+        currentEvent = eventNumber;
+        eventData = [row];
         continue;
       }
-      seenEventNumbers.add(eventNum);
 
-      if (currentEvent && eventData.length > 0) {
-        allEvents.push({ eventName: currentEvent, data: eventData });
-        Logger.log(`Saved event: ${currentEvent}, rows: ${eventData.length}`);
-      }
-      currentEvent = eventNumber;
-      eventData = [row];
-      continue;
-    }
-
-    if (currentEvent) {
-      eventData.push(row);
-      if (currentEvent.match(/\d+/) && currentEvent.match(/\d+/)[0] === '58') {
-        Logger.log(`Adding row ${i + 1} to Event 58: ${JSON.stringify(row)}`);
+      if (currentEvent) {
+        eventData.push(row);
       }
     }
-  }
 
-  if (currentEvent && eventData.length > 0) {
-    const eventNum = currentEvent.match(/\d+/)[0];
-    Logger.log(`Saving last event: ${currentEvent} (number: ${eventNum}), rows: ${eventData.length}`);
-    if (!seenEventNumbers.has(eventNum)) {
+    // Always add the last event if it exists
+    if (currentEvent && eventData.length > 0) {
       allEvents.push({ eventName: currentEvent, data: eventData });
-      seenEventNumbers.add(eventNum);
     }
-  }
 
-  if (allEvents.length === 0) {
-    Logger.log('No valid events found in the data!');
-    ui.alert(
-      `No valid events found in "${SOURCE_SHEET_NAME}"!\n` +
-      `Expected rows in Column A starting with "Event " followed by a number.\n` +
-      `${logMessage}`
-    );
-    return;
-  }
+    if (allEvents.length === 0) {
+      throw new Error(
+        `No valid events found in "${CONFIG.sourceSheetName}"!\n` +
+        `Expected rows in Column A starting with "Event " followed by a number.`
+      );
+    }
 
-  allEvents.forEach((event, index) => {
-    const eventNum = event.eventName.match(/\d+/)[0];
-    let sheetName = eventNum;
-    let newSheet = spreadsheet.getSheetByName(sheetName);
-
-    if (newSheet) {
+    allEvents.forEach(event => {
+      const eventNum = event.eventName.match(/\d+/)[0];
+      let sheetName = eventNum;
+      let newSheet = spreadsheet.getSheetByName(sheetName) || spreadsheet.insertSheet(sheetName);
       newSheet.clear();
-    } else {
-      newSheet = spreadsheet.insertSheet(sheetName);
-    }
 
-    const maxColumns = Math.max(...event.data.map(row => row.filter(cell => cell && cell.toString().trim() !== '').length));
-    try {
-      // Ensure at least 6 columns for column F
-      let currentMaxColumns = newSheet.getMaxColumns();
-      if (currentMaxColumns < 6) {
-        newSheet.insertColumnsAfter(currentMaxColumns, 6 - currentMaxColumns);
-        currentMaxColumns = newSheet.getMaxColumns();
-        if (currentMaxColumns < 6) {
-          throw new Error("Failed to add columns to reach column F.");
-        }
-      }
+      const maxColumns = Math.max(...event.data.map(row => row.filter(cell => cell && cell.toString().trim() !== '').length));
+      ensureColumns(newSheet, Math.max(6, maxColumns));
 
       const paddedData = event.data.map(row => {
         const paddedRow = [...row];
-        while (paddedRow.length < maxColumns) {
-          paddedRow.push('');
-        }
+        while (paddedRow.length < maxColumns) paddedRow.push('');
         return paddedRow.slice(0, maxColumns);
       });
+
       newSheet.getRange(1, 1, paddedData.length, maxColumns).setValues(paddedData);
       newSheet.getRange(1, 1, 1, Math.min(6, maxColumns)).mergeAcross();
 
-      // Set all row heights to 21 pixels
       if (paddedData.length > 0) {
-        newSheet.setRowHeights(1, paddedData.length, ROW_HEIGHT);
+        newSheet.setRowHeights(1, paddedData.length, CONFIG.rowHeight);
       }
 
-      // Auto-resize all columns, then set specific widths for A, F, G, H
-      if (maxColumns > 0) {
-        newSheet.autoResizeColumns(1, maxColumns);
-        newSheet.setColumnWidth(1, COLUMN_A_WIDTH);
-        if (maxColumns >= 6) {
-          newSheet.setColumnWidth(6, COLUMN_F_WIDTH);
-        }
-        if (maxColumns >= 7) {
-          newSheet.setColumnWidth(7, COLUMN_F_WIDTH);
-        }
-        if (maxColumns >= 8) {
-          newSheet.setColumnWidth(8, COLUMN_F_WIDTH);
-        }
-      }
+      newSheet.autoResizeColumns(1, maxColumns);
+      newSheet.setColumnWidth(1, CONFIG.columnWidths.A);
+      if (maxColumns >= CONFIG.columns.F) newSheet.setColumnWidth(CONFIG.columns.F, CONFIG.columnWidths.F);
+      if (maxColumns >= CONFIG.columns.G) newSheet.setColumnWidth(CONFIG.columns.G, CONFIG.columnWidths.G);
+      if (maxColumns >= CONFIG.columns.H) newSheet.setColumnWidth(CONFIG.columns.H, CONFIG.columnWidths.H);
 
       placeEventSummaryTable(newSheet, numLanes);
-    } catch (e) {
-      Logger.log(`Error processing sheet ${sheetName}: ${e.message}`);
-      ui.alert(`Error processing sheet ${sheetName}: ${e.message}`);
-    }
-  });
+    });
+  } catch (error) {
+    handleError(error.message, 'breakOutByEvent');
+  }
 }
 
 /**
@@ -283,185 +226,111 @@ function breakOutByEvent() {
  * @param {number} numLanes - Number of lanes provided by the user
  */
 function placeEventSummaryTable(sheet, numLanes) {
-  const ROW_HEIGHT = 21;
-  const COLUMN_A_WIDTH = 60;
-  const COLUMN_F_WIDTH = 20;
-  const TABLE_START_ROW = 4;
-  const TABLE_CIRCLE_ROW = 15;
-  const TABLE_TF_ROW = 21;
-  const TABLE_START_COLUMN = 10;
-  const MIN_SWIMMERS_PER_HEAT = 3;
-
   try {
-    // Validate sheet object
     if (!sheet || typeof sheet.getRange !== 'function') {
-      throw new Error("Invalid sheet object. Ensure a valid SpreadsheetApp.Sheet is provided.");
+      throw new Error('Invalid sheet object.');
     }
 
-    // Get values for K4 (numLanes) and calculate seeded swimmers
-    const numLanesValue = Number(sheet.getRange("K4").getValue()) || numLanes;
-    const entered = sheet.getRange("B3:B1000").getValues().filter(cell => cell[0]).length;
-    const scratches = sheet.getRange("H3:H1000").getValues().filter(cell => cell[0]).length;
-    const seededSwimmers = Math.max(0, entered - scratches); // Ensure non-negative
+    const numLanesValue = Number(sheet.getRange('K4').getValue()) || numLanes;
+    const entered = sheet.getRange('B3:B1000').getValues().filter(cell => cell[0]).length;
+    const scratches = sheet.getRange('H3:H1000').getValues().filter(cell => cell[0]).length;
+    const seededSwimmers = Math.max(0, entered - scratches);
 
-    // Validate inputs
-    let isValidInput = true;
     if (!Number.isFinite(numLanesValue) || numLanesValue <= 0) {
-      Logger.log(`Invalid number of lanes in K4: ${numLanesValue}. Using default value: ${numLanes}.`);
-      isValidInput = false;
+      Logger.log(`Invalid number of lanes in K4: ${numLanesValue}. Using default: ${numLanes}.`);
     }
     if (!Number.isFinite(seededSwimmers) || seededSwimmers < 0) {
-      Logger.log(`Invalid number of seeded swimmers: ${seededSwimmers}. Using default value: 0.`);
-      isValidInput = false;
+      Logger.log(`Invalid number of seeded swimmers: ${seededSwimmers}. Using 0.`);
     }
-
-    // Calculate swimmers per lane and remainder
-    const swimmersPerLane = isValidInput && numLanesValue > 0 ? seededSwimmers / numLanesValue : 0;
-    const remainderSwimmers = isValidInput && numLanesValue > 0 ? seededSwimmers % numLanesValue : 0;
 
     const tableData = [
-      ["Lanes", numLanes.toString()], // J4/K4: Number of lanes
-      ["=MOD(K8,K4)", ""], // J5/K5: Remainder of swimmers after dividing by lanes
-      ["Entered", "=COUNTA(B3:B1000)"], // J6/K6: Count of entries
-      ["Scratches", "=COUNTA(H3:H1000)"], // J7/K7: Count of scratches
-      ["Seeded", "=IFERROR(K6-K7,0)"], // J8/K8: Entered - Scratches
-      ["", ""], // J9/K9: Spacer
-      ["HEATS", "=(IF(K8/K4<1,0,ROUNDUP(K8/K4,0)))"], // J10/K10: Total heats
-      ["FULL", "=IF(AND(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0),K10-2,IF(J5=0,K10,IF(K10-1<0,0,K10-1)))"], // J11/K11: Full heats
-      ["1 @", "=IF(AND(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0),K4-(3-J5),IF(J5=0,\"-\",J5))"], // J12/K12: Swimmers in partial heat
-      ["Partial", "=IF(AND(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0),3,\"-\")"], // J13/K13: Swimmers in partial heat
-      ["", ""], // J14/K14: Spacer
+      ['Lanes', numLanes.toString()],
+      ['=MOD(K8,K4)', ''],
+      ['Entered', '=COUNTA(B3:B1000)'],
+      ['Scratches', '=COUNTA(H3:H1000)'],
+      ['Seeded', '=IFERROR(K6-K7,0)'],
+      ['', ''],
+      ['HEATS', '=(IF(K8/K4<1,0,ROUNDUP(K8/K4,0)))'],
+      ['FULL', `=IF(AND(J5<${CONFIG.table.minSwimmersPerHeat},J5>0),K10-2,IF(J5=0,K10,IF(K10-1<0,0,K10-1)))`],
+      ['1 @', `=IF(AND(J5<${CONFIG.table.minSwimmersPerHeat},J5>0),K4-(3-J5),IF(J5=0,"-",J5))`],
+      ['Partial', `=IF(AND(J5<${CONFIG.table.minSwimmersPerHeat},J5>0),3,"-")`],
+      ['', '']
     ];
 
-    // Write main table and flush to ensure J5 and K8 calculate
-    sheet.getRange(TABLE_START_ROW, TABLE_START_COLUMN, tableData.length, 2).setValues(tableData);
-    SpreadsheetApp.flush();
-
-    // Verify J5 value
-    const j5Value = sheet.getRange("J5").getValue();
-    if (!Number.isFinite(j5Value) || j5Value < 0) {
-      Logger.log(`Warning: J5 (=MOD(K8,K4)) has invalid value: ${j5Value}. Using calculated remainder: ${remainderSwimmers}.`);
-    }
-
-    // Dynamically populate circle seed table if K8/K4 < 3 and K8 > 0
     const tableCircleSeed = [
-      ["Circle Seed", ""], // J15/K15: Header
-      ["HEATS", "=K10"], // J16/K16: Mirror total heats
-      ["Heat 1", "=IF(K16=0,0,IF(K16=1,K8,IF(K16=2,CEILING(K8/2,1),IF(AND(K8<=K4*3,K8>K4*2),K4,CEILING(K8/K16,1)))))"], // J17/K17: Swimmers in Heat 1
-      ["Heat 2", "=IF(K16<=1,0,IF(K16=2,K8-K17,IF(AND(K8<=K4*3,K8>K4*2),K4,IF((K8-K17)/(K16-1)<" + MIN_SWIMMERS_PER_HEAT + ",0,CEILING((K8-K17)/(K16-1),1)))))"], // J18/K18: Swimmers in Heat 2
-      ["Heat 3", "=IF(K16<=2,0,IF(K8-K17-K18<" + MIN_SWIMMERS_PER_HEAT + ",0,K8-K17-K18))"], // J19/K19: Swimmers in Heat 3
-      ["", ""], // J20/K20: Spacer
+      ['Circle Seed', ''],
+      ['HEATS', '=K10'],
+      ['Heat 1', `=IF(K16=0,0,IF(K16=1,K8,IF(K16=2,CEILING(K8/2,1),IF(AND(K8<=K4*3,K8>K4*2),K4,CEILING(K8/K16,1)))))`],
+      ['Heat 2', `=IF(K16<=1,0,IF(K16=2,K8-K17,IF(AND(K8<=K4*3,K8>K4*2),K4,IF((K8-K17)/(K16-1)<${CONFIG.table.minSwimmersPerHeat},0,CEILING((K8-K17)/(K16-1),1)))))`],
+      ['Heat 3', `=IF(K16<=2,0,IF(K8-K17-K18<${CONFIG.table.minSwimmersPerHeat},0,K8-K17-K18))`],
+      ['', '']
     ];
 
     const tableTimedFinals = [
-      ["Timed Final", ""], // J21/K21: Header
-      ["HEATS", "=K10"], // J22/K22: Mirror total heats
-      ["FULL", "=IF(K10=0,0,IF(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0,K10-1,K10))"], // J23/K23: Mirror full heats
-      ["1@", "=IF(AND(J5<" + MIN_SWIMMERS_PER_HEAT + ",J5>0),0,J5)"], // J24/K24: Mirror partial heat
-      ["Partial", ""], // J25/K25: Spacer
+      ['Timed Final', ''],
+      ['HEATS', '=K10'],
+      ['FULL', `=IF(K10=0,0,IF(J5<${CONFIG.table.minSwimmersPerHeat},J5>0,K10-1,K10))`],
+      ['1@', `=IF(AND(J5<${CONFIG.table.minSwimmersPerHeat},J5>0),0,J5)`],
+      ['Partial', '']
     ];
 
-    // Combine remaining tables
-    const tablesToWrite = [tableCircleSeed, tableTimedFinals];
-    const numRows = tableData.length + tablesToWrite.reduce((sum, table) => sum + table.length, 0);
-    const numColumns = 2;
+    const tablesToWrite = [tableData, tableCircleSeed, tableTimedFinals];
+    const numRows = tablesToWrite.reduce((sum, table) => sum + table.length, 0);
+    const numColumns = CONFIG.table.numColumns;
 
-    // Ensure enough columns
-    const minColumnsRequired = Math.max(6, TABLE_START_COLUMN + numColumns);
-    let currentMaxColumns = sheet.getMaxColumns();
-    if (currentMaxColumns < minColumnsRequired) {
-      sheet.insertColumnsAfter(currentMaxColumns, minColumnsRequired - currentMaxColumns);
-      currentMaxColumns = sheet.getMaxColumns();
+    ensureColumns(sheet, Math.max(CONFIG.columns.F, CONFIG.table.startColumn + numColumns));
+    if (CONFIG.table.startRow + numRows > sheet.getMaxRows()) {
+      sheet.insertRowsAfter(sheet.getMaxRows(), (CONFIG.table.startRow + numRows - 1) - sheet.getMaxRows());
     }
 
-    // Ensure enough rows
-    if (TABLE_START_ROW + numRows > sheet.getMaxRows()) {
-      sheet.insertRowsAfter(sheet.getMaxRows(), (TABLE_START_ROW + numRows - 1) - sheet.getMaxRows());
-    }
-
-    // Write circle seed and timed finals tables
-    let currentRow = TABLE_START_ROW + tableData.length;
+    let currentRow = CONFIG.table.startRow;
     tablesToWrite.forEach(table => {
-      if (table.length > 0 && numColumns > 0) {
-        sheet.getRange(currentRow, TABLE_START_COLUMN, table.length, numColumns).setValues(table);
+      if (table.length > 0) {
+        sheet.getRange(currentRow, CONFIG.table.startColumn, table.length, numColumns).setValues(table);
         currentRow += table.length;
-      } else {
-        throw new Error("Table data is empty.");
       }
     });
 
-    // Set row heights
-    sheet.setRowHeights(TABLE_START_ROW, numRows, ROW_HEIGHT);
-
-    // Set column widths
-    sheet.autoResizeColumns(TABLE_START_COLUMN, numColumns);
-    sheet.setColumnWidth(1, COLUMN_A_WIDTH);
-    if (currentMaxColumns >= 6) {
-      sheet.setColumnWidth(6, COLUMN_F_WIDTH);
+    sheet.setRowHeights(CONFIG.table.startRow, numRows, CONFIG.rowHeight);
+    sheet.autoResizeColumns(CONFIG.table.startColumn, numColumns);
+    sheet.setColumnWidth(1, CONFIG.columnWidths.A);
+    if (sheet.getMaxColumns() >= CONFIG.columns.F) {
+      sheet.setColumnWidth(CONFIG.columns.F, CONFIG.columnWidths.F);
     }
-    sheet.setColumnWidth(TABLE_START_COLUMN, 70);
-    sheet.setColumnWidth(TABLE_START_COLUMN + 1, 30);
+    sheet.setColumnWidth(CONFIG.table.startColumn, CONFIG.columnWidths.J);
+    sheet.setColumnWidth(CONFIG.table.startColumn + 1, CONFIG.columnWidths.K);
 
-    // Bold headers
-    sheet.getRange(TABLE_START_ROW, TABLE_START_COLUMN, 1, numColumns).setFontWeight("bold");
-    const headerRowsRelative = [7, 12, 18];
-    headerRowsRelative.forEach(relativeRow => {
-      const actualRow = TABLE_START_ROW + relativeRow - 1;
-      if (actualRow <= TABLE_START_ROW + numRows - 1) {
-        sheet.getRange(actualRow, TABLE_START_COLUMN, 1, numColumns).setFontWeight("bold");
+    sheet.getRange(CONFIG.table.startRow, CONFIG.table.startColumn, 1, numColumns).setFontWeight('bold');
+    [7, 12, 18].forEach(relativeRow => {
+      const actualRow = CONFIG.table.startRow + relativeRow - 1;
+      if (actualRow <= CONFIG.table.startRow + numRows - 1) {
+        sheet.getRange(actualRow, CONFIG.table.startColumn, 1, numColumns).setFontWeight('bold');
       }
     });
 
-    // Apply borders
     const borderRanges = [
-      { startRow: 4, numRows: 5 }, // Main table (J4:K8)
-      { startRow: 10, numRows: 4 }, // Heats section (J10:K13)
-      { startRow: 15, numRows: 5 }, // Circle Seed section (J15:K19)
-      { startRow: 21, numRows: 5 }, // Timed Finals section (J21:K24)
+      { startRow: CONFIG.table.startRow, numRows: 5 },
+      { startRow: CONFIG.table.startRow + 6, numRows: 4 },
+      { startRow: CONFIG.table.circleRow, numRows: 5 },
+      { startRow: CONFIG.table.tfRow, numRows: 5 }
     ];
     borderRanges.forEach(range => {
-      sheet.getRange(range.startRow, TABLE_START_COLUMN, range.numRows, numColumns)
-        .setBorder(true, true, true, true, true, true, "black", SpreadsheetApp.BorderStyle.SOLID);
+      sheet.getRange(range.startRow, CONFIG.table.startColumn, range.numRows, numColumns)
+        .setBorder(true, true, true, true, true, true, 'black', SpreadsheetApp.BorderStyle.SOLID);
     });
 
-    // Update formulas
     const formulas = [
-      {
-        cell: 'K12',
-        formula: '=IF(AND(J5<' + MIN_SWIMMERS_PER_HEAT + ',J5>0),K4-(3-J5),IF(J5=0,"-",J5))'
-      },
-      {
-        cell: 'J13',
-        formula: '=IF(J5<' + MIN_SWIMMERS_PER_HEAT + ',"1 @","-")'
-      },
-      {
-        cell: 'K13',
-        formula: '=IF(AND(J5<' + MIN_SWIMMERS_PER_HEAT + ',J5>0),3,"-")'
-      },
-      {
-        cell: 'K22',
-        formula: '=(IF(K8/K4<1,0,ROUNDUP(K8/K4,0)))'
-      },
-      {
-        cell: 'K23',
-        formula: '=IF(AND(J5<3,J5>0),K10-2,IF(J5=0,K10,IF(K10-1<0, 0, K10-1)))'
-      },
-      {
-        cell: 'K24',
-        formula: '=IF(AND(J5<3,J5>0),K4-(3-J5),IF(J5=0,"-",J5))'
-      },
-      {
-        cell: 'J25',
-        formula: '=IF(J5<3,"1 @","-")'
-      },
-      {
-        cell: 'K25',
-        formula: '=IF(AND(J5<3,J5>0),3,"-")'
-      }
-
+      { cell: 'K12', formula: `=IF(AND(J5<${CONFIG.table.minSwimmersPerHeat},J5>0),K4-(3-J5),IF(J5=0,"-",J5))` },
+      { cell: 'J13', formula: `=IF(J5<${CONFIG.table.minSwimmersPerHeat},"1 @","-")` },
+      { cell: 'K13', formula: `=IF(AND(J5<${CONFIG.table.minSwimmersPerHeat},J5>0),3,"-")` },
+      { cell: 'K22', formula: '=(IF(K8/K4<1,0,ROUNDUP(K8/K4,0)))' },
+      { cell: 'K23', formula: `=IF(AND(J5<3,J5>0),K10-2,IF(J5=0,K10,IF(K10-1<0,0,K10-1)))` },
+      { cell: 'K24', formula: `=IF(AND(J5<3,J5>0),K4-(3-J5),IF(J5=0,"-",J5))` },
+      { cell: 'J25', formula: `=IF(J5<3,"1 @","-")` },
+      { cell: 'K25', formula: `=IF(AND(J5<3,J5>0),3,"-")` }
     ];
 
-    formulas.forEach(({cell, formula}) => {
+    formulas.forEach(({ cell, formula }) => {
       try {
         sheet.getRange(cell).setFormula(formula);
       } catch (e) {
@@ -470,281 +339,143 @@ function placeEventSummaryTable(sheet, numLanes) {
     });
 
     SpreadsheetApp.flush();
-
   } catch (error) {
-    Logger.log(`Error in placeEventSummaryTable: ${error.message}`);
-    SpreadsheetApp.getUi().alert(`Error in placeEventSummaryTable: ${error.message}`);
+    handleError(error.message, 'placeEventSummaryTable');
   }
 }
+
 /**
-*
-*
-*/
+ * Deletes all sheets except the source sheet
+ */
 function deleteAllSheetsExceptSource() {
   try {
-    // Get the active spreadsheet
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    
-    // Check if the source sheet exists
-    const sourceSheet = spreadsheet.getSheetByName(SOURCE_SHEET_NAME);
-    if (!sourceSheet) {
-      Logger.log(`Error: Source sheet "${SOURCE_SHEET_NAME}" not found!`);
-      return;
-    }
-    
-    // Get all sheets in the spreadsheet
+    const sourceSheet = spreadsheet.getSheetByName(CONFIG.sourceSheetName);
+    if (!sourceSheet) throw new Error(`Source sheet "${CONFIG.sourceSheetName}" not found!`);
+
     const sheets = spreadsheet.getSheets();
-    
-    // Check if there's only one sheet
     if (sheets.length === 1) {
-      Logger.log("Only one sheet exists. No sheets will be deleted.");
+      Logger.log('Only one sheet exists. No sheets deleted.');
       return;
     }
-    
-    // Loop through all sheets and delete those that aren't the source sheet
+
     sheets.forEach(sheet => {
-      if (sheet.getName() !== SOURCE_SHEET_NAME) {
+      if (sheet.getName() !== CONFIG.sourceSheetName) {
         spreadsheet.deleteSheet(sheet);
       }
     });
-    
-    Logger.log(`All sheets deleted except "${SOURCE_SHEET_NAME}"`);
-    
+
+    Logger.log(`All sheets deleted except "${CONFIG.sourceSheetName}"`);
   } catch (error) {
-    Logger.log(`Error: ${error.message}`);
+    handleError(error.message, 'deleteAllSheetsExceptSource');
   }
 }
+
 /**
- * Scratch the current swimmer
- * 
+ * Marks the current swimmer as scratched
  */
 function scrSwimmer() {
   try {
-    const sheet = SpreadsheetApp.getActiveSheet();
-    if (!sheet) {
-      throw new Error("No active sheet found.");
-    }
-
+    const sheet = getValidSheet();
     const cell = sheet.getActiveCell();
-    if (!cell) {
-      throw new Error("No active cell selected.");
-    }
-
+    if (!cell) throw new Error('No active cell selected.');
     const row = cell.getRow();
-    if (row < 1) {
-      throw new Error("Invalid row selected.");
-    }
+    if (row < 1) throw new Error('Invalid row selected.');
+    if (row > sheet.getLastRow()) throw new Error('Selected row is beyond the last used row.');
 
-    const lastRow = sheet.getLastRow();
-    if (lastRow < row) {
-      throw new Error("Selected row is beyond the last used row.");
-    }
-
-    // Check and ensure at least H columns exist
-    const scratchColumn = COLUMN_H; // Column H
-    let maxColumns = sheet.getMaxColumns();
-    if (maxColumns < scratchColumn) {
-      const columnsToAdd = scratchColumn - maxColumns;
-      sheet.insertColumnsAfter(maxColumns, columnsToAdd);
-      maxColumns = sheet.getMaxColumns(); // Update maxColumns after adding
-      if (maxColumns < scratchColumn) {
-        throw new Error("Failed to add columns to reach column H.");
-      }
-    }
-
-    // Get the last column with data, but ensure it includes at least 7 columns
-    //const lastColumn = Math.max(sheet.getLastColumn(), scratchColumn);
-    const lastColumn = COLUMN_H;
-    if (lastColumn < 1) {
-      throw new Error("Sheet has no columns.");
-    }
-
-    // Set background color for the entire row
-    sheet.getRange(row, 1, 1, COLUMN_H).setBackground(COLOR_SCR);
-
-    // Set "Scratch" in column H
-    sheet.getRange(row, COLUMN_H).setValue("Scratch");
-
+    ensureColumns(sheet, CONFIG.columns.H);
+    sheet.getRange(row, 1, 1, CONFIG.columns.H).setBackground(CONFIG.colors.scratch);
+    sheet.getRange(row, CONFIG.columns.H).setValue('Scratch');
     SpreadsheetApp.flush();
   } catch (error) {
-    Logger.log("Error in scrSwimmer: " + error.message);
-    SpreadsheetApp.getUi().alert("Error in scrSwimmer: " + error.message);
+    handleError(error.message, 'scrSwimmer');
   }
 }
-function Top8() {
-  try {
-    const sheet = SpreadsheetApp.getActiveSheet();
-    if (!sheet) {
-      throw new Error("No active sheet found.");
-    }
-
-    const cell = sheet.getActiveCell();
-    if (!cell) {
-      throw new Error("No active cell selected.");
-    }
-
-    const row = cell.getRow();
-    if (row < 1) {
-      throw new Error("Invalid row selected.");
-    }
-
-    const lastRow = sheet.getLastRow();
-    if (lastRow < row) {
-      throw new Error("Selected row is beyond the last used row.");
-    }
-
-    // Check and ensure at least H columns exist
-    const scratchColumn = COLUMN_H; // Column H
-    let maxColumns = sheet.getMaxColumns();
-    if (maxColumns < scratchColumn) {
-      const columnsToAdd = scratchColumn - maxColumns;
-      sheet.insertColumnsAfter(maxColumns, columnsToAdd);
-      maxColumns = sheet.getMaxColumns(); // Update maxColumns after adding
-      if (maxColumns < scratchColumn) {
-        throw new Error("Failed to add columns to reach column H.");
-      }
-    }
-
-    // Get the last column with data, but ensure it includes at least 7 columns
-    //const lastColumn = Math.max(sheet.getLastColumn(), scratchColumn);
-    const lastColumn = COLUMN_H;
-    if (lastColumn < 1) {
-      throw new Error("Sheet has no columns.");
-    }
-
-    // Set background color for the entire row
-    sheet.getRange(row, 1, 1, COLUMN_H).setBackground(COLOR_TOP);
-
-    // Set "Scratch" in column H
-    sheet.getRange(row, COLUMN_H).setValue("Top 8");
-
-    SpreadsheetApp.flush();
-  } catch (error) {
-    Logger.log("Error in scrSwimmer: " + error.message);
-    SpreadsheetApp.getUi().alert("Error in scrSwimmer: " + error.message);
-  }
-}
-function Top16() {
-  try {
-    const sheet = SpreadsheetApp.getActiveSheet();
-    if (!sheet) {
-      throw new Error("No active sheet found.");
-    }
-
-    const cell = sheet.getActiveCell();
-    if (!cell) {
-      throw new Error("No active cell selected.");
-    }
-
-    const row = cell.getRow();
-    if (row < 1) {
-      throw new Error("Invalid row selected.");
-    }
-
-    const lastRow = sheet.getLastRow();
-    if (lastRow < row) {
-      throw new Error("Selected row is beyond the last used row.");
-    }
-
-    // Check and ensure at least H columns exist
-    const scratchColumn = COLUMN_H; // Column H
-    let maxColumns = sheet.getMaxColumns();
-    if (maxColumns < scratchColumn) {
-      const columnsToAdd = scratchColumn - maxColumns;
-      sheet.insertColumnsAfter(maxColumns, columnsToAdd);
-      maxColumns = sheet.getMaxColumns(); // Update maxColumns after adding
-      if (maxColumns < scratchColumn) {
-        throw new Error("Failed to add columns to reach column H.");
-      }
-    }
-
-    // Get the last column with data, but ensure it includes at least 7 columns
-    //const lastColumn = Math.max(sheet.getLastColumn(), scratchColumn);
-    const lastColumn = COLUMN_H;
-    if (lastColumn < 1) {
-      throw new Error("Sheet has no columns.");
-    }
-
-    // Set background color for the entire row
-    sheet.getRange(row, 1, 1, COLUMN_H).setBackground(COLOR_TOP);
-
-    // Set "Scratch" in column H
-    sheet.getRange(row, COLUMN_H).setValue("Top 16");
-
-    SpreadsheetApp.flush();
-  } catch (error) {
-    Logger.log("Error in scrSwimmer: " + error.message);
-    SpreadsheetApp.getUi().alert("Error in scrSwimmer: " + error.message);
-  }
-}
-
-
 
 /**
- * Unscratch the current swimmer
- * 
+ * Marks the current swimmer as Top 8
+ */
+function Top8() {
+  try {
+    const sheet = getValidSheet();
+    const cell = sheet.getActiveCell();
+    if (!cell) throw new Error('No active cell selected.');
+    const row = cell.getRow();
+    if (row < 1) throw new Error('Invalid row selected.');
+    if (row > sheet.getLastRow()) throw new Error('Selected row is beyond the last used row.');
+
+    ensureColumns(sheet, CONFIG.columns.H);
+    sheet.getRange(row, 1, 1, CONFIG.columns.H).setBackground(CONFIG.colors.top);
+    sheet.getRange(row, CONFIG.columns.H).setValue('Top 8');
+    SpreadsheetApp.flush();
+  } catch (error) {
+    handleError(error.message, 'Top8');
+  }
+}
+
+/**
+ * Marks the current swimmer as Top 16
+ */
+function Top16() {
+  try {
+    const sheet = getValidSheet();
+    const cell = sheet.getActiveCell();
+    if (!cell) throw new Error('No active cell selected.');
+    const row = cell.getRow();
+    if (row < 1) throw new Error('Invalid row selected.');
+    if (row > sheet.getLastRow()) throw new Error('Selected row is beyond the last used row.');
+
+    ensureColumns(sheet, CONFIG.columns.H);
+    sheet.getRange(row, 1, 1, CONFIG.columns.H).setBackground(CONFIG.colors.top);
+    sheet.getRange(row, CONFIG.columns.H).setValue('Top 16');
+    SpreadsheetApp.flush();
+  } catch (error) {
+    handleError(error.message, 'Top16');
+  }
+}
+
+/**
+ * Unscratches the current swimmer
  */
 function UnscratchSwimmer() {
   try {
-    var sheet = SpreadsheetApp.getActiveSheet();
-    if (!sheet) {
-      throw new Error("No active sheet found.");
-    }
+    const sheet = getValidSheet();
+    const cell = sheet.getActiveCell();
+    if (!cell) throw new Error('No active cell selected.');
+    const row = cell.getRow();
+    if (row < 1) throw new Error('Invalid row selected.');
+    if (row > sheet.getLastRow()) throw new Error('Selected row is beyond the last used row.');
 
-    var cell = sheet.getActiveCell();
-    if (!cell) {
-      throw new Error("No active cell selected.");
-    }
-
-    var row = cell.getRow();
-    if (row < 1) {
-      throw new Error("Invalid row selected.");
-    }
-
-    var lastRow = sheet.getLastRow();
-    if (lastRow < row) {
-      throw new Error("Selected row is beyond the last used row.");
-    }
-
-    lastColumn = COLUMN_H;
-    sheet.getRange(row, 1, 1, COLUMN_H).setBackground(null);
-
-    sheet.getRange(row, COLUMN_H).setValue("");
-
+    ensureColumns(sheet, CONFIG.columns.H);
+    sheet.getRange(row, 1, 1, CONFIG.columns.H).setBackground(null);
+    sheet.getRange(row, CONFIG.columns.H).setValue('');
     SpreadsheetApp.flush();
   } catch (error) {
-    Logger.log("Error in UnscratchSwimmer: " + error.message);
-    SpreadsheetApp.getUi().alert("Error: " + error.message);
+    handleError(error.message, 'UnscratchSwimmer');
   }
 }
 
 /**
- * Find the last used column in the current row
- * 
+ * Finds the last used column in the specified row
+ * @param {number} [rowNumber] - Optional row number
+ * @param {number} [columnWidth=33] - Width to set for the last used column
+ * @returns {number} The last used column index
  */
 function findLastUsedColumn(rowNumber = null, columnWidth = 33) {
   try {
-    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    if (!spreadsheet) throw new Error("No active spreadsheet found.");
-
-    const sheet = spreadsheet.getActiveSheet();
-    if (!sheet) throw new Error("No active sheet found.");
-
-    // Use provided row number or fall back to active cell's row
+    const sheet = getValidSheet();
     const currentRow = rowNumber !== null ? rowNumber : sheet.getActiveCell().getRow();
-    if (currentRow < 1) throw new Error("Invalid row number.");
-
-    const lastRow = sheet.getLastRow();
-    if (lastRow < currentRow) throw new Error("Row is beyond the last used row.");
+    if (currentRow < 1) throw new Error('Invalid row number.');
+    if (currentRow > sheet.getLastRow()) throw new Error('Row is beyond the last used row.');
 
     const lastColumn = sheet.getLastColumn();
-    if (lastColumn < 1) return 0; // Return 0 for empty sheet
+    if (lastColumn < 1) return 0;
 
     const rowData = sheet.getRange(currentRow, 1, 1, lastColumn).getValues()[0];
-    let lastUsedColumn = 0; // Default to 0 if row is empty
+    let lastUsedColumn = 0;
 
     for (let i = rowData.length - 1; i >= 0; i--) {
-      if (rowData[i] !== "") {
+      if (rowData[i] !== '') {
         lastUsedColumn = i + 1;
         break;
       }
@@ -756,7 +487,7 @@ function findLastUsedColumn(rowNumber = null, columnWidth = 33) {
 
     return lastUsedColumn;
   } catch (error) {
-    Logger.log(`Error in findLastUsedColumn: ${error.message}`);
-    throw error; // Rethrow for calling function
+    handleError(error.message, 'findLastUsedColumn');
+    throw error;
   }
 }
