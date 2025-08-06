@@ -6,13 +6,14 @@
  * Version: 23Jul25 - More work on renumber swimmers
  * Version: 25Jul25 - Added back deleted addthirtyminutes function
  * Version: 27Jul25 - Added color code for all execptions
+ * Version: 06Aug25 - Added sidebar menu option
  * 
  * 
  */
 
 const COLOR_TIE = "#FF66FF"; // Color for ties
-const COLOR_DQ  = "Pink";    // Color for DQ
-const COLOR_NS  = "Green";   // Color for NS
+const COLOR_DQ = "Pink";    // Color for DQ
+const COLOR_NS = "Green";   // Color for NS
 const COLOR_SCR = "Yellow";  // Color for Scr
 const COLOR_DFS = "Orange";  // Color for DFS
 const COLOR_INTENT = "Cyan"; // Color for Intent to Scr
@@ -41,9 +42,11 @@ function onOpen(e) {
     if (!ui) {
       throw new Error("Unable to access UI.");
     }
+    // Add menu to open sidebar
     ui.createMenu('VCoC')
-      .addItem('Expand All Rows and delete row 1', 'expandAllRows')
+      .addItem('Open VCoC Sidebar', 'showSidebar')
       .addSeparator()
+      .addItem('Expand All Rows and delete row 1', 'expandAllRows')
       .addItem('Scr current swimmer', 'scrSwimmer')
       .addItem('Intent to Scratch', 'IntentscrSwimmer')
       .addItem('Unscratch swimmer', 'UnscratchSwimmer')
@@ -63,6 +66,23 @@ function onOpen(e) {
   }
 }
 
+function showSidebar() {
+  var html = HtmlService.createHtmlOutput(`
+    <button onclick="google.script.run.expandAllRows()">Expand All Rows and Delete Row 1</button><br><br>
+    <button onclick="google.script.run.scrSwimmer()">Scratch Current Swimmer</button><br><br>
+    <button onclick="google.script.run.IntentscrSwimmer()">Intent to Scratch</button><br><br>
+    <button onclick="google.script.run.UnscratchSwimmer()">Unscratch Swimmer</button><br><br>
+    <button onclick="google.script.run.renumberRankings()">Rerank Swimmers</button><br><br>
+    <button onclick="google.script.run.drawHeatLine()">Draw Heat Line</button><br><br>
+    <button onclick="google.script.run.removeAllBorders()">Remove All Heat Lines</button><br><br>
+    <button onclick="google.script.run.MarkEventClosed()">Mark Event Closed</button><br><br>
+    <button onclick="google.script.run.MarkEventRevised()">Mark Event Revised</button><br><br>
+    <button onclick="google.script.run.insertTimesImageOverSheet()">Announced Time</button>
+  `)
+    .setTitle('VCoC Controls')
+    .setWidth(300);
+  SpreadsheetApp.getUi().showSidebar(html);
+}
 /**
  * Expands all rows in the active sheet, deletes the first row if data exists,
  * removes empty rows, sets uniform row height, and removes borders.
@@ -70,7 +90,7 @@ function onOpen(e) {
  */
 function expandAllRows() {
   const DEFAULT_ROW_HEIGHT = 21;
-  
+
   try {
     // Get active spreadsheet and sheet with null checks
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -491,12 +511,12 @@ function MarkEventClosed() {
   // Define the spreadsheet and sheet
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = SpreadsheetApp.getActiveSheet();
-  
+
   // Define the cell position (e.g., B2 -> column 2, row 2)
   var column = 1;
   var row = 1;
-  
-  
+
+
   /**
    * Insert image from Google Drive
    * 
@@ -519,14 +539,14 @@ function MarkEventRevised() {
   // Define the spreadsheet and sheet
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = SpreadsheetApp.getActiveSheet();
-  
+
   // Define the cell position (e.g., B2 -> column 2, row 2)
   var column = 1;
   var row = 1;
-  
-  
+
+
   // Method 2: Insert image from Google Drive (uncomment to use)
-  
+
   var fileId = "1yYFXZL6fHdxvJS6LrpQ9wiMSooZCrmmY"; // Replace with your Google Drive file ID
   try {
     var file = DriveApp.getFileById(fileId);
@@ -545,16 +565,16 @@ function insertTimesImageOverSheet() {
   // Get the active spreadsheet and sheet
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getActiveSheet();
-  
+
   // Prompt user for announced time
   var ui = SpreadsheetApp.getUi();
   var response1 = ui.prompt('Enter Announced time (e.g., 10:30 AM):', ui.ButtonSet.OK_CANCEL);
   if (response1.getSelectedButton() !== ui.Button.OK) return;
   var time1 = response1.getResponseText();
-  
+
   // Calculate time2 by adding 30 minutes to time1
   var time2 = addThirtyMinutes(time1);
-  
+
   try {
     // Write times to a temporary range for chart data
     sheet.getRange('A131:B133').setValues([
@@ -562,7 +582,7 @@ function insertTimesImageOverSheet() {
       ['Read:    ', time1],
       ['Closes:  ', time2]
     ]);
-    
+
     // Create a data table chart
     var chart = sheet.newChart()
       .setChartType(Charts.ChartType.TABLE)
@@ -571,22 +591,22 @@ function insertTimesImageOverSheet() {
       .setOption('width', 200)
       .setOption('height', 100)
       .build();
-    
+
     // Insert the chart temporarily to get its image
     sheet.insertChart(chart);
-    
+
     // Get the chart as a blob
     var imageBlob = chart.getBlob();
-    
+
     // Remove the temporary chart
     sheet.removeChart(chart);
-    
+
     // Clear temporary data
     sheet.getRange('A131:B133').clearContent();
-    
+
     // Insert the image over the sheet at column 2, row 2
     var image = sheet.insertImage(imageBlob, 2, 2);
-    
+
     // Set image size
     image.setWidth(200).setHeight(100);
   } catch (e) {
@@ -602,26 +622,26 @@ function addThirtyMinutes(timeStr) {
   // Parse the input time string
   var parts = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
   if (!parts) return "Invalid time format";
-  
+
   var hours = parseInt(parts[1]);
   var minutes = parseInt(parts[2]);
   var period = parts[3].toUpperCase();
-  
+
   // Add 30 minutes
   minutes += 30;
-  
+
   // Handle minute overflow
   if (minutes >= 60) {
     minutes -= 60;
     hours += 1;
   }
-  
+
   // Handle hour overflow and AM/PM switch
   if (hours >= 12) {
     if (hours > 12) hours -= 12;
     period = (period === "AM") ? "PM" : "AM";
   }
-  
+
   // Format the time string
   return hours + ":" + (minutes < 10 ? "0" + minutes : minutes) + " " + period;
 }
@@ -634,7 +654,7 @@ function renumberRankings() {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getActiveSheet();
   var sheetName = sheet.getName();
-  
+
   // Process only if the active sheet is named "Event X"
   if (!sheetName.match(/^Event \d+$/)) {
     SpreadsheetApp.getUi().alert("Active sheet is not an 'Event' sheet! Please select a sheet named 'Event X'.");
@@ -643,7 +663,7 @@ function renumberRankings() {
 
   var data = sheet.getDataRange().getValues();
   var prelimRow = -1;
-  
+
   // Find the first "Preliminaries" row
   for (var row = 0; row < data.length; row++) {
     if (data[row][0] === "Preliminaries") {
@@ -651,12 +671,12 @@ function renumberRankings() {
       break;
     }
   }
-  
+
   if (prelimRow === -1) {
     SpreadsheetApp.getUi().alert("No 'Preliminaries' row found in the active sheet!");
     return;
   }
-  
+
   var rankColumn = 0; // Column B (0-based index)
   var timeColumn1 = 25; // Prelim Time (0-based index)
   var timeColumn2 = 40; // Alternate Prelim Time
@@ -735,32 +755,32 @@ function renumberRankings() {
     var timeCell = data[row][timeColumn];
     var scrCell = data[row][scrColumn];
     var rankCell = data[row][rankColumn];
-    
-// Skip rows with no time or marked as Scr, DFS, DQ, NS
-if (!timeCell || timeCell === "" || scrCell === "Scr" || timeCell === "DFS" || timeCell === "DQ" || timeCell === "NS" || timeCell === "DNF") {
-  // Clear rank if it exists
-  if (rankCell !== "") {
-    sheet.getRange(row + 1, rankColumn + 1).setValue("");
-  }
-  // Set background colors for DFS, DQ, DNF, NS, Scr
-  var normalizedTimeCell = timeCell ? timeCell.toString().trim().toUpperCase() : "";
-  var normalizedScrCell = scrCell ? scrCell.toString().trim().toUpperCase() : "";
-  if (normalizedTimeCell === "DFS") {
-    sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_DFS);
-  } else if (normalizedTimeCell === "DQ") {
-    sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_DQ);
-  } else if (normalizedTimeCell === "DNF") {
-    sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_DQ);
-  } else if (normalizedTimeCell === "NS") {
-    sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_NS);
-  } else if(normalizedScrCell === "SCR") {
-    sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_SCR);
-  }
-  continue;
-}
 
-    
-    
+    // Skip rows with no time or marked as Scr, DFS, DQ, NS
+    if (!timeCell || timeCell === "" || scrCell === "Scr" || timeCell === "DFS" || timeCell === "DQ" || timeCell === "NS" || timeCell === "DNF") {
+      // Clear rank if it exists
+      if (rankCell !== "") {
+        sheet.getRange(row + 1, rankColumn + 1).setValue("");
+      }
+      // Set background colors for DFS, DQ, DNF, NS, Scr
+      var normalizedTimeCell = timeCell ? timeCell.toString().trim().toUpperCase() : "";
+      var normalizedScrCell = scrCell ? scrCell.toString().trim().toUpperCase() : "";
+      if (normalizedTimeCell === "DFS") {
+        sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_DFS);
+      } else if (normalizedTimeCell === "DQ") {
+        sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_DQ);
+      } else if (normalizedTimeCell === "DNF") {
+        sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_DQ);
+      } else if (normalizedTimeCell === "NS") {
+        sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_NS);
+      } else if (normalizedScrCell === "SCR") {
+        sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_SCR);
+      }
+      continue;
+    }
+
+
+
     // Check for tie (same time as previous valid row)
     if (lastTime !== null && timeCell === lastTime) {
       tiedRows.push(row); // Add to tied group
@@ -781,7 +801,7 @@ if (!timeCell || timeCell === "" || scrCell === "Scr" || timeCell === "DFS" || t
       }
       tiedRows = [row]; // Start new group with current row
     }
-    
+
     lastTime = timeCell; // Update lastTime for next iteration
   }
 
