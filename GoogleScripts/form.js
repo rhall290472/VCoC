@@ -33,7 +33,7 @@ function openForm() {
     FormApp.getUi().alert("Error initializing form: " + error.message);
   }
 
-  setFormStopTrigger();
+  //setFormStopTrigger();
 }
 
 /**************************************************************************/
