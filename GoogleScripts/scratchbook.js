@@ -1,6 +1,7 @@
 /**
  * Virtual Clerk of Course App Scripts - Richard Hall
  * Version: 02Aug25 - Optimized
+ * Version: 08Aug25 - Circlle seeding fix
  */
 
 /**
@@ -290,7 +291,7 @@ function protectRange(sheet, sheetName) {
 function applyConditionalFormatting(sheet) {
   sheet.getRange('J5').setFontColor(CONFIG.colors.white);
   const k10Value = sheet.getRange('K10').getValue();
-  if (k10Value < 3) {
+  if (k10Value <= 3) {
     sheet.getRange('J10:K13').setFontColor(CONFIG.colors.white);
     sheet.getRange('J15:K19').setBackground(CONFIG.colors.circle);
   } else {
@@ -350,10 +351,10 @@ function placeEventSummaryTable(sheet, numLanes) {
       circleSeed: {
         data: [
           ['Circle Seed', ''],
-          ['HEATS', '=K10'],
-          ['Heat 1', `=IF(K16=0,0,IF(K16=1,K8,IF(K16=2,CEILING(K8/2,1),IF(AND(K8<=K4*3,K8>K4*2),K4,CEILING(K8/K16,1)))))`],
-          ['Heat 2', `=IF(K16<=1,0,IF(K16=2,K8-K17,IF(AND(K8<=K4*3,K8>K4*2),K4,IF((K8-K17)/(K16-1)<${CONFIG.table.minSwimmersPerHeat},0,CEILING((K8-K17)/(K16-1),1)))))`],
-          ['Heat 3', `=IF(K16<=2,0,IF(K8-K17-K18<${CONFIG.table.minSwimmersPerHeat},0,K8-K17-K18))`],
+          ['HEATS', ''],
+          ['Heat 1', ''],
+          ['Heat 2', ''],
+          ['Heat 3', ''],
           ['', '']
         ],
         border: { startRow: CONFIG.table.circleRow, numRows: 5 }
@@ -375,6 +376,10 @@ function placeEventSummaryTable(sheet, numLanes) {
       { cell: 'K12', formula: `=IF(AND(J5<${CONFIG.table.minSwimmersPerHeat},J5>0),K4-(3-J5),IF(J5=0,"-",J5))` },
       { cell: 'J13', formula: `=IF(J5<${CONFIG.table.minSwimmersPerHeat},"1 @","-")` },
       { cell: 'K13', formula: `=IF(AND(J5<${CONFIG.table.minSwimmersPerHeat},J5>0),3,"-")` },
+      { cell: 'K16', formula: `=IF(AND(K8<K4*3,K8>K4*2),3,ROUNDUP(K8/K4,0))`},
+      { cell: 'K17', formula: `=ROUNDUP(K8/K16,0)`},
+      { cell: 'K18', formula: `=IF(K16=1,0,ROUND((K8-L36-0.5)/(K16),0))`},
+      { cell: 'K19', formula: `=ROUNDDOWN((K8-K17-K18),0)`},
       { cell: 'K22', formula: '=(IF(K8/K4<1,0,ROUNDUP(K8/K4,0)))' },
       { cell: 'K23', formula: `=IF(AND(J5<3,J5>0),K10-2,IF(J5=0,K10,IF(K10-1<0,0,K10-1)))` },
       { cell: 'K24', formula: `=IF(AND(J5<3,J5>0),K4-(3-J5),IF(J5=0,"-",J5))` },
