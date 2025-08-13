@@ -89,7 +89,7 @@
     define('DB_HOST', 'rhall29047217205.ipagemysql.com');
     define('DB_USER', 'mbcuser');
     define('DB_PASS', 'ZCSCA?yrW7}L');
-    define('DB_NAME', 'meritbadges');
+    define('DB_NAME', 'usas');
   }
 
   // Database connection
