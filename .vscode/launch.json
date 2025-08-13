@@ -19,6 +19,13 @@
       "webRoot": "${workspaceFolder}"
     },
     {
+      "name": "Edit Official",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost/VCoC/edit.php",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
       "name": "Listen for Xdebug",
       "type": "php",
       "request": "launch",
