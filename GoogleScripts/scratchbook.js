@@ -2,6 +2,7 @@
  * Virtual Clerk of Course App Scripts - Richard Hall
  * Version: 02Aug25 - Optimized
  * Version: 08Aug25 - Circlle seeding fix
+ * Version: 13Aug25 - Add function updateAllEventSummaryTables
  */
 
 /**
@@ -481,6 +482,50 @@ function deleteAllSheetsExceptSource() {
     handleError(error.message, 'deleteAllSheetsExceptSource');
   }
 }
+
+/**
+ * Updates summary tables for all sheets except Sheet1
+ */
+function updateAllEventSummaryTables() {
+  try {
+    const start = new Date().getTime();
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const sheets = spreadsheet.getSheets();
+    const numLanes = getNumLanesFromUser();
+    const properties = PropertiesService.getScriptProperties();
+    const batchSize = 5;
+
+    let startIndex = parseInt(properties.getProperty('summaryTableIndex') || '0');
+    const eligibleSheets = sheets.filter(sheet => sheet.getName() !== CONFIG.sourceSheetName);
+
+    if (eligibleSheets.length === 0) {
+      throw new Error('No sheets found to update (excluding Sheet1).');
+    }
+    if (eligibleSheets.length > 200) {
+      throw new Error(`Too many sheets (${eligibleSheets.length}). Google Sheets supports up to 200 tabs.`);
+    }
+
+    for (let i = startIndex; i < eligibleSheets.length; i++) {
+      if (new Date().getTime() - start > 300000) {
+        properties.setProperty('summaryTableIndex', i.toString());
+        ScriptApp.newTrigger('updateAllEventSummaryTables')
+          .timeBased()
+          .after(1000)
+          .create();
+        Logger.log(`Paused at sheet ${i} (${eligibleSheets[i].getName()}). Scheduling next batch.`);
+        return;
+      }
+      Logger.log(`Updating summary table for sheet: ${eligibleSheets[i].getName()}`);
+      placeEventSummaryTable(eligibleSheets[i], numLanes);
+    }
+
+    properties.deleteProperty('summaryTableIndex');
+    Logger.log(`updateAllEventSummaryTables completed in ${(new Date().getTime() - start) / 1000} seconds`);
+  } catch (error) {
+    handleError(error.message, 'updateAllEventSummaryTables');
+  }
+}
+
 
 /**
  * Marks the currently selected swimmer as scratched
