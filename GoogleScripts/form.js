@@ -1,21 +1,40 @@
 /**
- * 
  * Virtual Clerk of Course App Scripts - FORMS
- * 
+ *
  * Version: 27Jul25 - Start
  * Version: 30Jul25 - Added trigger to stop accepting responses
- * 
- * 
  */
-// Global constant for the spreadsheet URL
+
+
+const APP_CONFIG = {
+  spreadsheetUrl: 'https://docs.google.com/...',
+  formId: '18Hvt5HCGnex...',
+  teamSheetName: 'TeamData',
+  eventSheetNames: ['ThurData', 'FriData', 'SatData', 'SunData']
+};
+
+/**
+ * The URL of the Google Spreadsheet containing meet data.
+ * @constant {string}
+ */
 const MEET_DATA_URL = 'https://docs.google.com/spreadsheets/d/1zGuiBwQCNarAin85FHNt7dS-oB1X-npWBkJJQ9XXIkE/edit?gid=0#gid=0';
-// Form ID form trigger to turn off responses.
-const FORM_ID = '18Hvt5HCGnexIg0ZNOO1Xk9n3QKt9MQpJ424td0JwDp8'; 
-// Set the date and time to stop accepting responses (YYYY, MM-1, DD, HH, MM)
+
+/**
+ * The ID of the Google Form for setting response triggers.
+ * @constant {string}
+ */
+const FORM_ID = '18Hvt5HCGnexIg0ZNOO1Xk9n3QKt9MQpJ424td0JwDp8';
+
+/**
+ * The date and time to stop accepting form responses.
+ * @constant {Date}
+ */
 const stopDateTime = new Date(2025, 6, 30, 19, 40); // Example: July 31, 2025, 09:40 PM
 
-
-// Trigger to initialize form
+/**
+ * Initializes the Google Form by populating team dropdowns and setting up a trigger to stop responses.
+ * @throws {Error} If form initialization fails or data retrieval encounters an error.
+ */
 function openForm() {
   try {
     // Populate event dropdowns for each day
@@ -36,11 +55,11 @@ function openForm() {
   //setFormStopTrigger();
 }
 
-/**************************************************************************/
-//
-// Populate events for prelim scratch fields
-//
-/**************************************************************************/
+/**
+ * Populates event dropdowns in the form with data from a specified spreadsheet sheet.
+ * @param {string} eventData - The name of the spreadsheet sheet containing event data.
+ * @throws {Error} If the event data sheet name is invalid, no active form is found, or data retrieval fails.
+ */
 function populateEvents(eventData) {
   try {
     // Validate input
@@ -108,11 +127,12 @@ function populateEvents(eventData) {
   }
 }
 
-/**************************************************************************/
-//
-// Retrieve event data from spreadsheet
-//
-/**************************************************************************/
+/**
+ * Retrieves event data from a specified sheet in the Google Spreadsheet.
+ * @param {string} eventData - The name of the spreadsheet sheet containing event data.
+ * @returns {Array<Array>} The data from the specified sheet as a 2D array.
+ * @throws {Error} If the sheet name is invalid, the spreadsheet cannot be opened, or the sheet is empty.
+ */
 function getEvents(eventData) {
   try {
     // Validate input
@@ -151,11 +171,10 @@ function getEvents(eventData) {
   }
 }
 
-/**************************************************************************/
-//
-// Populate teams for prelim scratch fields
-//
-/**************************************************************************/
+/**
+ * Populates team dropdowns in the form with data from the 'TeamData' spreadsheet sheet.
+ * @throws {Error} If no active form is found, no valid team data is retrieved, or form items are invalid.
+ */
 function populateTeams() {
   try {
     // Get the active form
@@ -218,11 +237,11 @@ function populateTeams() {
   }
 }
 
-/**************************************************************************/
-//
-// Retrieve team data from spreadsheet
-//
-/**************************************************************************/
+/**
+ * Retrieves team data from the 'TeamData' sheet in the Google Spreadsheet.
+ * @returns {Array<Array>} The data from the 'TeamData' sheet as a 2D array.
+ * @throws {Error} If the spreadsheet cannot be opened, the 'TeamData' sheet is not found, or the sheet is empty.
+ */
 function getTeams() {
   try {
     // Open spreadsheet
@@ -241,140 +260,3 @@ function getTeams() {
     var lastRow = questionSheet.getLastRow();
     var lastColumn = questionSheet.getLastColumn();
     if (lastRow < 1 || lastColumn < 1) {
-      throw new Error("Sheet TeamData is empty.");
-    }
-
-    var returnData = questionSheet.getRange(1, 1, lastRow, lastColumn).getValues();
-    if (!returnData || returnData.length === 0) {
-      throw new Error("No data retrieved from sheet: TeamData");
-    }
-
-    return returnData;
-  } catch (error) {
-    Logger.log("Error in getTeams: " + error.message);
-    throw error; // Rethrow to be caught by calling function
-  }
-}
-
-
-/**
- * Configuration object for easy customization
- */
-const CONFIG = {
-  EMAIL_QUESTION_TITLE: 'Email', // Exact title of the email question in the form
-  EMAIL_SUBJECT: 'Your Form Submission Responses',
-  FORM_COLLECTS_EMAIL: false, // Set to true if form collects respondent email automatically
-  EMAIL_QUOTA_WARNING: 90 // Warn if remaining email quota falls below this (out of 100 for free accounts)
-};
-
-/**
- * Triggered on form submission to email responses to the user-provided email
- * @param {Object} e - Form submit event object
- */
-function onFormSubmit(e) {
-  try {
-    // Get the form response from the event object
-    const formResponse = e.response;
-    if (!formResponse) {
-      Logger.log('Error: No form response found in event object.');
-      return;
-    }
-    
-    const itemResponses = formResponse.getItemResponses();
-    let email = '';
-    let messageBody = `
-      <h3>Thank You for Your Submission</h3>
-      <p>Below are your form responses:</p>
-      <ul>
-    `;
-    
-    // Check if form collects respondent email automatically
-    if (CONFIG.FORM_COLLECTS_EMAIL) {
-      email = formResponse.getRespondentEmail();
-      if (!email) {
-        Logger.log('Error: No respondent email collected by form.');
-      }
-    }
-    
-    // Loop through item responses to find email (if not collected automatically) and build message
-    for (let i = 0; i < itemResponses.length; i++) {
-      const itemResponse = itemResponses[i];
-      const question = itemResponse.getItem().getTitle();
-      // Handle array responses (e.g., checkboxes)
-      const answer = Array.isArray(itemResponse.getResponse()) 
-        ? itemResponse.getResponse().join(', ') 
-        : itemResponse.getResponse();
-      
-      // If form doesn't collect email automatically, look for email question
-      if (!CONFIG.FORM_COLLECTS_EMAIL && question === CONFIG.EMAIL_QUESTION_TITLE) {
-        email = answer;
-      }
-      
-      // Add question and answer to email body
-      messageBody += `<li><strong>${question}</strong>: ${answer}</li>`;
-    }
-    messageBody += '</ul>';
-    
-    // Validate email address
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
-      Logger.log(`Error: Invalid or missing email address: ${email}`);
-      return;
-    }
-    
-    // Check remaining email quota
-    const remainingQuota = MailApp.getRemainingDailyQuota();
-    if (remainingQuota < CONFIG.EMAIL_QUOTA_WARNING) {
-      Logger.log(`Warning: Low email quota. Remaining: ${remainingQuota}`);
-    }
-    if (remainingQuota <= 0) {
-      Logger.log('Error: Email quota exceeded. Cannot send email.');
-      return;
-    }
-    
-    // Send email
-    MailApp.sendEmail({
-      to: email,
-      subject: CONFIG.EMAIL_SUBJECT,
-      htmlBody: messageBody
-    });
-    
-    Logger.log(`Email sent successfully to ${email}`);
-    
-  } catch (error) {
-    Logger.log(`Error in onFormSubmit: ${error.message}`);
-    if (error.message.includes('Service invoked too many times')) {
-      Logger.log('Possible email quota issue. Check MailApp.getRemainingDailyQuota().');
-    }
-  }
-}
-
-
-function setFormStopTrigger() {
-  // Replace with your Google Form ID
-  const form = FormApp.openById(FORM_ID);
-  
-  
-  // Check if current time is past the stop date
-  if (new Date() >= stopDateTime) {
-    form.setAcceptingResponses(false);
-    Logger.log('Form stopped accepting responses at: ' + stopDateTime);
-    // Delete all triggers to prevent further execution
-    deleteAllTriggers();
-    return;
-  }
-  
-  // Create a time-based trigger to run this function again
-  ScriptApp.newTrigger('setFormStopTrigger')
-    .timeBased()
-    .at(stopDateTime)
-    .create();
-}
-
-// Function to delete all triggers to clean up
-function deleteAllTriggers() {
-  const triggers = ScriptApp.getProjectTriggers();
-  for (let i = 0; i < triggers.length; i++) {
-    ScriptApp.deleteTrigger(triggers[i]);
-  }
-}
