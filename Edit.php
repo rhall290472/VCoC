@@ -75,7 +75,7 @@
     <?php
   // Dynamically set SITE_URL based on environment
   $is_localhost = isset($_SERVER['SERVER_NAME']) && in_array($_SERVER['SERVER_NAME'], ['localhost', '127.0.0.1']);
-  $protocol = 'https'; // Simplified since it's always HTTPS in the original code
+  $protocol = 'https';
   $host = $is_localhost ? ($_SERVER['SERVER_NAME'] ?? 'localhost') : 'centennialdistrict.co';
   $port = ($is_localhost && isset($_SERVER['SERVER_PORT']) && !in_array($_SERVER['SERVER_PORT'], ['80', '443'])) ? ':' . $_SERVER['SERVER_PORT'] : '';
   define('SITE_URL', $protocol . '://' . $host . $port);
@@ -110,12 +110,13 @@
     $dr = $_POST['DR'];
     $ao = $_POST['AO'];
     $ar = $_POST['AR'];
+    $isDeleted = isset($_POST['IsDeleted']) ? 1 : 0;
 
-    $sql = "INSERT INTO officals (FirstName, LastName, PrefName, Team, email, ST, CJ, SR, DR, AO, AR) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO officals (FirstName, LastName, PrefName, Team, email, ST, CJ, SR, DR, AO, AR, IsDeleted) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param(
-      "sssisiiiiii",
+      "sssisiiiiiii",
       $firstName,
       $lastName,
       $prefName,
@@ -126,7 +127,8 @@
       $sr,
       $dr,
       $ao,
-      $ar
+      $ar,
+      $isDeleted
     );
     if ($stmt->execute()) {
       echo "<p style='color: green;'>New official added successfully!</p>";
@@ -150,14 +152,15 @@
     $dr = $_POST['DR'];
     $ao = $_POST['AO'];
     $ar = $_POST['AR'];
+    $isDeleted = isset($_POST['IsDeleted']) ? 1 : 0;
 
     $sql = "UPDATE officals SET 
                 FirstName = ?, LastName = ?, PrefName = ?, Team = ?, email = ?, 
-                ST = ?, CJ = ?, SR = ?, DR = ?, AO = ?, AR = ? 
+                ST = ?, CJ = ?, SR = ?, DR = ?, AO = ?, AR = ?, IsDeleted = ?
                 WHERE Idx = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param(
-      "sssisiiiiiii",
+      "sssisiiiiiiii",
       $firstName,
       $lastName,
       $prefName,
@@ -169,6 +172,7 @@
       $dr,
       $ao,
       $ar,
+      $isDeleted,
       $idx
     );
     if ($stmt->execute()) {
@@ -193,13 +197,14 @@
   $selectedTeam = isset($_POST['filterTeam']) && $_POST['filterTeam'] !== '' ? (int)$_POST['filterTeam'] : null;
   $sql = "SELECT * FROM officals WHERE (IsDeleted IS NULL OR IsDeleted = 0)";
   if ($selectedTeam !== null) {
-    $sql .= " AND Team = ?";
+    $sql .= " AND Team = ? ORDER BY LastName";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $selectedTeam);
     $stmt->execute();
     $result = $stmt->get_result();
     $stmt->close();
   } else {
+    $sql .= " ORDER BY LastName";
     $result = $conn->query($sql);
   }
   ?>
@@ -281,6 +286,7 @@
             <th>DR</th>
             <th>AO</th>
             <th>AR</th>
+            <th>Is Deleted</th>
             <th>Action</th>
         </tr>
         <?php if ($result->num_rows > 0): ?>
@@ -319,13 +325,15 @@
                 </td>
                 <td><input type="number" name="AR" value="<?php echo htmlspecialchars($row['AR']); ?>" min="0" max="3">
                 </td>
+                <td><input type="checkbox" name="IsDeleted" <?php echo $row['IsDeleted'] ? 'checked' : ''; ?>></td>
                 <td><button type="submit" name="update">Update</button></td>
+                <input type="hidden" name="filterTeam" value="<?php echo htmlspecialchars($selectedTeam); ?>">
             </form>
         </tr>
         <?php endwhile; ?>
         <?php else: ?>
         <tr>
-            <td colspan="13">No officials found</td>
+            <td colspan="14">No officials found</td>
         </tr>
         <?php endif; ?>
     </table>
