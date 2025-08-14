@@ -2,77 +2,77 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Edit Officials</title>
-  <style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Officials</title>
+    <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
+        font-family: Arial, sans-serif;
+        margin: 20px;
     }
 
     table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
     }
 
     th,
     td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
     }
 
     th {
-      background-color: #f2f2f2;
+        background-color: #f2f2f2;
     }
 
     select,
     input[type="text"],
     input[type="email"],
     input[type="number"] {
-      width: 100%;
-      padding: 5px;
+        width: 100%;
+        padding: 5px;
     }
 
     button {
-      padding: 5px 10px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
+        padding: 5px 10px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        cursor: pointer;
     }
 
     button:hover {
-      background-color: #45a049;
+        background-color: #45a049;
     }
 
     .error {
-      color: red;
+        color: red;
     }
 
     .form-container {
-      margin-bottom: 20px;
-      padding: 15px;
-      border: 1px solid #ddd;
-      background-color: #f9f9f9;
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        background-color: #f9f9f9;
     }
 
     .form-container h3 {
-      margin-top: 0;
+        margin-top: 0;
     }
 
     .filter-container {
-      margin-bottom: 20px;
+        margin-bottom: 20px;
     }
-  </style>
+    </style>
 </head>
 
 <body>
-  <h2>Edit Officials</h2>
+    <h2>Edit Officials</h2>
 
-  <?php
+    <?php
   // Dynamically set SITE_URL based on environment
   $is_localhost = isset($_SERVER['SERVER_NAME']) && in_array($_SERVER['SERVER_NAME'], ['localhost', '127.0.0.1']);
   $protocol = 'https'; // Simplified since it's always HTTPS in the original code
@@ -91,12 +91,6 @@
     define('DB_PASS', '80016$Hall$48367');
     define('DB_NAME', 'usas');
   }
-
-  // Database connection
-  //$servername = "localhost";
- // $username = "root"; // Replace with actual DB username
-  //$password = ""; // Replace with actual DB password
-//  $dbname = "usas";
 
   $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
   if ($conn->connect_error) {
@@ -210,107 +204,133 @@
   }
   ?>
 
-  <!-- Team Filter Form -->
-  <div class="filter-container">
-    <h3>Filter Officials by Team</h3>
-    <form method="POST" action="">
-      <select name="filterTeam">
-        <option value="" <?php echo $selectedTeam === null ? 'selected' : ''; ?>>All Teams</option>
-        <?php foreach ($teams as $teamIdx => $teamName): ?>
-          <option value="<?php echo $teamIdx; ?>" <?php echo $selectedTeam === $teamIdx ? 'selected' : ''; ?>>
-            <?php echo htmlspecialchars($teamName); ?>
-          </option>
-        <?php endforeach; ?>
-      </select>
-      <button type="submit" name="filter">Filter</button>
-    </form>
-  </div>
-
-  <!-- Add New Official Form -->
-  <div class="form-container">
-    <h3>Add New Official</h3>
-    <form method="POST" action="">
-      <table>
-        <tr>
-          <td><input type="text" name="FirstName" placeholder="First Name" required></td>
-          <td><input type="text" name="LastName" placeholder="Last Name" required></td>
-          <td><input type="text" name="PrefName" placeholder="Preferred Name"></td>
-          <td>
-            <select name="Team" required>
-              <option value="" disabled selected>Select Team</option>
-              <?php foreach ($teams as $teamIdx => $teamName): ?>
-                <option value="<?php echo $teamIdx; ?>">
-                  <?php echo htmlspecialchars($teamName); ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </td>
-          <td><input type="email" name="email" placeholder="Email" required></td>
-          <td><input type="number" name="ST" placeholder="ST" min="-1" max="3" value="0"></td>
-          <td><input type="number" name="CJ" placeholder="CJ" min="0" max="3" value="0"></td>
-          <td><input type="number" name="SR" placeholder="SR" min="0" max="3" value="0"></td>
-          <td><input type="number" name="DR" placeholder="DR" min="0" max="3" value="0"></td>
-          <td><input type="number" name="AO" placeholder="AO" min="0" max="3" value="0"></td>
-          <td><input type="number" name="AR" placeholder="AR" min="0" max="3" value="0"></td>
-          <td><button type="submit" name="add">Add Official</button></td>
-        </tr>
-      </table>
-    </form>
-  </div>
-
-  <!-- Existing Officials Table -->
-  <table>
-    <tr>
-      <th>ID</th>
-      <th>First Name</th>
-      <th>Last Name</th>
-      <th>Preferred Name</th>
-      <th>Team</th>
-      <th>Email</th>
-      <th>ST</th>
-      <th>CJ</th>
-      <th>SR</th>
-      <th>DR</th>
-      <th>AO</th>
-      <th>AR</th>
-      <th>Action</th>
-    </tr>
-    <?php if ($result->num_rows > 0): ?>
-      <?php while ($row = $result->fetch_assoc()): ?>
-        <tr>
-          <form method="POST" action="">
-            <td><?php echo htmlspecialchars($row['Idx']); ?><input type="hidden" name="Idx" value="<?php echo htmlspecialchars($row['Idx']); ?>"></td>
-            <td><input type="text" name="FirstName" value="<?php echo htmlspecialchars(trim($row['FirstName'])); ?>" required></td>
-            <td><input type="text" name="LastName" value="<?php echo htmlspecialchars(trim($row['LastName'])); ?>" required></td>
-            <td><input type="text" name="PrefName" value="<?php echo htmlspecialchars(trim($row['PrefName'])); ?>"></td>
-            <td>
-              <select name="Team" required>
+    <!-- Team Filter Form -->
+    <div class="filter-container">
+        <h3>Filter Officials by Team</h3>
+        <form method="POST" action="">
+            <select name="filterTeam">
+                <option value="" <?php echo $selectedTeam === null ? 'selected' : ''; ?>>All Teams</option>
                 <?php foreach ($teams as $teamIdx => $teamName): ?>
-                  <option value="<?php echo $teamIdx; ?>" <?php echo $row['Team'] == $teamIdx ? 'selected' : ''; ?>>
+                <option value="<?php echo $teamIdx; ?>" <?php echo $selectedTeam === $teamIdx ? 'selected' : ''; ?>>
                     <?php echo htmlspecialchars($teamName); ?>
-                  </option>
+                </option>
                 <?php endforeach; ?>
-              </select>
-            </td>
-            <td><input type="email" name="email" value="<?php echo htmlspecialchars(trim($row['email'])); ?>" required></td>
-            <td><input type="number" name="ST" value="<?php echo htmlspecialchars($row['ST']); ?>" min="-1" max="3"></td>
-            <td><input type="number" name="CJ" value="<?php echo htmlspecialchars($row['CJ']); ?>" min="0" max="3"></td>
-            <td><input type="number" name="SR" value="<?php echo htmlspecialchars($row['SR']); ?>" min="0" max="3"></td>
-            <td><input type="number" name="DR" value="<?php echo htmlspecialchars($row['DR']); ?>" min="0" max="3"></td>
-            <td><input type="number" name="AO" value="<?php echo htmlspecialchars($row['AO']); ?>" min="0" max="3"></td>
-            <td><input type="number" name="AR" value="<?php echo htmlspecialchars($row['AR']); ?>" min="0" max="3"></td>
-            <td><button type="submit" name="update">Update</button></td>
-          </form>
-        </tr>
-      <?php endwhile; ?>
-    <?php else: ?>
-      <tr>
-        <td colspan="13">No officials found</td>
-      </tr>
-    <?php endif; ?>
-  </table>
+            </select>
+            <button type="submit" name="filter">Filter</button>
+        </form>
+    </div>
 
-  <?php $conn->close(); ?>
+    <!-- Add New Official Form -->
+    <div class="form-container">
+        <h3>Add New Official</h3>
+        <form method="POST" action="">
+            <table>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Preferred Name</th>
+                    <th>Team</th>
+                    <th>Email</th>
+                    <th>ST</th>
+                    <th>CJ</th>
+                    <th>SR</th>
+                    <th>DR</th>
+                    <th>AO</th>
+                    <th>AR</th>
+                    <th>Action</th>
+                </tr>
+                <tr>
+                    <td><input type="text" name="FirstName" placeholder="First Name" required></td>
+                    <td><input type="text" name="LastName" placeholder="Last Name" required></td>
+                    <td><input type="text" name="PrefName" placeholder="Preferred Name"></td>
+                    <td>
+                        <select name="Team" required>
+                            <option value="" disabled selected>Select Team</option>
+                            <?php foreach ($teams as $teamIdx => $teamName): ?>
+                            <option value="<?php echo $teamIdx; ?>">
+                                <?php echo htmlspecialchars($teamName); ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
+                    <td><input type="email" name="email" placeholder="Email" required></td>
+                    <td><input type="number" name="ST" placeholder="ST" min="-1" max="3" value="0"></td>
+                    <td><input type="number" name="CJ" placeholder="CJ" min="0" max="3" value="0"></td>
+                    <td><input type="number" name="SR" placeholder="SR" min="0" max="3" value="0"></td>
+                    <td><input type="number" name="DR" placeholder="DR" min="0" max="3" value="0"></td>
+                    <td><input type="number" name="AO" placeholder="AO" min="0" max="3" value="0"></td>
+                    <td><input type="number" name="AR" placeholder="AR" min="0" max="3" value="0"></td>
+                    <td><button type="submit" name="add">Add Official</button></td>
+                </tr>
+            </table>
+        </form>
+    </div>
+
+    <!-- Existing Officials Table -->
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Preferred Name</th>
+            <th>Team</th>
+            <th>Email</th>
+            <th>ST</th>
+            <th>CJ</th>
+            <th>SR</th>
+            <th>DR</th>
+            <th>AO</th>
+            <th>AR</th>
+            <th>Action</th>
+        </tr>
+        <?php if ($result->num_rows > 0): ?>
+        <?php while ($row = $result->fetch_assoc()): ?>
+        <tr>
+            <form method="POST" action="">
+                <td><?php echo htmlspecialchars($row['Idx']); ?><input type="hidden" name="Idx"
+                        value="<?php echo htmlspecialchars($row['Idx']); ?>"></td>
+                <td><input type="text" name="FirstName" value="<?php echo htmlspecialchars(trim($row['FirstName'])); ?>"
+                        required></td>
+                <td><input type="text" name="LastName" value="<?php echo htmlspecialchars(trim($row['LastName'])); ?>"
+                        required></td>
+                <td><input type="text" name="PrefName" value="<?php echo htmlspecialchars(trim($row['PrefName'])); ?>">
+                </td>
+                <td>
+                    <select name="Team" required>
+                        <?php foreach ($teams as $teamIdx => $teamName): ?>
+                        <option value="<?php echo $teamIdx; ?>"
+                            <?php echo $row['Team'] == $teamIdx ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($teamName); ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+                <td><input type="email" name="email" value="<?php echo htmlspecialchars(trim($row['email'])); ?>"
+                        required></td>
+                <td><input type="number" name="ST" value="<?php echo htmlspecialchars($row['ST']); ?>" min="-1" max="3">
+                </td>
+                <td><input type="number" name="CJ" value="<?php echo htmlspecialchars($row['CJ']); ?>" min="0" max="3">
+                </td>
+                <td><input type="number" name="SR" value="<?php echo htmlspecialchars($row['SR']); ?>" min="0" max="3">
+                </td>
+                <td><input type="number" name="DR" value="<?php echo htmlspecialchars($row['DR']); ?>" min="0" max="3">
+                </td>
+                <td><input type="number" name="AO" value="<?php echo htmlspecialchars($row['AO']); ?>" min="0" max="3">
+                </td>
+                <td><input type="number" name="AR" value="<?php echo htmlspecialchars($row['AR']); ?>" min="0" max="3">
+                </td>
+                <td><button type="submit" name="update">Update</button></td>
+            </form>
+        </tr>
+        <?php endwhile; ?>
+        <?php else: ?>
+        <tr>
+            <td colspan="13">No officials found</td>
+        </tr>
+        <?php endif; ?>
+    </table>
+
+    <?php $conn->close(); ?>
 </body>
 
 </html>
