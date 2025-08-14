@@ -260,11 +260,11 @@
                     </td>
                     <td><input type="email" name="email" placeholder="Email" required></td>
                     <td><input type="number" name="ST" placeholder="ST" min="-1" max="3" value="0"></td>
-                    <td><input type="number" name="CJ" placeholder="CJ" min="0" max="3" value="0"></td>
-                    <td><input type="number" name="SR" placeholder="SR" min="0" max="3" value="0"></td>
-                    <td><input type="number" name="DR" placeholder="DR" min="0" max="3" value="0"></td>
-                    <td><input type="number" name="AO" placeholder="AO" min="0" max="3" value="0"></td>
-                    <td><input type="number" name="AR" placeholder="AR" min="0" max="3" value="0"></td>
+                    <td><input type="number" name="CJ" placeholder="CJ" min="-1" max="3" value="0"></td>
+                    <td><input type="number" name="SR" placeholder="SR" min="-1" max="3" value="0"></td>
+                    <td><input type="number" name="DR" placeholder="DR" min="-1" max="3" value="0"></td>
+                    <td><input type="number" name="AO" placeholder="AO" min="-1" max="3" value="0"></td>
+                    <td><input type="number" name="AR" placeholder="AR" min="-1" max="3" value="0"></td>
                     <td><button type="submit" name="add">Add Official</button></td>
                 </tr>
             </table>
@@ -315,15 +315,15 @@
                         required></td>
                 <td><input type="number" name="ST" value="<?php echo htmlspecialchars($row['ST']); ?>" min="-1" max="3">
                 </td>
-                <td><input type="number" name="CJ" value="<?php echo htmlspecialchars($row['CJ']); ?>" min="0" max="3">
+                <td><input type="number" name="CJ" value="<?php echo htmlspecialchars($row['CJ']); ?>" min="-1" max="3">
                 </td>
-                <td><input type="number" name="SR" value="<?php echo htmlspecialchars($row['SR']); ?>" min="0" max="3">
+                <td><input type="number" name="SR" value="<?php echo htmlspecialchars($row['SR']); ?>" min="-1" max="3">
                 </td>
-                <td><input type="number" name="DR" value="<?php echo htmlspecialchars($row['DR']); ?>" min="0" max="3">
+                <td><input type="number" name="DR" value="<?php echo htmlspecialchars($row['DR']); ?>" min="-1" max="3">
                 </td>
-                <td><input type="number" name="AO" value="<?php echo htmlspecialchars($row['AO']); ?>" min="0" max="3">
+                <td><input type="number" name="AO" value="<?php echo htmlspecialchars($row['AO']); ?>" min="-1" max="3">
                 </td>
-                <td><input type="number" name="AR" value="<?php echo htmlspecialchars($row['AR']); ?>" min="0" max="3">
+                <td><input type="number" name="AR" value="<?php echo htmlspecialchars($row['AR']); ?>" min="-1" max="3">
                 </td>
                 <td><input type="checkbox" name="IsDeleted" <?php echo $row['IsDeleted'] ? 'checked' : ''; ?>></td>
                 <td><button type="submit" name="update">Update</button></td>
