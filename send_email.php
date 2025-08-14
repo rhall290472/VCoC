@@ -40,17 +40,23 @@ if (!filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
 $mail = new PHPMailer(true);
 
 try {
-    // SMTP settings (example for Gmail)
+    // Enable debug output
+    $mail->SMTPDebug = 2; // Set to 0 in production
+    $mail->Debugoutput = function($str, $level) {
+        error_log("PHPMailer[$level]: $str", 3, 'email_errors.log');
+    };
+
+    // SMTP settings for Gmail
     $mail->isSMTP();
     $mail->Host = 'smtp.gmail.com';
     $mail->SMTPAuth = true;
-    $mail->Username = 'your_smtp_username@gmail.com'; // Replace with your SMTP username
-    $mail->Password = 'your_smtp_password'; // Replace with your SMTP password or app-specific password
+    $mail->Username = 'your_actual_gmail@gmail.com'; // Replace with your Gmail address
+    $mail->Password = 'your_app_password'; // Replace with your App Password
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = 587;
 
     // Email settings
-    $mail->setFrom('your_smtp_username@gmail.com', 'Team Email Generator');
+    $mail->setFrom('your_actual_gmail@gmail.com', 'Team Email Generator');
     $mail->addReplyTo($replyTo);
     $mail->Subject = $subject;
     $mail->Body = $message;
