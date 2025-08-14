@@ -87,8 +87,8 @@
     define('DB_NAME', 'usas');
   } else {
     define('DB_HOST', 'rhall29047217205.ipagemysql.com');
-    define('DB_USER', 'mbcuser');
-    define('DB_PASS', 'ZCSCA?yrW7}L');
+    define('DB_USER', 'rhall29047217205');
+    define('DB_PASS', '80016$Hall$48367');
     define('DB_NAME', 'usas');
   }
 
