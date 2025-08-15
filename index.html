@@ -1,159 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meet Referee Email Generator</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            max-width: 800px;
-            margin: 20px auto;
-        }
-        .form-container {
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        label {
-            display: block;
-            margin: 10px 0 5px;
-            font-weight: bold;
-        }
-        select, input[type="email"], input[type="text"], textarea, input[type="file"] {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        select[multiple] {
-            height: 100px;
-        }
-        textarea {
-            height: 150px;
-            resize: vertical;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        .error {
-            color: red;
-            margin: 10px 0;
-        }
-        .success {
-            color: green;
-            margin: 10px 0;
-        }
-        #message-container {
-            display: none;
-            margin-bottom: 15px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meet Referee Email Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      max-width: 800px;
+      margin: 20px auto;
+    }
+
+    .form-container {
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    select,
+    input[type="email"],
+    input[type="text"],
+    textarea,
+    input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    select[multiple] {
+      height: 100px;
+    }
+
+    textarea {
+      height: 150px;
+      resize: vertical;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .error {
+      color: red;
+      margin: 10px 0;
+    }
+
+    .success {
+      color: green;
+      margin: 10px 0;
+    }
+
+    #message-container {
+      display: none;
+      margin-bottom: 15px;
+    }
+  </style>
 </head>
+
 <body>
-    <div class="form-container">
-        <h2>Meet Referee  Email Generator</h2>
-        <div id="message-container"></div>
-        <form id="email-form" enctype="multipart/form-data">
-            <label for="teams">Select Teams</label>
-            <select name="teams[]" id="teams" multiple required>
-                <option value="" disabled>Hold Ctrl/Cmd to select multiple teams</option>
-                <!-- Teams will be populated dynamically -->
-            </select>
+  <div class="form-container">
+    <h2>Meet Referee Email Generator</h2>
+    <div id="message-container"></div>
+    <form id="email-form" enctype="multipart/form-data">
+      <label for="teams">Select Teams</label>
+      <select name="teams[]" id="teams" multiple required>
+        <option value="" disabled>Hold Ctrl/Cmd to select multiple teams</option>
+        <!-- Teams will be populated dynamically -->
+      </select>
 
-            <label for="reply_to">Reply-To Email</label>
-            <input type="email" name="reply_to" id="reply_to" required>
+      <label for="reply_to">Reply-To Email</label>
+      <input type="email" name="reply_to" id="reply_to" required>
 
-            <label for="subject">Email Subject</label>
-            <input type="text" name="subject" id="subject" required>
+      <label for="subject">Email Subject</label>
+      <input type="text" name="subject" id="subject" required>
 
-            <label for="message">Email Message</label>
-            <textarea name="message" id="message" required></textarea>
+      <label for="message">Email Message</label>
+      <textarea name="message" id="message" required></textarea>
 
-            <label for="attachments">Attachments</label>
-            <input type="file" name="attachments[]" id="attachments" multiple accept=".pdf,.doc,.txt,.jpg,.png">
+      <label for="attachments">Attachments</label>
+      <input type="file" name="attachments[]" id="attachments" multiple accept=".pdf,.doc,.txt,.jpg,.png">
 
-            <button type="submit">Send Email</button>
-        </form>
-    </div>
+      <button type="submit">Send Email</button>
+    </form>
+  </div>
 
-    <script>
-        // Fetch teams on page load
-        fetch('api/email_handler.php?action=get_teams')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const teamsSelect = document.getElementById('teams');
-                    data.teams.forEach(team => {
-                        const option = document.createElement('option');
-                        option.value = team.Idx;
-                        option.textContent = team.fullname;
-                        teamsSelect.appendChild(option);
-                    });
-                } else {
-                    showMessage('error', 'Failed to load teams: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => showMessage('error', 'Error loading teams: ' + error.message));
-
-        // Handle form submission
-        document.getElementById('email-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            formData.append('action', 'send_email');
-
-            fetch('api/email_handler.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showMessage('success', `Email sent successfully to ${data.success_count} recipient(s).`);
-                    this.reset();
-                    document.getElementById('teams').options[0].text = 'Hold Ctrl/Cmd to select multiple teams';
-                } else {
-                    showMessage('error', data.error || 'Failed to send email.');
-                }
-            })
-            .catch(error => showMessage('error', 'Error sending email: ' + error.message));
-        });
-
-        // Update team selection text
-        document.getElementById('teams').addEventListener('change', function() {
-            const options = this.options;
-            let selectedCount = 0;
-            for (let i = 0; i < options.length; i++) {
-                if (options[i].selected && options[i].value !== '') {
-                    selectedCount++;
-                }
-            }
-            this.options[0].text = selectedCount > 0 
-                ? `${selectedCount} team(s) selected`
-                : 'Hold Ctrl/Cmd to select multiple teams';
-        });
-
-        // Display messages
-        function showMessage(type, message) {
-            const container = document.getElementById('message-container');
-            container.className = type;
-            container.textContent = message;
-            container.style.display = 'block';
-            setTimeout(() => {
-                container.style.display = 'none';
-            }, 5000);
+  <script>
+    // Fetch teams on page load
+    fetch('api/email_handler.php?action=get_teams')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const teamsSelect = document.getElementById('teams');
+          data.teams.forEach(team => {
+            const option = document.createElement('option');
+            option.value = team.Idx;
+            option.textContent = team.fullname;
+            teamsSelect.appendChild(option);
+          });
+        } else {
+          showMessage('error', 'Failed to load teams: ' + (data.error || 'Unknown error'));
         }
-    </script>
+      })
+      .catch(error => showMessage('error', 'Error loading teams: ' + error.message));
+
+    // Handle form submission
+    document.getElementById('email-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      formData.append('action', 'send_email');
+
+      fetch('api/email_handler.php', {
+        method: 'POST',
+        body: formData
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showMessage('success', `Email sent successfully to ${data.success_count} recipient(s).`);
+            this.reset();
+            document.getElementById('teams').options[0].text = 'Hold Ctrl/Cmd to select multiple teams';
+          } else {
+            showMessage('error', data.error || 'Failed to send email.');
+          }
+        })
+        .catch(error => showMessage('error', 'Error sending email: ' + error.message));
+    });
+
+    // Update team selection text
+    document.getElementById('teams').addEventListener('change', function () {
+      const options = this.options;
+      let selectedCount = 0;
+      for (let i = 0; i < options.length; i++) {
+        if (options[i].selected && options[i].value !== '') {
+          selectedCount++;
+        }
+      }
+      this.options[0].text = selectedCount > 0
+        ? `${selectedCount} team(s) selected`
+        : 'Hold Ctrl/Cmd to select multiple teams';
+    });
+
+    // Display messages
+    function showMessage(type, message) {
+      const container = document.getElementById('message-container');
+      container.className = type;
+      container.textContent = message;
+      container.style.display = 'block';
+      setTimeout(() => {
+        container.style.display = 'none';
+      }, 5000);
+    }
+  </script>
 </body>
+
 </html>
