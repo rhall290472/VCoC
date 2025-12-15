@@ -545,7 +545,7 @@ function MarkEventClosed() {
 
   // Define the cell position (e.g., B2 -> column 2, row 2)
   var column = 15;
-  var row = 2;
+  var row = 1;
 
 
   /**
@@ -574,8 +574,8 @@ function MarkEventRevised() {
   var sheet = SpreadsheetApp.getActiveSheet();
 
   // Define the cell position (e.g., B2 -> column 2, row 2)
-  var column = 1;
-  var row = 1;
+  var column = 15;
+  var row = 2;
 
 
   // Method 2: Insert image from Google Drive (uncomment to use)
@@ -606,66 +606,66 @@ function insertTimesImageOverSheet() {
 
 
 function processAnnouncedTime(time1) {
-  // Get the active spreadsheet and sheet
-  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = spreadsheet.getActiveSheet();
+  var sheet = SpreadsheetApp.getActiveSheet();
 
-  // Prompt user for announced time
-  // var ui = SpreadsheetApp.getUi();
-  // var response1 = ui.prompt('Enter Announced time (e.g., 10:30 AM):', ui.ButtonSet.OK_CANCEL);
-  // if (response1.getSelectedButton() !== ui.Button.OK) return;
-  // var time1 = response1.getResponseText();
+  // Target a safe empty cell: Column AK (37), Row 1 (top-right, unlikely to have data)
+  var targetCell = sheet.getRange('AK1');  // Change to another empty cell if needed (e.g., 'AL1')
 
-  // Calculate time2 by adding 30 minutes to time1
-  var time2 = addThirtyMinutes(time1);
+  // Clear any previous content/formula in target cell
+  targetCell.clearContent();
+
+  // Remove any old floating images (just in case)
+  sheet.getImages().forEach(function(img) { img.remove(); });
+
+  var time2 = addThirtyMinutes(time1);  // Your existing helper function
 
   try {
-    // Write times to a temporary range for chart data
+    // Temporary data in far-away cells (two columns for clean table layout)
     sheet.getRange('A131:B133').setValues([
       ['Announced:', 'Time'],
-      ['Read:    ', time1],
-      ['Closes:  ', time2]
+      ['Read:', time1],
+      ['Closes:', time2]
     ]);
 
-    // Create a data table chart
+    // Create chart blob (good visible size)
     var chart = sheet.newChart()
       .setChartType(Charts.ChartType.TABLE)
-      .addRange(sheet.getRange('A131:B133')) // Updated range to match data
-      .setPosition(5, 5, 0, 0) // Temporary position
-      .setOption('width', 200)
-      .setOption('height', 100)
+      .addRange(sheet.getRange('A131:B133'))
+      .setPosition(5, 5, 0, 0)
+      .setOption('width', 240)
+      .setOption('height', 120)
       .build();
 
-    // Insert the chart temporarily to get its image
     sheet.insertChart(chart);
-
-    // Get the chart as a blob
     var imageBlob = chart.getBlob();
-
-    // Remove the temporary chart
     sheet.removeChart(chart);
 
-    // Clear temporary data
+    // Clear temp data
     sheet.getRange('A131:B133').clearContent();
 
-    // Insert the image over the sheet at column 2, row 2
-    var image = sheet.insertImage(imageBlob, 35, 2);
+    // Upload to Drive for direct view URL
+    var tempFile = DriveApp.getRootFolder().createFile(imageBlob.setName('announced_time_temp.png'));
+    tempFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var imageUrl = 'https://drive.google.com/uc?export=view&id=' + tempFile.getId();
 
-    // Set image size
-    image.setWidth(200).setHeight(100);
+    // CRITICAL: Set fixed cell dimensions BEFORE inserting formula (prevents auto-expansion)
+    sheet.setRowHeight(1, 130);      // Fixed height with padding
+    sheet.setColumnWidth(37, 260);   // Column AK (37) – wide enough for table
+
+    // Insert in-cell image: Mode 1 = stretch/resize to exactly fit the cell
+    targetCell.setFormula('=IMAGE("' + imageUrl + '", 1)');
+
+    // Clean up temporary Drive file after delay
+    Utilities.sleep(2000);
+    tempFile.setTrashed(true);
+
   } catch (e) {
-    ui.alert('Error creating image: ' + e.message);
+    SpreadsheetApp.getUi().alert('Error creating announced time: ' + e.message);
   }
 
-  // Force sheet to re-render
-  var sheet = SpreadsheetApp.getActiveSheet();
-  var cell = sheet.getRange('A1');  // Choose any unused cell
-  var value = cell.getValue();
-  cell.setValue(value);  // Re-sets the same value → forces recalc
   SpreadsheetApp.flush();
-  return SUCESS;
+  return "SUCCESS";
 }
-
 
 
 function addThirtyMinutes(timeStr) {
