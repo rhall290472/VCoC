@@ -7,9 +7,13 @@
  * Version: 25Jul25 - Added back deleted addthirtyminutes function
  * Version: 27Jul25 - Added color code for all execptions
  * Version: 06Aug25 - Added sidebar menu option
+ * Version: 15Dec25 - Trying to fix the persistent working message when running scripts
  * 
  * 
  */
+const SCRIPT_VERSION = "06Aug25";  // Update this whenever you make changes
+const VERSION_DESCRIPTION = "persistent working message";  // Optional: short note
+
 
 const COLOR_TIE = "#FF66FF"; // Color for ties
 const COLOR_DQ = "Pink";    // Color for DQ
@@ -59,13 +63,26 @@ function onOpen(e) {
       .addItem('Mark event Revised', 'MarkEventRevised')
       .addSeparator()
       .addItem('Announced time', 'insertTimesImageOverSheet')
+      .addSeparator()
+      .addSubMenu(
+        ui.createMenu('About')
+          .addItem('Show Version', 'showVersion')
+      )
       .addToUi();
   } catch (error) {
     Logger.log("Error in onOpen: " + error.message);
     SpreadsheetApp.getUi().alert("Error setting up menu: " + error.message);
   }
 }
-
+/**
+ * Displays the current script version in a dialog
+ */
+function showVersion() {
+  var ui = SpreadsheetApp.getUi();
+  var message = `Virtual Clerk of Course (VCoC)\n\nVersion: ${SCRIPT_VERSION}\n${VERSION_DESCRIPTION}\n\nLast updated: August 6, 2025`;
+  
+  ui.alert('VCoC Version', message, ui.ButtonSet.OK);
+}
 function showSidebar() {
   var html = HtmlService.createHtmlOutput(`
     <button onclick="google.script.run.expandAllRows()">Expand All Rows and Delete Row 1</button><br><br>
@@ -152,6 +169,7 @@ function expandAllRows() {
     // Ensure changes are applied
     SpreadsheetApp.flush();
     renumberRankings();
+    SpreadsheetApp.flush();
 
   } catch (error) {
     // Enhanced error handling
@@ -164,6 +182,7 @@ function expandAllRows() {
     }
     throw error; // Re-throw to allow calling function to handle if needed
   }
+  return "SUCCESS";
 }
 
 /**
@@ -217,6 +236,8 @@ function scrSwimmer() {
     SpreadsheetApp.getUi().alert("Error: " + error.message);
   }
   renumberRankings();
+  SpreadsheetApp.flush();
+  return SUCESS;
 }
 
 /**
@@ -270,6 +291,8 @@ function UnscratchSwimmer() {
     SpreadsheetApp.getUi().alert("Error: " + error.message);
   }
   renumberRankings();
+  SpreadsheetApp.flush();
+  return SUCESS;
 }
 
 /**
@@ -344,6 +367,7 @@ function IntentscrSwimmer() {
     Logger.log("Error in IntentscrSwimmer: " + error.message);
     SpreadsheetApp.getUi().alert("Error: " + error.message);
   }
+  return SUCESS;
 }
 
 /**
@@ -388,6 +412,7 @@ function drawHeatLine() {
     Logger.log("Error in drawHeatLine: " + error.message);
     SpreadsheetApp.getUi().alert("Error: " + error.message);
   }
+  return SUCESS;
 }
 
 /**
@@ -436,6 +461,7 @@ function findLastUsedColumn() {
     Logger.log("Error in findLastUsedColumn: " + error.message);
     throw error; // Rethrow to be caught by calling function
   }
+  return SUCESS;
 }
 
 /**
@@ -467,11 +493,12 @@ function removeAllBorders() {
     var range = sheet.getRange(1, 1, lastRow, lastColumn);
     range.setBorder(false, false, false, false, false, false);
 
-    SpreadsheetApp.flush();
+    SpreadsheetApp.flush();SpreadsheetApp.flush();
   } catch (error) {
     Logger.log("Error in removeAllBorders: " + error.message);
     SpreadsheetApp.getUi().alert("Error: " + error.message);
   }
+  return SUCESS;
 }
 
 /**
@@ -501,6 +528,7 @@ function columnLetterToIndex(columnLetter) {
     Logger.log("Error in columnLetterToIndex: " + error.message);
     throw error; // Rethrow to be caught by calling function
   }
+  return SUCESS;
 }
 
 /**
@@ -529,6 +557,8 @@ function MarkEventClosed() {
   } catch (e) {
     SpreadsheetApp.getUi().alert("Error inserting image from Google Drive: " + e.message);
   }
+  SpreadsheetApp.flush();
+  return SUCESS;
 }
 
 /**
@@ -555,6 +585,8 @@ function MarkEventRevised() {
   } catch (e) {
     SpreadsheetApp.getUi().alert("Error inserting image from Google Drive: " + e.message);
   }
+  SpreadsheetApp.flush();
+  return SUCESS;
 }
 
 /**
@@ -615,7 +647,7 @@ function insertTimesImageOverSheet() {
     // Force sheet to re-render
     SpreadsheetApp.flush();
 
-    return;
+    return SUCESS;
   }
 }
 function addThirtyMinutes(timeStr) {
@@ -690,31 +722,31 @@ function renumberRankings() {
   var lastTime = null;
   var tiedRows = [];
 
-  // Function to find the time column with a period
-  function findTimeColumnWithPeriod(activeRow, lastColumn) {
-    var rowValues = sheet.getRange(activeRow, 1, 1, lastColumn).getValues()[0];
-    for (var col = lastColumn - 1; col >= 0; col--) {
-      var value = rowValues[col];
-      if (value && value.toString().includes('.')) {
-        timeColumn = col;
-        switch (col) {
-          case 40:
-            scrColumn = 47;
-            break;
-          case 25:
-            scrColumn = 33;
-            break;
-          case 35:
-            scrColumn = 43;
-            break;
-          default:
-            scrColumn = null; // Handle unexpected columns
-        }
-        return true;
-      }
-    }
-    return false;
-  }
+  // // Function to find the time column with a period
+  // function findTimeColumnWithPeriod(activeRow, lastColumn) {
+    // var rowValues = sheet.getRange(activeRow, 1, 1, lastColumn).getValues()[0];
+    // for (var col = lastColumn - 1; col >= 0; col--) {
+      // var value = rowValues[col];
+      // if (value && value.toString().includes('.')) {
+        // timeColumn = col;
+        // switch (col) {
+          // case 40:
+            // scrColumn = 47;
+            // break;
+          // case 25:
+            // scrColumn = 33;
+            // break;
+          // case 35:
+            // scrColumn = 43;
+            // break;
+          // default:
+            // scrColumn = null; // Handle unexpected columns
+        // }
+        // return true;
+      // }
+    // }
+    // return false;
+  // }
 
   // Process rows starting from the row after the first "Preliminaries"
   for (var row = prelimRow + 1; row < data.length; row++) {
@@ -815,8 +847,38 @@ function renumberRankings() {
     sheet.getRange(tiedRows[0] + 1, rankColumn + 1).setValue(currentRank);
     sheet.getRange(tiedRows[0] + 1, 1, 1, lastColumn).setBackground(null);
   }
+  SpreadsheetApp.flush();
+  return SUCESS;
 }
 
+/**
+ * Helper function
+ */
+/**
+ * Helper: Find the time column containing a decimal point and set corresponding scr column
+ */
+function findTimeColumnWithPeriod(sheet, activeRow, lastColumn) {
+  var rowValues = sheet.getRange(activeRow, 1, 1, lastColumn).getValues()[0];
+  for (var col = lastColumn - 1; col >= 0; col--) {
+    var value = rowValues[col];
+    if (value && typeof value === 'string' && value.includes('.')) {
+      // Or better: if it's a time like 1:23.45 or 23.45
+      var str = value.toString().trim();
+      if (str.match(/\d+\.\d+/)) {  // contains decimal
+        var timeCol = col;
+        var scrCol;
+        switch (col) {
+          case 40: scrCol = 47; break;
+          case 25: scrCol = 33; break;
+          case 35: scrCol = 43; break;
+          default: scrCol = null;
+        }
+        return { timeColumn: timeCol, scrColumn: scrCol };
+      }
+    }
+  }
+  return null;
+}
 /**
  * These function will split out multiple scratch into indivdaul scratches
  * 
@@ -839,6 +901,8 @@ function onFormSubmit(e) {
   Utilities.sleep(2000);                    // give form time to finish writing
   console.log("Form submitted – processing splits...");
   splitEventsInColumnsGHIJ();
+  SpreadsheetApp.flush();
+  return SUCESS;
 }
 
 /**
@@ -912,4 +976,7 @@ function splitEventsInColumnsGHIJ() {
   }
 
   console.log(`Success! Sheet now has ${1 + newDataRows.length} rows (including header)`);
+
+  SpreadsheetApp.flush();
+  return SUCESS;
 }
