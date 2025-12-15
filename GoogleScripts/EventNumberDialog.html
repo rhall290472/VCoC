@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h3 {
+      margin-top: 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 15px 0;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+    }
+
+    #okBtn {
+      background: #4285f4;
+      color: white;
+    }
+
+    #cancelBtn {
+      background: #f1f1f1;
+    }
+  </style>
+</head>
+
+<body>
+  <h3>Sheet Imported Successfully</h3>
+  <p>Please enter the event number:</p>
+  <input type="text" id="eventNum" placeholder="e.g., 5, 12, 101" autofocus>
+
+  <br>
+  <button id="okBtn">OK</button>
+  <button id="cancelBtn">Cancel</button>
+
+  <script>
+  // Safely injected from server via template
+  const sheetName = '<?!= sheetName ?>';
+
+  // ... rest of your script remains exactly as before
+  document.getElementById('okBtn').onclick = function () {
+    const eventNum = document.getElementById('eventNum').value.trim();
+    if (!eventNum || isNaN(eventNum) || eventNum === '') {
+      alert('Please enter a valid event numbera (numeric only).');
+      return;
+    }
+
+    google.script.host.close();
+
+    google.script.run
+      .withSuccessHandler(function () {
+        google.script.host.editor.getUi()
+          .toast('Sheet renamed to "Event ' + eventNum + '" and activated.', 'Success', 8);
+      })
+      .withFailureHandler(function (error) {
+        google.script.host.editor.getUi()
+          .alert('Rename failed: ' + error.message);
+      })
+      .renameSheetToEvent(sheetName, eventNum);
+  };
+
+    document.getElementById('cancelBtn').onclick = function () {
+      google.script.host.close();
+    };
+
+    // Allow Enter key to submit
+    document.getElementById('eventNum').addEventListener('keyup', function (e) {
+      if (e.key === 'Enter') {
+        document.getElementById('okBtn').click();
+      }
+    });
+
+    // Focus the input field
+    document.getElementById('eventNum').select();
+  </script>
+</body>
+
+</html>

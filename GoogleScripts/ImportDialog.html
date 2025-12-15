@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+      input { width: 100%; padding: 10px; margin: 15px 0; font-size: 16px; box-sizing: border-box; }
+      button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+      #importBtn { background: #4285f4; color: white; border: none; cursor: pointer; }
+      #cancelBtn { background: #f1f1f1; border: 1px solid #ddd; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <p>.</p>
+    <input type="text" id="fileName" placeholder="File name (with or without extension)" autofocus>
+    <br>
+    <button id="importBtn">Import</button>
+    <button id="cancelBtn">Cancel</button>
+
+<script>
+  document.getElementById('importBtn').onclick = function() {
+    const fileName = document.getElementById('fileName').value.trim();
+    if (!fileName) {
+      alert('Please enter a file name.');
+      return;
+    }
+
+    // Close the import dialog immediately to avoid "Working..." issues
+    google.script.host.close();
+
+    // Run the import on the server
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          alert(result.message);  // Feedback that import worked
+
+          // THIS IS THE KEY LINE:
+          // Call the server-side function to show the Event Number dialog
+          if (result.lastSheetName) {
+            google.script.run.showEventNumberPrompt(result.lastSheetName);
+          }
+        } else {
+          alert('Import failed: ' + result.message);
+        }
+      })
+      .withFailureHandler(function(error) {
+        alert('Error: ' + error.message);
+      })
+      .processImport(fileName);
+  };
+
+  document.getElementById('cancelBtn').onclick = function() {
+    google.script.host.close();
+  };
+
+  document.getElementById('fileName').addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') {
+      document.getElementById('importBtn').click();
+    }
+  });
+
+  document.getElementById('fileName').focus();
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+      input { width: 100%; padding: 10px; margin: 15px 0; font-size: 16px; box-sizing: border-box; }
+      button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
+      #okBtn { background: #4285f4; color: white; border: none; }
+      #cancelBtn { background: #f1f1f1; border: 1px solid #ddd; }
+    </style>
+  </head>
+  <body>
+    <p>Enter Announced time (10:30 AM):</p>
+    <input type="text" id="timeInput" placeholder="10:30 AM" autofocus>
+    <br>
+    <button id="okBtn">OK</button>
+    <button id="cancelBtn">Cancel</button>
+
+    <script>
+      document.getElementById('okBtn').onclick = function() {
+        const time = document.getElementById('timeInput').value.trim();
+        if (!time) {
+          alert('Please enter a time.');
+          return;
+        }
+        google.script.host.close();
+        google.script.run
+          .withSuccessHandler(() => { /* Success handled in server */ })
+          .processAnnouncedTime(time);
+      };
+
+      document.getElementById('cancelBtn').onclick = function() {
+        google.script.host.close();
+      };
+
+      document.getElementById('timeInput').addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') document.getElementById('okBtn').click();
+      });
+
+      document.getElementById('timeInput').focus();
+    </script>
+  </body>
+</html>

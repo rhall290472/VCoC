@@ -22,6 +22,8 @@ const COLOR_SCR = "Yellow";  // Color for Scr
 const COLOR_DFS = "Orange";  // Color for DFS
 const COLOR_INTENT = "Cyan"; // Color for Intent to Scr
 
+const SUCESS = "SUCCESS";
+
 
 /**
  * Trigger on script installation
@@ -50,7 +52,8 @@ function onOpen(e) {
     ui.createMenu('VCoC')
       .addItem('Open VCoC Sidebar', 'showSidebar')
       .addSeparator()
-      .addItem('Expand All Rows and delete row 1', 'expandAllRows')
+      .addItem('Import Sheet by Name...', 'importSheetByName')
+      .addSeparator()
       .addItem('Scr current swimmer', 'scrSwimmer')
       .addItem('Intent to Scratch', 'IntentscrSwimmer')
       .addItem('Unscratch swimmer', 'UnscratchSwimmer')
@@ -80,7 +83,7 @@ function onOpen(e) {
 function showVersion() {
   var ui = SpreadsheetApp.getUi();
   var message = `Virtual Clerk of Course (VCoC)\n\nVersion: ${SCRIPT_VERSION}\n${VERSION_DESCRIPTION}\n\nLast updated: August 6, 2025`;
-  
+
   ui.alert('VCoC Version', message, ui.ButtonSet.OK);
 }
 function showSidebar() {
@@ -493,7 +496,7 @@ function removeAllBorders() {
     var range = sheet.getRange(1, 1, lastRow, lastColumn);
     range.setBorder(false, false, false, false, false, false);
 
-    SpreadsheetApp.flush();SpreadsheetApp.flush();
+    SpreadsheetApp.flush(); SpreadsheetApp.flush();
   } catch (error) {
     Logger.log("Error in removeAllBorders: " + error.message);
     SpreadsheetApp.getUi().alert("Error: " + error.message);
@@ -637,19 +640,21 @@ function insertTimesImageOverSheet() {
     sheet.getRange('A131:B133').clearContent();
 
     // Insert the image over the sheet at column 2, row 2
-    var image = sheet.insertImage(imageBlob, 2, 2);
+    var image = sheet.insertImage(imageBlob, 35, 2);
 
     // Set image size
     image.setWidth(200).setHeight(100);
   } catch (e) {
     ui.alert('Error creating image: ' + e.message);
-
-    // Force sheet to re-render
-    SpreadsheetApp.flush();
-
-    return SUCESS;
   }
+
+  // Force sheet to re-render
+    SpreadsheetApp.flush();
+    return SUCESS;
 }
+
+
+
 function addThirtyMinutes(timeStr) {
   // Parse the input time string
   var parts = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
@@ -722,31 +727,31 @@ function renumberRankings() {
   var lastTime = null;
   var tiedRows = [];
 
-  // // Function to find the time column with a period
-  // function findTimeColumnWithPeriod(activeRow, lastColumn) {
-    // var rowValues = sheet.getRange(activeRow, 1, 1, lastColumn).getValues()[0];
-    // for (var col = lastColumn - 1; col >= 0; col--) {
-      // var value = rowValues[col];
-      // if (value && value.toString().includes('.')) {
-        // timeColumn = col;
-        // switch (col) {
-          // case 40:
-            // scrColumn = 47;
-            // break;
-          // case 25:
-            // scrColumn = 33;
-            // break;
-          // case 35:
-            // scrColumn = 43;
-            // break;
-          // default:
-            // scrColumn = null; // Handle unexpected columns
-        // }
-        // return true;
-      // }
-    // }
-    // return false;
-  // }
+  // Function to find the time column with a period
+  function findTimeColumnWithPeriod(activeRow, lastColumn) {
+    var rowValues = sheet.getRange(activeRow, 1, 1, lastColumn).getValues()[0];
+    for (var col = lastColumn - 1; col >= 0; col--) {
+      var value = rowValues[col];
+      if (value && value.toString().includes('.')) {
+        timeColumn = col;
+        switch (col) {
+          case 40:
+            scrColumn = 47;
+            break;
+          case 25:
+            scrColumn = 33;
+            break;
+          case 35:
+            scrColumn = 43;
+            break;
+          default:
+            scrColumn = null; // Handle unexpected columns
+        }
+        return true;
+      }
+    }
+    return false;
+  }
 
   // Process rows starting from the row after the first "Preliminaries"
   for (var row = prelimRow + 1; row < data.length; row++) {
@@ -857,28 +862,174 @@ function renumberRankings() {
 /**
  * Helper: Find the time column containing a decimal point and set corresponding scr column
  */
-function findTimeColumnWithPeriod(sheet, activeRow, lastColumn) {
-  var rowValues = sheet.getRange(activeRow, 1, 1, lastColumn).getValues()[0];
-  for (var col = lastColumn - 1; col >= 0; col--) {
-    var value = rowValues[col];
-    if (value && typeof value === 'string' && value.includes('.')) {
-      // Or better: if it's a time like 1:23.45 or 23.45
-      var str = value.toString().trim();
-      if (str.match(/\d+\.\d+/)) {  // contains decimal
-        var timeCol = col;
-        var scrCol;
-        switch (col) {
-          case 40: scrCol = 47; break;
-          case 25: scrCol = 33; break;
-          case 35: scrCol = 43; break;
-          default: scrCol = null;
-        }
-        return { timeColumn: timeCol, scrColumn: scrCol };
+// function findTimeColumnWithPeriod(sheet, activeRow, lastColumn) {
+// var rowValues = sheet.getRange(activeRow, 1, 1, lastColumn).getValues()[0];
+// for (var col = lastColumn - 1; col >= 0; col--) {
+// var value = rowValues[col];
+// if (value && typeof value === 'string' && value.includes('.')) {
+// // Or better: if it's a time like 1:23.45 or 23.45
+// var str = value.toString().trim();
+// if (str.match(/\d+\.\d+/)) {  // contains decimal
+// var timeCol = col;
+// var scrCol;
+// switch (col) {
+// case 40: scrCol = 47; break;
+// case 25: scrCol = 33; break;
+// case 35: scrCol = 43; break;
+// default: scrCol = null;
+// }
+// return { timeColumn: timeCol, scrColumn: scrCol };
+// }
+// }
+// }
+// return null;
+// }
+
+/**
+ * FUnction to copy results into this sheet.
+ */
+/**
+ * Menu item: Prompt user for a file name in the same folder,
+ * auto-convert Excel if needed, then copy all tabs.
+ * Fixed: Eliminates hanging "Working..." message
+ */
+/**
+ * Menu item: Open HTML dialog for file name input, then import sheets
+ */
+function importSheetByName() {
+  const html = HtmlService.createHtmlOutputFromFile('ImportDialog')
+    .setWidth(400)
+    .setHeight(200);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Import Sheet by Name');
+}
+
+/**
+ * Called from HTML dialog - performs the actual import ONLY
+ * After success, client-side code will handle the event number prompt
+ */
+/**
+ * Performs the import and returns the name of the last imported sheet
+ */
+function processImport(fileNameToImport) {
+  try {
+    if (!fileNameToImport || fileNameToImport.trim() === '') {
+      return { success: false, message: 'No file name provided.' };
+    }
+
+    fileNameToImport = fileNameToImport.trim();
+
+    const currentSs = SpreadsheetApp.getActiveSpreadsheet();
+    const currentFile = DriveApp.getFileById(currentSs.getId());
+    const parentFolder = currentFile.getParents().next();
+
+    const files = parentFolder.getFilesByName(fileNameToImport);
+    let sourceFile = null;
+    while (files.hasNext()) {
+      const file = files.next();
+      if (file.getName() === fileNameToImport) {
+        sourceFile = file;
+        break;
       }
     }
+
+    if (!sourceFile) {
+      return { success: false, message: `No file named "${fileNameToImport}" found in the same folder.` };
+    }
+
+    const isExcel = [MimeType.MICROSOFT_EXCEL, MimeType.MICROSOFT_EXCEL_LEGACY].includes(sourceFile.getMimeType());
+
+    let sourceSs;
+    let tempFileId = null;
+    if (!isExcel) {
+      sourceSs = SpreadsheetApp.openById(sourceFile.getId());
+    } else {
+      const resource = {
+        name: 'Temp_Import_' + sourceFile.getName().replace(/\.[^/.]+$/, ""),
+        mimeType: MimeType.GOOGLE_SHEETS,
+        parents: [{ id: parentFolder.getId() }]
+      };
+      const convertedFile = Drive.Files.create(resource, sourceFile.getBlob(), { convert: true });
+      tempFileId = convertedFile.id;
+      sourceSs = SpreadsheetApp.openById(tempFileId);
+    }
+
+    const sourceSheets = sourceSs.getSheets();
+    if (sourceSheets.length === 0) {
+      return { success: false, message: 'The file has no tabs to import.' };
+    }
+
+    let importedCount = 0;
+    let lastCopiedSheet = null;
+
+    sourceSheets.forEach(sheet => {
+      lastCopiedSheet = sheet.copyTo(currentSs);  // This is the copied sheet in destination
+      importedCount++;
+    });
+
+    // Cleanup temp file
+    if (tempFileId) {
+      try { DriveApp.getFileById(tempFileId).setTrashed(true); } catch (e) { }
+    }
+
+    SpreadsheetApp.flush();
+
+    // Return the name of the newly copied sheet (usually the only/main one)
+    const lastSheetName = lastCopiedSheet ? lastCopiedSheet.getName() : null;
+    showEventNumberPrompt(lastSheetName);
+
+    return {
+      success: true,
+      message: `Imported ${importedCount} sheet(s) successfully!`,
+      lastSheetName: lastSheetName
+    };
+
+  } catch (error) {
+    Logger.log('Import Error: ' + error.message + '\n' + error.stack);
+    return { success: false, message: 'Import failed: ' + error.message };
   }
-  return null;
 }
+
+/**
+ * Shows the Event Number dialog and passes the sheet name safely
+ */
+function showEventNumberPrompt(lastSheetName) {
+  const template = HtmlService.createTemplateFromFile('EventNumberDialog');
+  template.sheetName = lastSheetName || '';
+  const html = template.evaluate()
+    .setWidth(360)
+    .setHeight(220);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Set Event Number');
+}
+
+/**
+ * Renames a specific sheet to "Event xx"
+ */
+// Already in your processImport() — just ensure it returns lastSheetName as shown earlier
+// (see previous response for full processImport code)
+
+// New function needed:
+function renameSheetToEvent(sheetName, eventNum) {
+  Logger.log('renameSheetToEvent has been called: ' + sheetName);
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    //const sheetName = '<?!= sheetName ?>';
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      throw new Error('Imported sheet "' + sheetName + '" not found.');
+    }
+    const newName = 'Event ' + eventNum;
+    sheet.setName(newName);
+    ss.setActiveSheet(sheet);
+  } catch (error) {
+    Logger.log('Rename error: ' + error);
+    throw error;  // Will trigger failure handler in client
+  }
+
+  expandAllRows();
+  return success;
+}
+
+
 /**
  * These function will split out multiple scratch into indivdaul scratches
  * 
@@ -953,10 +1104,10 @@ function splitEventsInColumnsGHIJ() {
     for (let i = 0; i < maxSplits; i++) {
       const newRow = row.slice();
       splits.forEach(item => {
-        newRow[item.col] = i < item.parts.length 
-          ? item.parts[i] 
+        newRow[item.col] = i < item.parts.length
+          ? item.parts[i]
           : item.parts[item.parts.length - 1];   // repeat last value
-          // or use '' for blank after last item
+        // or use '' for blank after last item
       });
       newDataRows.push(newRow);
     }
