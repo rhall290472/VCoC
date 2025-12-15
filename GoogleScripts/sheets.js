@@ -597,15 +597,24 @@ function MarkEventRevised() {
  * 
  */
 function insertTimesImageOverSheet() {
+  // Show custom HTML dialog instead of built-in prompt
+  const html = HtmlService.createHtmlOutputFromFile('TimePrompt')
+    .setWidth(350)
+    .setHeight(200);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Announced Time');
+}
+
+
+function processAnnouncedTime(time1) {
   // Get the active spreadsheet and sheet
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getActiveSheet();
 
   // Prompt user for announced time
-  var ui = SpreadsheetApp.getUi();
-  var response1 = ui.prompt('Enter Announced time (e.g., 10:30 AM):', ui.ButtonSet.OK_CANCEL);
-  if (response1.getSelectedButton() !== ui.Button.OK) return;
-  var time1 = response1.getResponseText();
+  // var ui = SpreadsheetApp.getUi();
+  // var response1 = ui.prompt('Enter Announced time (e.g., 10:30 AM):', ui.ButtonSet.OK_CANCEL);
+  // if (response1.getSelectedButton() !== ui.Button.OK) return;
+  // var time1 = response1.getResponseText();
 
   // Calculate time2 by adding 30 minutes to time1
   var time2 = addThirtyMinutes(time1);
@@ -649,8 +658,12 @@ function insertTimesImageOverSheet() {
   }
 
   // Force sheet to re-render
-    SpreadsheetApp.flush();
-    return SUCESS;
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var cell = sheet.getRange('A1');  // Choose any unused cell
+  var value = cell.getValue();
+  cell.setValue(value);  // Re-sets the same value → forces recalc
+  SpreadsheetApp.flush();
+  return SUCESS;
 }
 
 
