@@ -1,6 +1,6 @@
 /**
  * 
- * Virtual Clerk of  Course App Scripts
+ * Virtual Clerk of  Course App Scripts (sheets.js)
  * 
  * Version: 22Jul25 - Added rerank swimmers.
  * Version: 23Jul25 - More work on renumber swimmers
