@@ -544,8 +544,8 @@ function MarkEventClosed() {
   var sheet = SpreadsheetApp.getActiveSheet();
 
   // Define the cell position (e.g., B2 -> column 2, row 2)
-  var column = 1;
-  var row = 1;
+  var column = 15;
+  var row = 2;
 
 
   /**
