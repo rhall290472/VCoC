@@ -8,11 +8,12 @@
  * Version: 27Jul25 - Added color code for all execptions
  * Version: 06Aug25 - Added sidebar menu option
  * Version: 15Dec25 - Trying to fix the persistent working message when running scripts
+ * Version: 16Dec25 - Add import sheet, get URL for sheet
  * 
  * 
  */
-const SCRIPT_VERSION = "06Aug25";  // Update this whenever you make changes
-const VERSION_DESCRIPTION = "persistent working message";  // Optional: short note
+const SCRIPT_VERSION = "16Dec25";  // Update this whenever you make changes
+const VERSION_DESCRIPTION = "Add import sheet, get URL for sheet";  // Optional: short note
 
 
 const COLOR_TIE = "#FF66FF"; // Color for ties
