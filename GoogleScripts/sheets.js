@@ -53,6 +53,7 @@ function onOpen(e) {
       .addItem('Open VCoC Sidebar', 'showSidebar')
       .addSeparator()
       .addItem('Import Sheet by Name...', 'importSheetByName')
+      .addItem('Publish sheet...', 'getViewOnlySheetUrl')
       .addSeparator()
       .addItem('Scr current swimmer', 'scrSwimmer')
       .addItem('Intent to Scratch', 'IntentscrSwimmer')
@@ -615,7 +616,7 @@ function processAnnouncedTime(time1) {
   targetCell.clearContent();
 
   // Remove any old floating images (just in case)
-  sheet.getImages().forEach(function(img) { img.remove(); });
+  sheet.getImages().forEach(function (img) { img.remove(); });
 
   var time2 = addThirtyMinutes(time1);  // Your existing helper function
 
@@ -1040,6 +1041,73 @@ function renameSheetToEvent(sheetName, eventNum) {
 
   expandAllRows();
   return success;
+}
+
+/**
+ * Shows a dialog with the view-only URL for the active sheet and a Copy button
+ */
+function getViewOnlySheetUrl() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getActiveSheet();
+    
+    if (!sheet) {
+      throw new Error("No active sheet found.");
+    }
+    
+    const sheetName = sheet.getName();
+    const sheetId = sheet.getSheetId();
+    const editUrl = ss.getUrl();
+    
+    // View-only URL with direct tab link
+    const viewOnlyUrl = editUrl.replace(/\/edit.*$/, '/preview') + `#gid=${sheetId}`;
+    
+    // Create HTML dialog with copy button
+    const html = HtmlService.createHtmlOutput(`
+      <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 500px;">
+        <h3 style="margin-top: 0;">View-Only Link for: ${sheetName}</h3>
+        <p>This link opens the spreadsheet in <strong>view-only mode</strong> and jumps directly to this sheet.</p>
+        
+        <textarea id="urlText" readonly style="width: 100%; height: 80px; font-family: monospace; font-size: 12px; padding: 10px; box-sizing: border-box; margin-bottom: 15px;">
+${viewOnlyUrl}
+        </textarea>
+        
+        <button onclick="copyToClipboard()" style="background: #1a73e8; color: white; border: none; padding: 10px 20px; font-size: 14px; cursor: pointer; border-radius: 4px;">
+          Copy to Clipboard
+        </button>
+        <span id="copyStatus" style="margin-left: 10px; color: green; font-weight: bold;"></span>
+        
+        <script>
+          function copyToClipboard() {
+            const textarea = document.getElementById('urlText');
+            textarea.select();
+            document.execCommand('copy');
+            
+            document.getElementById('copyStatus').textContent = 'Copied!';
+            setTimeout(() => {
+              document.getElementById('copyStatus').textContent = '';
+            }, 2000);
+          }
+          
+          // Auto-select text when dialog opens
+          window.onload = function() {
+            document.getElementById('urlText').select();
+          };
+        </script>
+      </div>
+    `)
+    .setWidth(560)
+    .setHeight(380);
+    
+    SpreadsheetApp.getUi().showModalDialog(html, 'View-Only Sheet URL - Click to Copy');
+    
+    // Also log it
+    Logger.log("View-Only Sheet URL: " + viewOnlyUrl);
+    
+  } catch (error) {
+    Logger.log("Error in getViewOnlySheetUrl: " + error.message);
+    SpreadsheetApp.getUi().alert("Error: " + error.message);
+  }
 }
 
 
