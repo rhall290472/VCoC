@@ -12,10 +12,10 @@
       "port": 9003
     },
     {
-      "name": "forms",
+      "name": "relays",
       "request": "launch",
       "type": "chrome",
-      "url": "https://localhost/Forms/submit_relay.php",
+      "url": "https://localhost/VCoC/relays/submit_relay.php",
       "webRoot": "${workspaceFolder}"
     }
   ]
