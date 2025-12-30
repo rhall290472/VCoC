@@ -3,6 +3,7 @@
  * Version: 02Aug25 - Optimized
  * Version: 08Aug25 - Circlle seeding fix
  * Version: 13Aug25 - Add function updateAllEventSummaryTables
+ * Version: 30Dec25 - Released
  */
 
 /**
@@ -25,6 +26,11 @@
  * @property {number} table.numColumns - Number of columns in tables
  * @property {number} table.minSwimmersPerHeat - Minimum swimmers per heat
  */
+
+const SCRIPT_VERSION = "30Dec25";  // Update this whenever you make changes
+const VERSION_DESCRIPTION = "Released";  // Optional: short note
+
+
 const CONFIG = {
   sourceSheetName: 'Sheet1',
   colors: { 
@@ -123,6 +129,11 @@ function onOpen(e) {
       .addItem('Top 8', 'Top8')
       .addItem('Top 16', 'Top16')
       .addItem('Unscratch swimmer', 'UnscratchSwimmer')
+            .addSeparator()
+      .addSubMenu(
+        ui.createMenu('About')
+          .addItem('Show Version', 'showVersion')
+      )
       .addToUi();
   } catch (error) {
     handleError(error.message, 'onOpen');
@@ -613,4 +624,14 @@ function UnscratchSwimmer() {
   } catch (error) {
     handleError(error.message, 'UnscratchSwimmer');
   }
+}
+
+/**
+ * Displays the current script version in a dialog
+ */
+function showVersion() {
+  var ui = SpreadsheetApp.getUi();
+  var message = `Virtual Clerk of Course (VCoC)\n\nVersion: ${SCRIPT_VERSION}\n${VERSION_DESCRIPTION}\n\n`;
+
+  ui.alert('VCoC Version', message, ui.ButtonSet.OK);
 }
