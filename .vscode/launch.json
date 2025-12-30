@@ -4,33 +4,19 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
-    {
-      "name": "Launch Chrome",
-      "request": "launch",
-      "type": "chrome",
-      "url": "http://localhost/VCoC/aces/summerinvite/index.html",
-      "webRoot": "${workspaceFolder}"
-    },
-    {
-      "name": "EMail Gen",
-      "request": "launch",
-      "type": "chrome",
-      "url": "http://localhost/VCoC/index.html",
-      "webRoot": "${workspaceFolder}"
-    },
-    {
-      "name": "Edit Official",
-      "request": "launch",
-      "type": "chrome",
-      "url": "http://localhost/VCoC/edit.php",
-      "webRoot": "${workspaceFolder}"
-    },
+
     {
       "name": "Listen for Xdebug",
       "type": "php",
       "request": "launch",
       "port": 9003
+    },
+    {
+      "name": "forms",
+      "request": "launch",
+      "type": "chrome",
+      "url": "https://localhost/Forms/submit_relay.php",
+      "webRoot": "${workspaceFolder}"
     }
-   }
   ]
 }
