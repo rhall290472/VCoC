@@ -1,4 +1,6 @@
 /**
+ *  *  * ** Triggers are required/needed for this script to work.
+ * Trigger is need to break out mutiple scratches to indivdaul rows.
  * 
  * Virtual Clerk of  Course App Scripts (sheets.js)
  * 

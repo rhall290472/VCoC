@@ -1,4 +1,8 @@
 /**
+ *  * ** Triggers are required/needed for this script to work.
+ * Trigger is need to send emails on form submit.
+ * 
+ * 
  * Google Apps Script for dynamically populating Google Form dropdowns from a Google Spreadsheet
  * and sending confirmation emails to respondents upon form submission.
  *

@@ -4,6 +4,11 @@
  * Version: 08Aug25 - Circlle seeding fix
  * Version: 13Aug25 - Add function updateAllEventSummaryTables
  * Version: 30Dec25 - Released
+ * 
+ * 
+ * 
+ * 
+ * ** NO Triggers are required/needed for this script.
  */
 
 /**
