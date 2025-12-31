@@ -15,11 +15,12 @@
  * Version: 06Aug25 - Added sidebar menu option
  * Version: 15Dec25 - Trying to fix the persistent working message when running scripts
  * Version: 16Dec25 - Add import sheet, get URL for sheet
+ * Version: 31Dec25 - Updated sidebar
  * 
  * 
  */
-const SCRIPT_VERSION = "16Dec25";  // Update this whenever you make changes
-const VERSION_DESCRIPTION = "Add import sheet, get URL for sheet";  // Optional: short note
+const SCRIPT_VERSION = "31Dec25";  // Update this whenever you make changes
+const VERSION_DESCRIPTION = "Update sidebar";  // Optional: short note
 
 
 const COLOR_TIE = "#FF66FF"; // Color for ties
@@ -96,7 +97,8 @@ function showVersion() {
 }
 function showSidebar() {
   var html = HtmlService.createHtmlOutput(`
-    <button onclick="google.script.run.expandAllRows()">Expand All Rows and Delete Row 1</button><br><br>
+    <button onclick="google.script.run.importSheetByName()">Import Sheet by Name...</button><br><br>
+    <button onclick="google.script.run.getViewOnlySheetUrl()">Publish sheet...</button><br><br>
     <button onclick="google.script.run.scrSwimmer()">Scratch Current Swimmer</button><br><br>
     <button onclick="google.script.run.IntentscrSwimmer()">Intent to Scratch</button><br><br>
     <button onclick="google.script.run.UnscratchSwimmer()">Unscratch Swimmer</button><br><br>
