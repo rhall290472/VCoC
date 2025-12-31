@@ -1,6 +1,10 @@
 /**
  *  *  * ** Triggers are required/needed for this script to work.
- * Trigger is need to break out mutiple scratches to indivdaul rows.
+ * Trigger is need to break out mutiple scratches to indivdaul rows. OnFormSubmit
+ * 3 html files need to be included in the sheet
+ *  1. EventNumberDialog.html
+ *  2. ImportDialog.html
+ *  3. TimePrompt.html
  * 
  * Virtual Clerk of  Course App Scripts (sheets.js)
  * 
