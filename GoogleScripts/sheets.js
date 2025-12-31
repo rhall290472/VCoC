@@ -149,9 +149,9 @@ function expandAllRows() {
       const values = range.getValues();
       let rowsToDelete = [];
 
-      // Identify empty rows (all cells in row are empty)
+      // Identify empty rows (all cells are empty or whitespace-only)
       for (let i = values.length - 1; i >= 0; i--) {
-        const isRowEmpty = values[i].every(cell => cell === "");
+        const isRowEmpty = values[i].every(cell => (cell || '').toString().trim() === '');
         if (isRowEmpty) {
           rowsToDelete.push(i + 1); // Row numbers are 1-based
         }
@@ -164,7 +164,6 @@ function expandAllRows() {
 
       Logger.log(`Deleted ${rowsToDelete.length} empty rows`);
     }
-
     // Set row heights for remaining rows
     const remainingRows = sheet.getLastRow();
     if (remainingRows > 0) {
@@ -1036,7 +1035,6 @@ function renameSheetToEvent(sheetName, eventNum) {
   Logger.log('renameSheetToEvent has been called: ' + sheetName);
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    //const sheetName = '<?!= sheetName ?>';
     const sheet = ss.getSheetByName(sheetName);
     if (!sheet) {
       throw new Error('Imported sheet "' + sheetName + '" not found.');
@@ -1044,13 +1042,14 @@ function renameSheetToEvent(sheetName, eventNum) {
     const newName = 'Event ' + eventNum;
     sheet.setName(newName);
     ss.setActiveSheet(sheet);
+
+    expandAllRows();  // Clean up the newly renamed sheet
+
+    return SUCESS;  // Consistent with other functions in your script
   } catch (error) {
     Logger.log('Rename error: ' + error);
     throw error;  // Will trigger failure handler in client
   }
-
-  expandAllRows();
-  return success;
 }
 
 /**
@@ -1060,18 +1059,18 @@ function getViewOnlySheetUrl() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getActiveSheet();
-    
+
     if (!sheet) {
       throw new Error("No active sheet found.");
     }
-    
+
     const sheetName = sheet.getName();
     const sheetId = sheet.getSheetId();
     const editUrl = ss.getUrl();
-    
+
     // View-only URL with direct tab link
     const viewOnlyUrl = editUrl.replace(/\/edit.*$/, '/preview') + `#gid=${sheetId}`;
-    
+
     // Create HTML dialog with copy button
     const html = HtmlService.createHtmlOutput(`
       <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 500px;">
@@ -1106,14 +1105,14 @@ ${viewOnlyUrl}
         </script>
       </div>
     `)
-    .setWidth(560)
-    .setHeight(380);
-    
+      .setWidth(560)
+      .setHeight(380);
+
     SpreadsheetApp.getUi().showModalDialog(html, 'View-Only Sheet URL - Click to Copy');
-    
+
     // Also log it
     Logger.log("View-Only Sheet URL: " + viewOnlyUrl);
-    
+
   } catch (error) {
     Logger.log("Error in getViewOnlySheetUrl: " + error.message);
     SpreadsheetApp.getUi().alert("Error: " + error.message);
