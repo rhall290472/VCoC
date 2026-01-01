@@ -1,12 +1,24 @@
 <?php
 // submit_relay.php - Expanded multi-day version
-// Handles: Display form, new submissions, editing existing entries, detailed confirmation email for multiple days
+// Handles: Display form, new submissions, editing existing entries, detailed confirmation email, and Google Sheets export
+
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+// At the top, replace any old Google use statements with these:
+use Google\Client;
+use Google\Service\Sheets;
+use Google\Service\Sheets\ValueRange;
+
 require 'vendor/autoload.php';
 require 'config/config.php';  // Contains DB and SMTP constants
+
+// ---------- Google Sheets Configuration ----------
+define('GOOGLE_SHEETS_SPREADSHEET_ID', '1MD_npqt5_0Uvq02-WNVQy6ZQ3d2YoVHMKMg_CfnPxPE');
+define('GOOGLE_SHEETS_CREDENTIALS_PATH', __DIR__ . '/config/relay-credentials.json'); // Absolute path for reliability
+define('GOOGLE_SHEETS_RANGE', 'Sheet1!A:M');
 
 // Database connection
 try {
@@ -53,7 +65,7 @@ $event_configs = [
 $edit_token = $_GET['edit'] ?? '';
 $is_edit_mode = false;
 $first_name = $last_name = $email = $team = '';
-$day = strtolower($_GET['day'] ?? '');  // Default empty for new; will validate later
+$day = strtolower($_GET['day'] ?? '');
 
 // Initialize empty structure for new forms
 $entries_index = [];
@@ -69,7 +81,7 @@ if ($edit_token) {
     $last_name  = htmlspecialchars($submission['last_name']);
     $email      = htmlspecialchars($submission['email']);
     $team       = htmlspecialchars($submission['team']);
-    $day        = strtolower($submission['day']);  // Fetch day from DB
+    $day        = strtolower($submission['day']);
     $is_edit_mode = true;
 
     if (!isset($event_configs[$day])) {
@@ -91,7 +103,6 @@ if ($edit_token) {
     }
 
     foreach ($entries as $row) {
-      // Map event_id back to gender_key (assuming unique IDs per day)
       foreach ($event_configs[$day]['events'] as $gender_key => $event) {
         if ($row['event_id'] == $event['id']) {
           $line = strtolower($row['line']);
@@ -112,11 +123,9 @@ if ($edit_token) {
     exit;
   }
 } else {
-  // For new submissions, require day parameter
   if (!isset($event_configs[$day])) {
     die("Invalid or missing day parameter.");
   }
-  // Initialize entries_index for new form
   foreach ($event_configs[$day]['events'] as $gender_key => $event) {
     $entries_index[$gender_key] = [];
     foreach ($event_configs[$day]['lines'] as $line_key => $line_label) {
@@ -125,7 +134,6 @@ if ($edit_token) {
   }
 }
 
-// Get config for the current day
 $config = $event_configs[$day];
 
 // Process form submission
@@ -142,7 +150,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     die("Required fields are missing or invalid day.");
   }
 
-  // Use posted day for new, or DB day for edit
   $day = $is_edit_mode ? $day : $post_day;
   $config = $event_configs[$day];
 
@@ -151,7 +158,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $edit_token = $existing_token;
 
   if ($is_edit_mode && $existing_token === $edit_token && isset($submission)) {
-    // UPDATE existing submission
     $submission_id = $submission['id'];
 
     $stmt = $pdo->prepare("
@@ -161,11 +167,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ");
     $stmt->execute([$first_name, $last_name, $email, $team, $submission_id, $edit_token]);
 
-    // Delete old entries
     $stmt = $pdo->prepare("DELETE FROM relay_entries WHERE submission_id = ?");
     $stmt->execute([$submission_id]);
   } else {
-    // INSERT new submission
     $edit_token = bin2hex(random_bytes(32));
 
     $stmt = $pdo->prepare("
@@ -177,13 +181,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $submission_id = $pdo->lastInsertId();
   }
 
-  // Helper functions (must be defined inside POST for scope)
-  function chk($name)
-  {
+  // Helper functions
+  function chk($name) {
     return isset($_POST[$name]) && $_POST[$name] === 'on' ? 'Yes' : 'No';
   }
-  function swimmer($name)
-  {
+  function swimmer($name) {
     return trim($_POST[$name] ?? '');
   }
 
@@ -206,20 +208,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
       $stmt->execute([
-        $submission_id,
-        $event_id,
-        $line_label,
+        $submission_id, $event_id, $line_label,
         ($scratch === 'Yes' ? 1 : 0),
         ($prelim === 'Yes' ? 1 : 0),
-        $s1,
-        $s2,
-        $s3,
-        $s4
+        $s1, $s2, $s3, $s4
       ]);
     }
   }
 
-  // Rebuild relay_data from POST for email tables
+  // Rebuild relay_data from POST for email and Google Sheets
   $relay_data = [];
   foreach ($config['events'] as $gender_key => $event) {
     $event_name = $event['name'];
@@ -248,7 +245,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   // Edit URL
-  $edit_url = EDIT_URL . $edit_token;  // e.g., 'submit_relay.php?edit='
+  $edit_url = EDIT_URL . $edit_token;
 
   // Build detailed email body
   $day_cap = ucfirst($day);
@@ -300,7 +297,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </html>
     ";
 
-  // Send email
+// ==================== GOOGLE SHEETS EXPORT ====================
+try {
+    $client = new Client();
+    $client->setApplicationName('Relay Entries');
+    $client->setScopes([Sheets::SPREADSHEETS]);
+    $client->setAuthConfig(GOOGLE_SHEETS_CREDENTIALS_PATH);
+
+    $service = new Sheets($client);
+
+    $rowsToAppend = [];
+    $submitted_at = date('Y-m-d H:i:s');
+    $submitter_name = $first_name . ' ' . $last_name;
+
+    foreach ($relay_data as $event_name => $lines) {
+        foreach ($lines as $relay_line => $data) {
+            $row = [
+                ucfirst($day),
+                $submitted_at,
+                $submitter_name,
+                $email,
+                $team,
+                $event_name,
+                $relay_line,
+                $data['Scratch'],
+                $data['Swim Prelim'],
+                $data['Swimmer 1'] !== '&nbsp;' ? $data['Swimmer 1'] : '',
+                $data['Swimmer 2'] !== '&nbsp;' ? $data['Swimmer 2'] : '',
+                $data['Swimmer 3'] !== '&nbsp;' ? $data['Swimmer 3'] : '',
+                $data['Swimmer 4'] !== '&nbsp;' ? $data['Swimmer 4'] : '',
+            ];
+            $rowsToAppend[] = $row;
+        }
+    }
+
+    if (!empty($rowsToAppend)) {
+        $body = new ValueRange([
+            'values' => $rowsToAppend
+        ]);
+
+        $params = [
+            'valueInputOption' => 'RAW'
+        ];
+
+        // Modern correct call – works perfectly with v2.18.0
+        $service->spreadsheets_values->append(
+            GOOGLE_SHEETS_SPREADSHEET_ID,
+            GOOGLE_SHEETS_RANGE,
+            $body,
+            $params
+        );
+    }
+} catch (Exception $e) {
+    error_log('Google Sheets append failed: ' . $e->getMessage());
+}
+// ============================================================
+
+
+  // Send confirmation email
   $mail = new PHPMailer(true);
 
   try {
@@ -322,8 +376,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $mail->send();
 
-    //header("Location: https://forms.deckmaster.us/thankyou.php");  // or full URL: https://yourdomain.com/thankyou.php
-    // After $mail->send();
     echo '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -339,6 +391,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h1>Thank You!</h1>
     <p>Your relay entry has been submitted successfully.</p>
     <p>A confirmation email with your edit link has been sent.</p>
+</body>
 </html>';
     exit();
   } catch (Exception $e) {
@@ -349,11 +402,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 }
 
-// Display the form (for new or edit)
+// ==================== DISPLAY FORM ====================
+// (The rest of your HTML form remains exactly as before)
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -362,9 +415,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
   <link rel="stylesheet" href="css/relay-form.css">
 </head>
-
 <body>
-
   <h1><?= ucfirst($day) ?> Relay <?= $is_edit_mode ? ' - Edit Your Entry' : '' ?></h1>
 
   <?php if ($is_edit_mode): ?>
@@ -399,93 +450,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </select>
     <script>
       new TomSelect('select[name="team"]', {
-        maxOptions: null, // Show all
+        maxOptions: null,
         searchField: ['text']
       });
     </script>
 
-
     <?php
-    function val($gender, $line, $field, $entries_index)
-    {
+    function val($gender, $line, $field, $entries_index) {
       return $entries_index[$gender][$line][$field] ?? '';
     }
-    function checked($gender, $line, $field, $entries_index)
-    {
+    function checked($gender, $line, $field, $entries_index) {
       return ($entries_index[$gender][$line][$field] ?? 0) == 1 ? 'checked' : '';
     }
     ?>
 
     <?php foreach ($config['events'] as $gender_key => $event): ?>
-      <h2 class="event-title"><?= $event['name'] ?></label>
-        <table class="relay-table">
-          <thead>
+      <h2 class="event-title"><?= $event['name'] ?></h2>
+      <table class="relay-table">
+        <thead>
+          <tr>
+            <th>Relay</th>
+            <th>Scratch</th>
+            <th>Swim Prelim</th>
+            <th>Swimmer 1</th>
+            <th>Swimmer 2</th>
+            <th>Swimmer 3</th>
+            <th>Swimmer 4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($config['lines'] as $key => $label): ?>
             <tr>
-              <th>Relay</th>
-              <th>Scratch</th>
-              <th>Swim Prelim</th>
-              <th>Swimmer 1</th>
-              <th>Swimmer 2</th>
-              <th>Swimmer 3</th>
-              <th>Swimmer 4</th>
+              <td data-label="Relay"><strong><?= $label ?></strong></td>
+              <td data-label="Scratch">
+                <input type="checkbox" name="<?= $gender_key ?>_<?= $key ?>_scratch" <?= checked($gender_key, $key, 'scratch', $entries_index) ?>>
+              </td>
+              <td data-label="Swim Prelim">
+                <?php
+                $force_prelim = in_array($day, ['thursday', 'friday']) && ($label === 'C') ||
+                                in_array($day, ['saturday', 'sunday']) && in_array($label, ['E', 'F']);
+
+                $is_checked = $force_prelim || (!empty($entries_index[$gender_key][$key]['prelim']));
+                $disabled = $force_prelim ? 'disabled' : '';
+                ?>
+                <input type="checkbox" name="<?= $gender_key ?>_<?= $key ?>_prelim" <?= $is_checked ? 'checked' : '' ?> <?= $disabled ?>>
+                <?php if ($force_prelim): ?>
+                  <input type="hidden" name="<?= $gender_key ?>_<?= $key ?>_prelim" value="on">
+                  <br><small style="color: #555; font-style: italic;">(Required)</small>
+                <?php endif; ?>
+              </td>
+              <td data-label="Swimmer 1"><input type="text" name="<?= $gender_key ?>_<?= $key ?>_1" value="<?= val($gender_key, $key, 's1', $entries_index) ?>"></td>
+              <td data-label="Swimmer 2"><input type="text" name="<?= $gender_key ?>_<?= $key ?>_2" value="<?= val($gender_key, $key, 's2', $entries_index) ?>"></td>
+              <td data-label="Swimmer 3"><input type="text" name="<?= $gender_key ?>_<?= $key ?>_3" value="<?= val($gender_key, $key, 's3', $entries_index) ?>"></td>
+              <td data-label="Swimmer 4"><input type="text" name="<?= $gender_key ?>_<?= $key ?>_4" value="<?= val($gender_key, $key, 's4', $entries_index) ?>"></td>
             </tr>
-          </thead>
-          <tbody>
-            <?php foreach ($config['lines'] as $key => $label): ?>
-              <tr>
-                <td data-label="Relay"><strong><?= $label ?></strong></td>
-                <td data-label="Scratch">
-                  <input type="checkbox" name="<?= $gender_key ?>_<?= $key ?>_scratch" <?= checked($gender_key, $key, 'scratch', $entries_index) ?>>
-                </td>
-                <td data-label="Swim Prelim">
-                  <?php
-                  // Only apply forced prelim rule on Thursday and Friday, and only for C relay
-                  $force_prelim = in_array($day, ['thursday', 'friday']) && ($label === 'C') || 
-                  in_array($day, ['saturday', 'sunday']) && ( ($label === 'E') || ($label === 'F') ); 
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endforeach; ?>
 
-                  // Determine if checkbox should be checked
-                  $is_checked = $force_prelim || (!empty($entries_index[$gender_key][$key]['prelim']));
-
-                  // Disable the checkbox if we're forcing it
-                  $disabled = $force_prelim ? 'disabled' : '';
-                  ?>
-
-                  <input
-                    type="checkbox"
-                    name="<?= $gender_key ?>_<?= $key ?>_prelim"
-                    <?= $is_checked ? 'checked' : '' ?>
-                    <?= $disabled ?>>
-
-                  <?php if ($force_prelim): ?>
-                    <!-- Ensure value is sent even when disabled -->
-                    <input type="hidden" name="<?= $gender_key ?>_<?= $key ?>_prelim" value="on">
-                    <br><small style="color: #555; font-style: italic;">(Required)</small>
-                  <?php endif; ?>
-                </td>
-
-                <td data-label="Swimmer 1">
-                  <input type="text" name="<?= $gender_key ?>_<?= $key ?>_1" value="<?= val($gender_key, $key, 's1', $entries_index) ?>">
-                </td>
-                <td data-label="Swimmer 2">
-                  <input type="text" name="<?= $gender_key ?>_<?= $key ?>_2" value="<?= val($gender_key, $key, 's2', $entries_index) ?>">
-                </td>
-                <td data-label="Swimmer 3">
-                  <input type="text" name="<?= $gender_key ?>_<?= $key ?>_3" value="<?= val($gender_key, $key, 's3', $entries_index) ?>">
-                </td>
-                <td data-label="Swimmer 4">
-                  <input type="text" name="<?= $gender_key ?>_<?= $key ?>_4" value="<?= val($gender_key, $key, 's4', $entries_index) ?>">
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
-      <?php endforeach; ?>
-
-      <div class="submit-btn">
-        <input type="submit" value="<?= $is_edit_mode ? 'Update Entry' : 'Submit Entry' ?>">
-      </div>
+    <div class="submit-btn">
+      <input type="submit" value="<?= $is_edit_mode ? 'Update Entry' : 'Submit Entry' ?>">
+    </div>
   </form>
-
 </body>
-
 </html>

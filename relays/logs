@@ -55,3 +55,187 @@ Stack trace:
 Stack trace:
 #0 {main}
   thrown in C:\xampp\htdocs\forms\submit_relay.php on line 241
+[01-Jan-2026 20:23:20 UTC] PHP Fatal error:  Uncaught InvalidArgumentException: file does not exist in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Client.php:839
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\submit_relay.php(299): Google_Client->setAuthConfig('config/relay-cr...')
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Client.php on line 839
+[01-Jan-2026 20:24:55 UTC] PHP Deprecated:  Creation of dynamic property Google\Service\Sheets::$serviceName is deprecated in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets.php on line 74
+[01-Jan-2026 20:24:55 UTC] PHP Fatal error:  Uncaught TypeError: implode(): Argument #2 ($array) must be of type ?array, string given in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php:291
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(291): implode(Array, '&')
+#1 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(189): Google_Service_Resource->createRequestUri('v4/spreadsheets...', Array)
+#2 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google_Service_Resource->call('append', Array, 'Google\\Service\\...')
+#3 C:\xampp\htdocs\VCoC\relays\submit_relay.php(331): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1MD_npqt5_0Uvq0...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#4 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php on line 291
+[01-Jan-2026 20:28:11 UTC] PHP Deprecated:  Creation of dynamic property Google\Service\Sheets::$serviceName is deprecated in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets.php on line 74
+[01-Jan-2026 20:28:11 UTC] PHP Fatal error:  Uncaught TypeError: implode(): Argument #2 ($array) must be of type ?array, string given in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php:291
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(291): implode(Array, '&')
+#1 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(189): Google_Service_Resource->createRequestUri('v4/spreadsheets...', Array)
+#2 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google_Service_Resource->call('append', Array, 'Google\\Service\\...')
+#3 C:\xampp\htdocs\VCoC\relays\submit_relay.php(342): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1MD_npqt5_0Uvq0...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#4 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php on line 291
+[01-Jan-2026 20:30:19 UTC] PHP Deprecated:  Creation of dynamic property Google\Service\Sheets::$serviceName is deprecated in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets.php on line 74
+[01-Jan-2026 20:30:19 UTC] PHP Fatal error:  Uncaught TypeError: implode(): Argument #2 ($array) must be of type ?array, string given in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php:291
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(291): implode(Array, '&')
+#1 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(189): Google_Service_Resource->createRequestUri('v4/spreadsheets...', Array)
+#2 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google_Service_Resource->call('append', Array, 'Google\\Service\\...')
+#3 C:\xampp\htdocs\VCoC\relays\submit_relay.php(347): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1MD_npqt5_0Uvq0...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#4 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php on line 291
+[01-Jan-2026 20:31:51 UTC] PHP Deprecated:  Creation of dynamic property Google\Service\Sheets::$serviceName is deprecated in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets.php on line 74
+[01-Jan-2026 20:31:51 UTC] PHP Fatal error:  Uncaught TypeError: implode(): Argument #2 ($array) must be of type ?array, string given in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php:291
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(291): implode(Array, '&')
+#1 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(189): Google_Service_Resource->createRequestUri('v4/spreadsheets...', Array)
+#2 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google_Service_Resource->call('append', Array, 'Google\\Service\\...')
+#3 C:\xampp\htdocs\VCoC\relays\submit_relay.php(345): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1MD_npqt5_0Uvq0...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#4 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php on line 291
+[01-Jan-2026 20:32:21 UTC] PHP Deprecated:  Creation of dynamic property Google\Service\Sheets::$serviceName is deprecated in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets.php on line 74
+[01-Jan-2026 20:32:21 UTC] PHP Fatal error:  Uncaught TypeError: implode(): Argument #2 ($array) must be of type ?array, string given in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php:291
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(291): implode(Array, '&')
+#1 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(189): Google_Service_Resource->createRequestUri('v4/spreadsheets...', Array)
+#2 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google_Service_Resource->call('append', Array, 'Google\\Service\\...')
+#3 C:\xampp\htdocs\VCoC\relays\submit_relay.php(345): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1MD_npqt5_0Uvq0...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#4 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php on line 291
+[01-Jan-2026 20:34:11 UTC] PHP Deprecated:  Creation of dynamic property Google\Service\Sheets::$serviceName is deprecated in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets.php on line 74
+[01-Jan-2026 20:34:11 UTC] PHP Fatal error:  Uncaught TypeError: implode(): Argument #2 ($array) must be of type ?array, string given in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php:291
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(291): implode(Array, '&')
+#1 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(189): Google_Service_Resource->createRequestUri('v4/spreadsheets...', Array)
+#2 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google_Service_Resource->call('append', Array, 'Google\\Service\\...')
+#3 C:\xampp\htdocs\VCoC\relays\submit_relay.php(343): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1MD_npqt5_0Uvq0...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#4 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php on line 291
+[01-Jan-2026 20:38:55 UTC] PHP Deprecated:  Creation of dynamic property Google\Service\Sheets::$serviceName is deprecated in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets.php on line 74
+[01-Jan-2026 20:38:55 UTC] PHP Fatal error:  Uncaught TypeError: implode(): Argument #2 ($array) must be of type ?array, string given in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php:291
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(291): implode(Array, '&')
+#1 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(189): Google_Service_Resource->createRequestUri('v4/spreadsheets...', Array)
+#2 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google_Service_Resource->call('append', Array, 'Google\\Service\\...')
+#3 C:\xampp\htdocs\VCoC\relays\submit_relay.php(339): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1MD_npqt5_0Uvq0...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#4 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php on line 291
+[01-Jan-2026 20:44:02 UTC] PHP Deprecated:  Creation of dynamic property Google\Service\Sheets::$serviceName is deprecated in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets.php on line 74
+[01-Jan-2026 20:44:02 UTC] PHP Fatal error:  Uncaught TypeError: implode(): Argument #2 ($array) must be of type ?array, string given in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php:291
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(291): implode(Array, '&')
+#1 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(189): Google_Service_Resource->createRequestUri('v4/spreadsheets...', Array)
+#2 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google_Service_Resource->call('append', Array, 'Google\\Service\\...')
+#3 C:\xampp\htdocs\VCoC\relays\submit_relay.php(344): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1MD_npqt5_0Uvq0...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#4 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php on line 291
+[01-Jan-2026 20:44:18 UTC] PHP Deprecated:  Creation of dynamic property Google\Service\Sheets::$serviceName is deprecated in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets.php on line 74
+[01-Jan-2026 20:44:18 UTC] PHP Fatal error:  Uncaught TypeError: implode(): Argument #2 ($array) must be of type ?array, string given in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php:291
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(291): implode(Array, '&')
+#1 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(189): Google_Service_Resource->createRequestUri('v4/spreadsheets...', Array)
+#2 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google_Service_Resource->call('append', Array, 'Google\\Service\\...')
+#3 C:\xampp\htdocs\VCoC\relays\submit_relay.php(344): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1MD_npqt5_0Uvq0...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#4 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php on line 291
+[01-Jan-2026 20:47:57 UTC] PHP Deprecated:  Creation of dynamic property Google\Service\Sheets::$serviceName is deprecated in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets.php on line 74
+[01-Jan-2026 20:47:57 UTC] PHP Fatal error:  Uncaught TypeError: implode(): Argument #2 ($array) must be of type ?array, string given in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php:291
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(291): implode(Array, '&')
+#1 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php(189): Google_Service_Resource->createRequestUri('v4/spreadsheets...', Array)
+#2 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google_Service_Resource->call('append', Array, 'Google\\Service\\...')
+#3 C:\xampp\htdocs\VCoC\relays\submit_relay.php(344): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1MD_npqt5_0Uvq0...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#4 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Google\Service\Resource.php on line 291
+[01-Jan-2026 20:55:42 UTC] PHP Fatal error:  Uncaught GuzzleHttp\Exception\RequestException: cURL error 60: SSL certificate problem: unable to get local issuer certificate (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://oauth2.googleapis.com/token in C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\CurlFactory.php:278
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\CurlFactory.php(207): GuzzleHttp\Handler\CurlFactory::createRejection(Object(GuzzleHttp\Handler\EasyHandle), Array)
+#1 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\CurlFactory.php(159): GuzzleHttp\Handler\CurlFactory::finishError(Object(GuzzleHttp\Handler\CurlHandler), Object(GuzzleHttp\Handler\EasyHandle), Object(GuzzleHttp\Handler\CurlFactory))
+#2 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\CurlHandler.php(47): GuzzleHttp\Handler\CurlFactory::finish(Object(GuzzleHttp\Handler\CurlHandler), Object(GuzzleHttp\Handler\EasyHandle), Object(GuzzleHttp\Handler\CurlFactory))
+#3 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\Proxy.php(28): GuzzleHttp\Handler\CurlHandler->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#4 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\Proxy.php(48): GuzzleHttp\Handler\Proxy::{closure:GuzzleHttp\Handler\Proxy::wrapSync():27}(Object(GuzzleHttp\Psr7\Request), Array)
+#5 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\Middleware\AuthTokenMiddleware.php(105): GuzzleHttp\Handler\Proxy::{closure:GuzzleHttp\Handler\Proxy::wrapStreaming():47}(Object(GuzzleHttp\Psr7\Request), Array)
+#6 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\PrepareBodyMiddleware.php(64): Google\Auth\Middleware\AuthTokenMiddleware->{closure:Google\Auth\Middleware\AuthTokenMiddleware::__invoke():102}(Object(GuzzleHttp\Psr7\Request), Array)
+#7 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Middleware.php(31): GuzzleHttp\PrepareBodyMiddleware->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#8 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\RedirectMiddleware.php(71): GuzzleHttp\Middleware::{closure:{closure:GuzzleHttp\Middleware::cookies():28}:29}(Object(GuzzleHttp\Psr7\Request), Array)
+#9 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Middleware.php(66): GuzzleHttp\RedirectMiddleware->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#10 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\HandlerStack.php(75): GuzzleHttp\Middleware::{closure:{closure:GuzzleHttp\Middleware::httpErrors():60}:61}(Object(GuzzleHttp\Psr7\Request), Array)
+#11 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Client.php(333): GuzzleHttp\HandlerStack->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#12 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Client.php(106): GuzzleHttp\Client->transfer(Object(GuzzleHttp\Psr7\Request), Array)
+#13 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Client.php(124): GuzzleHttp\Client->sendAsync(Object(GuzzleHttp\Psr7\Request), Array)
+#14 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\HttpHandler\Guzzle6HttpHandler.php(65): GuzzleHttp\Client->send(Object(GuzzleHttp\Psr7\Request), Array)
+#15 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\OAuth2.php(678): Google\Auth\HttpHandler\Guzzle6HttpHandler->__invoke(Object(GuzzleHttp\Psr7\Request))
+#16 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\Credentials\ServiceAccountCredentials.php(253): Google\Auth\OAuth2->fetchAuthToken(Object(Google\Auth\HttpHandler\Guzzle7HttpHandler), Array)
+#17 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\UpdateMetadataTrait.php(66): Google\Auth\Credentials\ServiceAccountCredentials->fetchAuthToken(Object(Google\Auth\HttpHandler\Guzzle7HttpHandler))
+#18 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\Credentials\ServiceAccountCredentials.php(322): Google\Auth\CredentialsLoader->updateMetadata(Array, NULL, Object(Google\Auth\HttpHandler\Guzzle7HttpHandler))
+#19 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\FetchAuthTokenCache.php(263): Google\Auth\Credentials\ServiceAccountCredentials->updateMetadata(Array, NULL, Object(Google\Auth\HttpHandler\Guzzle7HttpHandler))
+#20 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\Middleware\AuthTokenMiddleware.php(139): Google\Auth\FetchAuthTokenCache->updateMetadata(Array, NULL, Object(Google\Auth\HttpHandler\Guzzle7HttpHandler))
+#21 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\Middleware\AuthTokenMiddleware.php(108): Google\Auth\Middleware\AuthTokenMiddleware->addAuthHeaders(Object(GuzzleHttp\Psr7\Request))
+#22 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\PrepareBodyMiddleware.php(64): Google\Auth\Middleware\AuthTokenMiddleware->{closure:Google\Auth\Middleware\AuthTokenMiddleware::__invoke():102}(Object(GuzzleHttp\Psr7\Request), Array)
+#23 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Middleware.php(31): GuzzleHttp\PrepareBodyMiddleware->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#24 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\RedirectMiddleware.php(71): GuzzleHttp\Middleware::{closure:{closure:GuzzleHttp\Middleware::cookies():28}:29}(Object(GuzzleHttp\Psr7\Request), Array)
+#25 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Middleware.php(63): GuzzleHttp\RedirectMiddleware->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#26 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\HandlerStack.php(75): GuzzleHttp\Middleware::{closure:{closure:GuzzleHttp\Middleware::httpErrors():60}:61}(Object(GuzzleHttp\Psr7\Request), Array)
+#27 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Client.php(333): GuzzleHttp\HandlerStack->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#28 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Client.php(106): GuzzleHttp\Client->transfer(Object(GuzzleHttp\Psr7\Request), Array)
+#29 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Client.php(124): GuzzleHttp\Client->sendAsync(Object(GuzzleHttp\Psr7\Request), Array)
+#30 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\HttpHandler\Guzzle6HttpHandler.php(65): GuzzleHttp\Client->send(Object(GuzzleHttp\Psr7\Request), Array)
+#31 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php(84): Google\Auth\HttpHandler\Guzzle6HttpHandler->__invoke(Object(GuzzleHttp\Psr7\Request))
+#32 [internal function]: Google\Http\REST::doExecute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#33 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Task\Runner.php(187): call_user_func_array(Array, Array)
+#34 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php(66): Google\Task\Runner->run()
+#35 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Client.php(967): Google\Http\REST::execute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...', Array, NULL)
+#36 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Service\Resource.php(248): Google\Client->execute(Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#37 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google\Service\Resource->call('append', Array, 'Google\\Service\\...')
+#38 C:\xampp\htdocs\VCoC\relays\submit_relay.php(344): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1MD_npqt5_0Uvq0...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#39 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\CurlFactory.php on line 278
+[01-Jan-2026 20:55:43 UTC] Xdebug: [Step Debug] Time-out connecting to debugging client, waited: 200 ms. Tried: localhost:9003 (through xdebug.client_host/xdebug.client_port).
+[01-Jan-2026 20:55:43 UTC] Xdebug: [Step Debug] Time-out connecting to debugging client, waited: 200 ms. Tried: localhost:9003 (through xdebug.client_host/xdebug.client_port).
+[01-Jan-2026 20:55:44 UTC] Xdebug: [Step Debug] Time-out connecting to debugging client, waited: 200 ms. Tried: localhost:9003 (through xdebug.client_host/xdebug.client_port).
+[01-Jan-2026 20:56:09 UTC] PHP Fatal error:  Uncaught GuzzleHttp\Exception\RequestException: cURL error 60: SSL certificate problem: unable to get local issuer certificate (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://oauth2.googleapis.com/token in C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\CurlFactory.php:278
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\CurlFactory.php(207): GuzzleHttp\Handler\CurlFactory::createRejection(Object(GuzzleHttp\Handler\EasyHandle), Array)
+#1 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\CurlFactory.php(159): GuzzleHttp\Handler\CurlFactory::finishError(Object(GuzzleHttp\Handler\CurlHandler), Object(GuzzleHttp\Handler\EasyHandle), Object(GuzzleHttp\Handler\CurlFactory))
+#2 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\CurlHandler.php(47): GuzzleHttp\Handler\CurlFactory::finish(Object(GuzzleHttp\Handler\CurlHandler), Object(GuzzleHttp\Handler\EasyHandle), Object(GuzzleHttp\Handler\CurlFactory))
+#3 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\Proxy.php(28): GuzzleHttp\Handler\CurlHandler->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#4 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\Proxy.php(48): GuzzleHttp\Handler\Proxy::{closure:GuzzleHttp\Handler\Proxy::wrapSync():27}(Object(GuzzleHttp\Psr7\Request), Array)
+#5 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\Middleware\AuthTokenMiddleware.php(105): GuzzleHttp\Handler\Proxy::{closure:GuzzleHttp\Handler\Proxy::wrapStreaming():47}(Object(GuzzleHttp\Psr7\Request), Array)
+#6 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\PrepareBodyMiddleware.php(64): Google\Auth\Middleware\AuthTokenMiddleware->{closure:Google\Auth\Middleware\AuthTokenMiddleware::__invoke():102}(Object(GuzzleHttp\Psr7\Request), Array)
+#7 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Middleware.php(31): GuzzleHttp\PrepareBodyMiddleware->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#8 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\RedirectMiddleware.php(71): GuzzleHttp\Middleware::{closure:{closure:GuzzleHttp\Middleware::cookies():28}:29}(Object(GuzzleHttp\Psr7\Request), Array)
+#9 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Middleware.php(66): GuzzleHttp\RedirectMiddleware->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#10 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\HandlerStack.php(75): GuzzleHttp\Middleware::{closure:{closure:GuzzleHttp\Middleware::httpErrors():60}:61}(Object(GuzzleHttp\Psr7\Request), Array)
+#11 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Client.php(333): GuzzleHttp\HandlerStack->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#12 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Client.php(106): GuzzleHttp\Client->transfer(Object(GuzzleHttp\Psr7\Request), Array)
+#13 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Client.php(124): GuzzleHttp\Client->sendAsync(Object(GuzzleHttp\Psr7\Request), Array)
+#14 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\HttpHandler\Guzzle6HttpHandler.php(65): GuzzleHttp\Client->send(Object(GuzzleHttp\Psr7\Request), Array)
+#15 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\OAuth2.php(678): Google\Auth\HttpHandler\Guzzle6HttpHandler->__invoke(Object(GuzzleHttp\Psr7\Request))
+#16 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\Credentials\ServiceAccountCredentials.php(253): Google\Auth\OAuth2->fetchAuthToken(Object(Google\Auth\HttpHandler\Guzzle7HttpHandler), Array)
+#17 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\UpdateMetadataTrait.php(66): Google\Auth\Credentials\ServiceAccountCredentials->fetchAuthToken(Object(Google\Auth\HttpHandler\Guzzle7HttpHandler))
+#18 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\Credentials\ServiceAccountCredentials.php(322): Google\Auth\CredentialsLoader->updateMetadata(Array, NULL, Object(Google\Auth\HttpHandler\Guzzle7HttpHandler))
+#19 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\FetchAuthTokenCache.php(263): Google\Auth\Credentials\ServiceAccountCredentials->updateMetadata(Array, NULL, Object(Google\Auth\HttpHandler\Guzzle7HttpHandler))
+#20 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\Middleware\AuthTokenMiddleware.php(139): Google\Auth\FetchAuthTokenCache->updateMetadata(Array, NULL, Object(Google\Auth\HttpHandler\Guzzle7HttpHandler))
+#21 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\Middleware\AuthTokenMiddleware.php(108): Google\Auth\Middleware\AuthTokenMiddleware->addAuthHeaders(Object(GuzzleHttp\Psr7\Request))
+#22 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\PrepareBodyMiddleware.php(64): Google\Auth\Middleware\AuthTokenMiddleware->{closure:Google\Auth\Middleware\AuthTokenMiddleware::__invoke():102}(Object(GuzzleHttp\Psr7\Request), Array)
+#23 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Middleware.php(31): GuzzleHttp\PrepareBodyMiddleware->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#24 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\RedirectMiddleware.php(71): GuzzleHttp\Middleware::{closure:{closure:GuzzleHttp\Middleware::cookies():28}:29}(Object(GuzzleHttp\Psr7\Request), Array)
+#25 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Middleware.php(63): GuzzleHttp\RedirectMiddleware->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#26 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\HandlerStack.php(75): GuzzleHttp\Middleware::{closure:{closure:GuzzleHttp\Middleware::httpErrors():60}:61}(Object(GuzzleHttp\Psr7\Request), Array)
+#27 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Client.php(333): GuzzleHttp\HandlerStack->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#28 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Client.php(106): GuzzleHttp\Client->transfer(Object(GuzzleHttp\Psr7\Request), Array)
+#29 C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Client.php(124): GuzzleHttp\Client->sendAsync(Object(GuzzleHttp\Psr7\Request), Array)
+#30 C:\xampp\htdocs\VCoC\relays\vendor\google\auth\src\HttpHandler\Guzzle6HttpHandler.php(65): GuzzleHttp\Client->send(Object(GuzzleHttp\Psr7\Request), Array)
+#31 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php(84): Google\Auth\HttpHandler\Guzzle6HttpHandler->__invoke(Object(GuzzleHttp\Psr7\Request))
+#32 [internal function]: Google\Http\REST::doExecute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#33 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Task\Runner.php(187): call_user_func_array(Array, Array)
+#34 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php(66): Google\Task\Runner->run()
+#35 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Client.php(967): Google\Http\REST::execute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...', Array, NULL)
+#36 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Service\Resource.php(248): Google\Client->execute(Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#37 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google\Service\Resource->call('append', Array, 'Google\\Service\\...')
+#38 C:\xampp\htdocs\VCoC\relays\submit_relay.php(344): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1MD_npqt5_0Uvq0...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#39 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\guzzlehttp\guzzle\src\Handler\CurlFactory.php on line 278
