@@ -1,0 +1,367 @@
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 15px;
+      font-size: 16px;
+      /* Better base readability on mobile */
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    p {
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    select {
+      width: 100%;
+      padding: 12px;
+      box-sizing: border-box;
+      font-size: 16px;
+      /* Prevents zoom on iOS when focusing */
+      margin-top: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .required::after {
+      content: " *";
+      color: red;
+    }
+
+    /* Mobile-first table styling */
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 15px;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: left;
+      vertical-align: middle;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f0f0f0;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+    }
+
+    /* Desktop: normal table layout */
+    @media (min-width: 768px) {
+      table {
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border: 1px solid #ccc;
+        text-align: center;
+      }
+
+      td:first-child {
+        text-align: center;
+        font-weight: bold;
+      }
+    }
+
+    /* Mobile: card-style layout for each relay line */
+    @media (max-width: 767px) {
+      thead {
+        display: none;
+      }
+
+      /* Best mobile checkbox styling */
+      table.relay-table input[type="checkbox"] {
+        width: 30px;
+        height: 30px;
+        transform: scale(1.6);
+        margin: 0 12px 0 0;
+        vertical-align: middle;
+        accent-color: #007bff;
+        /* Optional: makes checked box blue to match submit button */
+      }
+
+      /* Make the entire checkbox cell easier to tap */
+      table.relay-table td[data-label="Scratch"],
+      table.relay-table td[data-label="Swim Prelim"] {
+        padding: 18px 0;
+        touch-action: manipulation;
+        /* Improves responsiveness on touch devices */
+      }
+
+      /* Hide header on mobile */
+
+      tbody tr {
+        display: block;
+        margin-bottom: 20px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      tbody td {
+        display: block;
+        width: 100%;
+        text-align: left !important;
+        border: none;
+        padding: 8px 0;
+        position: relative;
+      }
+
+      tbody td:first-child {
+        font-size: 1.4em;
+        font-weight: bold;
+        text-align: center !important;
+        padding-bottom: 15px;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #eee;
+      }
+
+      tbody td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+      }
+
+      /* Checkboxes side-by-side on mobile */
+      td:nth-child(2),
+      td:nth-child(3) {
+        display: inline-block;
+        width: 48%;
+        margin-right: 4%;
+      }
+
+      td:nth-child(3) {
+        margin-right: 0;
+      }
+
+      /* Full width for swimmer inputs */
+      td:nth-child(n+4) {
+        display: block;
+        width: 100%;
+      }
+
+      input[type="checkbox"] {
+        width: auto;
+        height: 20px;
+        vertical-align: middle;
+      }
+    }
+
+    .submit-btn {
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    input[type="submit"] {
+      padding: 15px 30px;
+      font-size: 18px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #0056b3;
+    }
+
+    /* Event titles */
+    .event-title {
+      margin-top: 40px;
+      margin-bottom: 10px;
+      text-align: center;
+      background-color: #f0f0f0;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 1.3em;
+    }
+
+    /* Specific styling for relay tables */
+    table.relay-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 15px;
+    }
+
+    /* Desktop table styling */
+    @media (min-width: 768px) {
+      table.relay-table {
+        border-collapse: collapse;
+      }
+
+      table.relay-table th,
+      table.relay-table td {
+        border: 1px solid #ccc;
+        text-align: center;
+      }
+
+      table.relay-table td:first-child {
+        font-weight: bold;
+      }
+    }
+
+    /* Mobile card layout - only applies to relay tables */
+    @media (max-width: 767px) {
+      table.relay-table thead {
+        display: none;
+      }
+
+      /* Mobile: Bigger checkboxes, properly left-aligned */
+      table.relay-table input[type="checkbox"] {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        /* Prevents shrinking */
+        transform: scale(1.6);
+        /* Adjust size: 1.6 = large, 1.8 = very large */
+        transform-origin: left center;
+        /* KEY FIX: Scale from the left side, not center */
+        margin: 0 16px 0 0;
+        /* Space to the right of checkbox */
+        vertical-align: middle;
+        accent-color: #007bff;
+        /* Optional: nice blue when checked */
+        cursor: pointer;
+      }
+
+      /* Ensure the checkbox stays left-aligned in its cell */
+      table.relay-table td[data-label="Scratch"],
+      table.relay-table td[data-label="Swim Prelim"] {
+        text-align: left !important;
+        padding: 18px 0 18px 4px;
+        /* Small left padding for breathing room */
+      }
+
+      /* Keep the two checkbox fields side-by-side but properly spaced */
+      table.relay-table td:nth-child(2),
+      table.relay-table td:nth-child(3) {
+        display: inline-block;
+        width: 48%;
+        margin-right: 4%;
+        box-sizing: border-box;
+      }
+
+      table.relay-table td:nth-child(3) {
+        margin-right: 0;
+      }
+
+      table.relay-table tbody td {
+        display: block;
+        width: 100%;
+        text-align: left !important;
+        border: none;
+        padding: 10px 0;
+        position: relative;
+      }
+
+      table.relay-table tbody td:first-child {
+        font-size: 1.6em;
+        font-weight: bold;
+        text-align: center !important;
+        padding-bottom: 20px;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #eee;
+      }
+
+      table.relay-table tbody td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+      }
+
+      /* Checkboxes side-by-side on mobile */
+      table.relay-table td:nth-child(2),
+      table.relay-table td:nth-child(3) {
+        display: inline-block;
+        width: 48%;
+        margin-right: 4%;
+      }
+
+      table.relay-table td:nth-child(3) {
+        margin-right: 0;
+      }
+
+      /* Bigger checkboxes */
+      input[type="checkbox"] {
+        transform: scale(1.6);
+        margin-right: 12px;
+        vertical-align: middle;
+      }
+
+      @media (max-width: 767px) {
+
+        table.relay-table td:nth-child(2),
+        table.relay-table td:nth-child(3) {
+          text-align: left !important;
+          /* Overrides the desktop center */
+          padding-left: 12px;
+          /* Optional: small indent for visual breathing room */
+        }
+
+        /* Ensure the scaled checkbox doesn't add unwanted space */
+        table.relay-table input[type="checkbox"] {
+          margin-left: 0;
+          margin-right: 16px;
+          /* Keeps space after the checkbox */
+        }
+      }
+    }
+
+
+@media (max-width: 767px) {
+  /* Force side-by-side checkbox cells to left-align content */
+  table.relay-table td:nth-child(2),
+  table.relay-table td:nth-child(3) {
+    display: inline-block !important;
+    width: 48% !important;
+    margin-right: 4% !important;
+    text-align: left !important;
+    vertical-align: top;
+    padding: 18px 0 18px 12px !important; /* Left padding for visual space */
+    box-sizing: border-box;
+  }
+
+  table.relay-table td:nth-child(3) {
+    margin-right: 0 !important;
+  }
+
+  /* Ensure the checkbox itself starts from the left */
+  table.relay-table td:nth-child(2) input[type="checkbox"],
+  table.relay-table td:nth-child(3) input[type="checkbox"] {
+    margin: 0 16px 0 0 !important; /* No left margin, space only on right */
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* Extra safety override for any inherited centering */
+  table.relay-table td[data-label="Scratch"],
+  table.relay-table td[data-label="Swim Prelim"] {
+    text-align: left !important;
+  }
+}    

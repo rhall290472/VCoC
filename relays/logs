@@ -1,0 +1,57 @@
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 160
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 161
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 162
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 163
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 164
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 165
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 160
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 161
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 162
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 163
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 164
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 165
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 160
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 161
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 162
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 163
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 164
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 165
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 179
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 180
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 181
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 182
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 183
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 184
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 179
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 180
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 181
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 182
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 183
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 184
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 179
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 180
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 181
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 182
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 183
+[24-Dec-2025 21:44:53 UTC] PHP Warning:  Undefined variable $entries_index in C:\xampp\htdocs\forms\submit_relay.php on line 184
+[24-Dec-2025 21:47:01 UTC] PHP Warning:  Undefined variable $mail in C:\xampp\htdocs\forms\submit_relay.php on line 92
+[24-Dec-2025 21:47:01 UTC] PHP Fatal error:  Uncaught Error: Call to a member function send() on null in C:\xampp\htdocs\forms\submit_relay.php:92
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\forms\submit_relay.php on line 92
+[24-Dec-2025 21:53:28 UTC] PHP Fatal error:  Uncaught Error: Undefined constant "SMTP_USER" in C:\xampp\htdocs\forms\submit_relay.php:202
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\forms\submit_relay.php on line 202
+[24-Dec-2025 21:54:01 UTC] PHP Fatal error:  Uncaught Error: Undefined constant "SMTP_USER" in C:\xampp\htdocs\forms\submit_relay.php:207
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\forms\submit_relay.php on line 207
+[24-Dec-2025 21:54:07 UTC] PHP Fatal error:  Uncaught Error: Undefined constant "SMTP_USER" in C:\xampp\htdocs\forms\submit_relay.php:207
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\forms\submit_relay.php on line 207
+[24-Dec-2025 22:08:36 UTC] PHP Fatal error:  Uncaught Error: Undefined constant "SMTP_USER" in C:\xampp\htdocs\forms\submit_relay.php:241
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\forms\submit_relay.php on line 241
