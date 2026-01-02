@@ -32,3 +32,14 @@ CREATE TABLE teams (
     name VARCHAR(255) UNIQUE NOT NULL,
     abbreviation VARCHAR(10)  -- Optional, e.g., 'BEST'
 );
+
+CREATE TABLE swimmers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    team VARCHAR(255) NOT NULL,
+    lsc VARCHAR(255) NOT NULL,
+    gender ENUM('F', 'M') NOT NULL,
+    age TINYINT UNSIGNED NOT NULL,  -- Recommended: change to this
+    -- If you need text ages, use: age VARCHAR(10) NOT NULL,
+    INDEX idx_team_gender (team, gender)  -- Named composite index for faster queries
+);
