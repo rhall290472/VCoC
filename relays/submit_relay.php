@@ -350,6 +350,7 @@ try {
     }
 } catch (Exception $e) {
     error_log('Google Sheets append failed: ' . $e->getMessage());
+    echo "<p><strong>Warning:</strong> Data saved, but export to Google Sheets failed. Admin notified.</p>";
 }
 // ============================================================
 
