@@ -182,10 +182,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   // Helper functions
-  function chk($name) {
+  function chk($name)
+  {
     return isset($_POST[$name]) && $_POST[$name] === 'on' ? 'Yes' : 'No';
   }
-  function swimmer($name) {
+  function swimmer($name)
+  {
     return trim($_POST[$name] ?? '');
   }
 
@@ -208,10 +210,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
       $stmt->execute([
-        $submission_id, $event_id, $line_label,
+        $submission_id,
+        $event_id,
+        $line_label,
         ($scratch === 'Yes' ? 1 : 0),
         ($prelim === 'Yes' ? 1 : 0),
-        $s1, $s2, $s3, $s4
+        $s1,
+        $s2,
+        $s3,
+        $s4
       ]);
     }
   }
@@ -246,9 +253,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   // Edit URL
   $edit_url = EDIT_URL . $edit_token;
-
   // Build detailed email body
   $day_cap = ucfirst($day);
+  // Fixed UTC-7 timezone (no DST, always 7 hours behind UTC)
+  $timezone = new DateTimeZone('-07:00');  // or 'UTC-7' works too MST
+  // Get current time in UTC-7
+  $submittedTime = new DateTime('now', $timezone);
+  // Format for display
+  $formattedSubmitted = $submittedTime->format('Y-m-d H:i:s').' (UTC-7)';
+
   $email_body = "
     <html>
     <head><title>Your $day_cap Relay Entry Confirmation</title></head>
@@ -256,7 +269,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h2>Thank you for your $day_cap Relay entry" . ($is_edit_mode ? " (updated)" : "") . ", {$full_name}!</h2>
     <p><strong>Team:</strong> {$team}<br>
     <strong>Email:</strong> {$email}<br>
-    <strong>Submitted:</strong> " . date('Y-m-d H:i:s') . "</p>
+    <strong>Submitted:</strong> {$formattedSubmitted}</p>
 
     <h3>Your Relay Entries</h3>
     ";
@@ -292,13 +305,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p style='font-size: 18px;'><strong><a href='{$edit_url}'>Click here to edit your relay entry</a></strong></p>
     <p><em>Save this email — this is the only time you'll receive this link.</em></p>
 
-    <p>Thank you for participating!</p>
+    <p>Thank you for relay entries</p>
     </body>
     </html>
     ";
 
-// ==================== GOOGLE SHEETS EXPORT ====================
-try {
+  // ==================== GOOGLE SHEETS EXPORT ====================
+  try {
     $client = new Client();
     $client->setApplicationName('Relay Entries');
     $client->setScopes([Sheets::SPREADSHEETS]);
@@ -311,48 +324,48 @@ try {
     $submitter_name = $first_name . ' ' . $last_name;
 
     foreach ($relay_data as $event_name => $lines) {
-        foreach ($lines as $relay_line => $data) {
-            $row = [
-                ucfirst($day),
-                $submitted_at,
-                $submitter_name,
-                $email,
-                $team,
-                $event_name,
-                $relay_line,
-                $data['Scratch'],
-                $data['Swim Prelim'],
-                $data['Swimmer 1'] !== '&nbsp;' ? $data['Swimmer 1'] : '',
-                $data['Swimmer 2'] !== '&nbsp;' ? $data['Swimmer 2'] : '',
-                $data['Swimmer 3'] !== '&nbsp;' ? $data['Swimmer 3'] : '',
-                $data['Swimmer 4'] !== '&nbsp;' ? $data['Swimmer 4'] : '',
-            ];
-            $rowsToAppend[] = $row;
-        }
+      foreach ($lines as $relay_line => $data) {
+        $row = [
+          ucfirst($day),
+          $submitted_at,
+          $submitter_name,
+          $email,
+          $team,
+          $event_name,
+          $relay_line,
+          $data['Scratch'],
+          $data['Swim Prelim'],
+          $data['Swimmer 1'] !== '&nbsp;' ? $data['Swimmer 1'] : '',
+          $data['Swimmer 2'] !== '&nbsp;' ? $data['Swimmer 2'] : '',
+          $data['Swimmer 3'] !== '&nbsp;' ? $data['Swimmer 3'] : '',
+          $data['Swimmer 4'] !== '&nbsp;' ? $data['Swimmer 4'] : '',
+        ];
+        $rowsToAppend[] = $row;
+      }
     }
 
     if (!empty($rowsToAppend)) {
-        $body = new ValueRange([
-            'values' => $rowsToAppend
-        ]);
+      $body = new ValueRange([
+        'values' => $rowsToAppend
+      ]);
 
-        $params = [
-            'valueInputOption' => 'RAW'
-        ];
+      $params = [
+        'valueInputOption' => 'RAW'
+      ];
 
-        // Modern correct call – works perfectly with v2.18.0
-        $service->spreadsheets_values->append(
-            GOOGLE_SHEETS_SPREADSHEET_ID,
-            GOOGLE_SHEETS_RANGE,
-            $body,
-            $params
-        );
+      // Modern correct call – works perfectly with v2.18.0
+      $service->spreadsheets_values->append(
+        GOOGLE_SHEETS_SPREADSHEET_ID,
+        GOOGLE_SHEETS_RANGE,
+        $body,
+        $params
+      );
     }
-} catch (Exception $e) {
+  } catch (Exception $e) {
     error_log('Google Sheets append failed: ' . $e->getMessage());
     echo "<p><strong>Warning:</strong> Data saved, but export to Google Sheets failed. Admin notified.</p>";
-}
-// ============================================================
+  }
+  // ============================================================
 
 
   // Send confirmation email
@@ -372,7 +385,7 @@ try {
     $mail->addBCC('acescsiar+relays@gmail.com');
 
     $mail->isHTML(true);
-    $mail->Subject = ucfirst($day) . ' Relay Entry Confirmation & Edit Link';
+    $mail->Subject = ucfirst($day) . ' Relay Entry Confirmation & Edit Link - ' . $team;
     $mail->Body    = $email_body;
 
     $mail->send();
@@ -408,6 +421,7 @@ try {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -416,6 +430,7 @@ try {
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
   <link rel="stylesheet" href="css/relay-form.css">
 </head>
+
 <body>
   <h1><?= ucfirst($day) ?> Relay <?= $is_edit_mode ? ' - Edit Your Entry' : '' ?></h1>
 
@@ -457,10 +472,12 @@ try {
     </script>
 
     <?php
-    function val($gender, $line, $field, $entries_index) {
+    function val($gender, $line, $field, $entries_index)
+    {
       return $entries_index[$gender][$line][$field] ?? '';
     }
-    function checked($gender, $line, $field, $entries_index) {
+    function checked($gender, $line, $field, $entries_index)
+    {
       return ($entries_index[$gender][$line][$field] ?? 0) == 1 ? 'checked' : '';
     }
     ?>
@@ -489,7 +506,7 @@ try {
               <td data-label="Swim Prelim">
                 <?php
                 $force_prelim = in_array($day, ['thursday', 'friday']) && ($label === 'C') ||
-                                in_array($day, ['saturday', 'sunday']) && in_array($label, ['E', 'F']);
+                  in_array($day, ['saturday', 'sunday']) && in_array($label, ['E', 'F']);
 
                 $is_checked = $force_prelim || (!empty($entries_index[$gender_key][$key]['prelim']));
                 $disabled = $force_prelim ? 'disabled' : '';
@@ -515,4 +532,5 @@ try {
     </div>
   </form>
 </body>
+
 </html>
