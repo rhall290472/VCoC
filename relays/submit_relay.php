@@ -320,7 +320,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $service = new Sheets($client);
 
     $rowsToAppend = [];
-    $submitted_at = date('Y-m-d H:i:s');
+    //$submitted_at = $submittedTime->format('Y-m-d H:i:s');
+    $submitted_at = $submittedTime; // Nake UTC-7
     $submitter_name = $first_name . ' ' . $last_name;
 
     foreach ($relay_data as $event_name => $lines) {
