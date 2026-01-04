@@ -17,11 +17,12 @@
  * Version: 15Dec25 - Trying to fix the persistent working message when running scripts
  * Version: 16Dec25 - Add import sheet, get URL for sheet
  * Version: 31Dec25 - Updated sidebar
+ * Version: 03Jan26 - splitEventsInColumnsGHIJ Updated
  * 
  * 
  */
-const SCRIPT_VERSION = "31Dec25";  // Update this whenever you make changes
-const VERSION_DESCRIPTION = "Update sidebar";  // Optional: short note
+const SCRIPT_VERSION = "03Jan26";  // Update this whenever you make changes
+const VERSION_DESCRIPTION = "splitEventsInColumnsGHIJ Updated";  // Optional: short note
 
 
 const COLOR_TIE = "#FF66FF"; // Color for ties
@@ -1149,75 +1150,166 @@ function onFormSubmit(e) {
 /**
  * MAIN SPLIT FUNCTION – now completely bulletproof
  */
+// function splitEventsInColumnsGHIJ() {
+//   const sheet = SpreadsheetApp.getActiveSheet();
+//   const DATA_START_ROW = 2;
+//   const COLUMNS_TO_CHECK = [7, 8, 9, 10];    // G=7, H=8, I=9, J=10
+
+//   // 1. Get current data (including header)
+//   const lastRow = sheet.getLastRow();
+//   if (lastRow < DATA_START_ROW) {
+//     console.log("No data yet");
+//     return;
+//   }
+
+//   const fullRange = sheet.getRange(1, 1, lastRow, sheet.getLastColumn());
+//   const values = fullRange.getValues();     // 2D array with header in row 0
+//   const header = values[0];                  // keep real header untouched
+//   const dataRows = values.slice(1);          // everything below header
+
+//   const newDataRows = [];                    // will hold processed rows only
+
+//   // 2. Process each data row
+//   for (let row of dataRows) {
+//     const splits = [];
+
+//     // Check G, H, I, J for commas
+//     COLUMNS_TO_CHECK.forEach(col1 => {
+//       const col0 = col1 - 1;
+//       const cell = row[col0];
+//       if (typeof cell === 'string' && cell.includes(',')) {
+//         const parts = cell.split(',').map(s => s.trim()).filter(s => s !== '');
+//         if (parts.length > 1) {
+//           splits.push({ col: col0, parts: parts });
+//         }
+//       }
+//     });
+
+//     if (splits.length === 0) {
+//       newDataRows.push(row);
+//       continue;
+//     }
+
+//     // Split this row
+//     const maxSplits = Math.max(...splits.map(s => s.parts.length));
+//     for (let i = 0; i < maxSplits; i++) {
+//       const newRow = row.slice();
+//       splits.forEach(item => {
+//         newRow[item.col] = i < item.parts.length
+//           ? item.parts[i]
+//           : item.parts[item.parts.length - 1];   // repeat last value
+//         // or use '' for blank after last item
+//       });
+//       newDataRows.push(newRow);
+//     }
+//   }
+
+//   // 3. Write back safely – NEVER touches row 1 (the real header)
+//   if (newDataRows.length > 0) {
+//     // Clear only the data area (row 2 and below)
+//     if (lastRow >= 2) {
+//       const clearRange = sheet.getRange(2, 1, sheet.getMaxRows() - 1, sheet.getLastColumn());
+//       clearRange.clearContent();               // ← correct method name
+//     }
+
+//     // Write new data starting at row 2
+//     const target = sheet.getRange(2, 1, newDataRows.length, newDataRows[0].length);
+//     target.setValues(newDataRows);
+//   }
+
+//   console.log(`Success! Sheet now has ${1 + newDataRows.length} rows (including header)`);
+
+//   SpreadsheetApp.flush();
+//   return SUCESS;
+// }
+/**
+ * MAIN SPLIT FUNCTION – now completely bulletproof
+ */
 function splitEventsInColumnsGHIJ() {
-  const sheet = SpreadsheetApp.getActiveSheet();
-  const DATA_START_ROW = 2;
-  const COLUMNS_TO_CHECK = [7, 8, 9, 10];    // G=7, H=8, I=9, J=10
+  const lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) {  // Wait up to 30 seconds for lock
+    try {
+      const sheet = SpreadsheetApp.getActiveSheet();
+      const DATA_START_ROW = 2;
+      const COLUMNS_TO_CHECK = [7, 8, 9, 10];    // G=7, H=8, I=9, J=10
 
-  // 1. Get current data (including header)
-  const lastRow = sheet.getLastRow();
-  if (lastRow < DATA_START_ROW) {
-    console.log("No data yet");
-    return;
-  }
+      // 1. Get current data (including header)
+      let lastRow = sheet.getLastRow();
+      if (lastRow < DATA_START_ROW) {
+        console.log("No data yet");
+        return;
+      }
 
-  const fullRange = sheet.getRange(1, 1, lastRow, sheet.getLastColumn());
-  const values = fullRange.getValues();     // 2D array with header in row 0
-  const header = values[0];                  // keep real header untouched
-  const dataRows = values.slice(1);          // everything below header
+      const fullRange = sheet.getRange(1, 1, lastRow, sheet.getLastColumn());
+      const values = fullRange.getValues();     // 2D array with header in row 0
+      const header = values[0];                  // keep real header untouched
+      const dataRows = values.slice(1);          // everything below header
 
-  const newDataRows = [];                    // will hold processed rows only
+      const newDataRows = [];                    // will hold processed rows only
 
-  // 2. Process each data row
-  for (let row of dataRows) {
-    const splits = [];
+      // 2. Process each data row
+      for (let row of dataRows) {
+        const splits = [];
 
-    // Check G, H, I, J for commas
-    COLUMNS_TO_CHECK.forEach(col1 => {
-      const col0 = col1 - 1;
-      const cell = row[col0];
-      if (typeof cell === 'string' && cell.includes(',')) {
-        const parts = cell.split(',').map(s => s.trim()).filter(s => s !== '');
-        if (parts.length > 1) {
-          splits.push({ col: col0, parts: parts });
+        // Check G, H, I, J for commas
+        COLUMNS_TO_CHECK.forEach(col1 => {
+          const col0 = col1 - 1;
+          const cell = row[col0];
+          if (typeof cell === 'string' && cell.includes(',')) {
+            const parts = cell.split(',').map(s => s.trim()).filter(s => s !== '');
+            if (parts.length > 1) {
+              splits.push({ col: col0, parts: parts });
+            }
+          }
+        });
+
+        if (splits.length === 0) {
+          newDataRows.push(row);
+          continue;
+        }
+
+        // Split this row
+        const maxSplits = Math.max(...splits.map(s => s.parts.length));
+        for (let i = 0; i < maxSplits; i++) {
+          const newRow = row.slice();
+          splits.forEach(item => {
+            newRow[item.col] = i < item.parts.length
+              ? item.parts[i]
+              : item.parts[item.parts.length - 1];   // repeat last value
+            // or use '' for blank after last item
+          });
+          newDataRows.push(newRow);
         }
       }
-    });
 
-    if (splits.length === 0) {
-      newDataRows.push(row);
-      continue;
-    }
+      // Calculate rows needed
+      const rowsNeeded = newDataRows.length;
+      const oldDataRows = lastRow - 1;
+      if (rowsNeeded > oldDataRows) {
+        const extraRows = rowsNeeded - oldDataRows;
+        sheet.insertRowsAfter(lastRow, extraRows);
+        lastRow += extraRows;  // Update lastRow after insertion
+      }
 
-    // Split this row
-    const maxSplits = Math.max(...splits.map(s => s.parts.length));
-    for (let i = 0; i < maxSplits; i++) {
-      const newRow = row.slice();
-      splits.forEach(item => {
-        newRow[item.col] = i < item.parts.length
-          ? item.parts[i]
-          : item.parts[item.parts.length - 1];   // repeat last value
-        // or use '' for blank after last item
-      });
-      newDataRows.push(newRow);
+      // 3. Write back safely – NEVER touches row 1 (the real header)
+      if (newDataRows.length > 0) {
+        // Clear only the data area (row 2 to current max needed)
+        const clearRange = sheet.getRange(2, 1, sheet.getMaxRows() - 1, sheet.getLastColumn());
+        clearRange.clearContent();               // ← correct method name
+
+        // Write new data starting at row 2
+        const target = sheet.getRange(2, 1, newDataRows.length, newDataRows[0].length);
+        target.setValues(newDataRows);
+      }
+
+      console.log(`Success! Sheet now has ${1 + newDataRows.length} rows (including header)`);
+
+      SpreadsheetApp.flush();
+      return 'SUCCESS';
+    } finally {
+      lock.releaseLock();
     }
+  } else {
+    console.log("Could not acquire lock. Try again later.");
   }
-
-  // 3. Write back safely – NEVER touches row 1 (the real header)
-  if (newDataRows.length > 0) {
-    // Clear only the data area (row 2 and below)
-    if (lastRow >= 2) {
-      const clearRange = sheet.getRange(2, 1, sheet.getMaxRows() - 1, sheet.getLastColumn());
-      clearRange.clearContent();               // ← correct method name
-    }
-
-    // Write new data starting at row 2
-    const target = sheet.getRange(2, 1, newDataRows.length, newDataRows[0].length);
-    target.setValues(newDataRows);
-  }
-
-  console.log(`Success! Sheet now has ${1 + newDataRows.length} rows (including header)`);
-
-  SpreadsheetApp.flush();
-  return SUCESS;
 }
