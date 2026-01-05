@@ -256,24 +256,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   // Insert relay entries into database
-  foreach ($config['events'] as $gender_key => $event) {
-    // ... loop through lines and insert ...
-    $event_id = $event['id'];
-    foreach ($config['lines'] as $line_key => $line_label) {
-      $scratch = chk("{$gender_key}_{$line_key}_scratch");
-      $prelim  = chk("{$gender_key}_{$line_key}_prelim");
-      $s1 = swimmer("{$gender_key}_{$line_key}_1");
-      $s2 = swimmer("{$gender_key}_{$line_key}_2");
-      $s3 = swimmer("{$gender_key}_{$line_key}_3");
-      $s4 = swimmer("{$gender_key}_{$line_key}_4");
+  foreach ($config['events'] as $gender_key => $events_list) {
+    foreach ($events_list as $event) {
+      $event_id = $event['id'];
+      foreach ($config['lines'] as $line_key => $line_label) {
+        $scratch = chk("{$gender_key}_{$line_key}_scratch");
+        $prelim  = chk("{$gender_key}_{$line_key}_prelim");
+        $s1 = swimmer("{$gender_key}_{$line_key}_1");
+        $s2 = swimmer("{$gender_key}_{$line_key}_2");
+        $s3 = swimmer("{$gender_key}_{$line_key}_3");
+        $s4 = swimmer("{$gender_key}_{$line_key}_4");
 
-      $stmt = $pdo->prepare("INSERT INTO relay_entries (submission_id, event_id, line, scratch, swim_prelim, swimmer1, swimmer2, swimmer3, swimmer4) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-      $stmt->execute([$submission_id, $event_id, $line_label, ($scratch === 'Yes' ? 1 : 0), ($prelim === 'Yes' ? 1 : 0), $s1, $s2, $s3, $s4]);
+        $stmt = $pdo->prepare("INSERT INTO relay_entries (submission_id, event_id, line, scratch, swim_prelim, swimmer1, swimmer2, swimmer3, swimmer4) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$submission_id, $event_id, $line_label, ($scratch === 'Yes' ? 1 : 0), ($prelim === 'Yes' ? 1 : 0), $s1, $s2, $s3, $s4]);
+      }
     }
   }
 
+
   $relay_data = [];
-  foreach ($config['events'] as $gender_key => $event) {
+  foreach ($config['events'] as $gender_key => $events_list) {
+  foreach ($events_list as $event) {
     $event_name = $event['name'];
     $relay_data[$event_name] = [];
     foreach ($config['lines'] as $line_key => $line_label) {
