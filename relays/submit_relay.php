@@ -71,8 +71,8 @@ $teams = $stmt->fetchAll(PDO::FETCH_COLUMN);
  */
 
 // Load meet configuration
-//$meet_slug = $_GET['meet'] ?? '2026-wz-sc';  // e.g. ?meet=2026-sectionals
-$meet_slug = $_GET['meet'] ?? 'csi-state-ag-sc';  // e.g. ?meet=2026-sectionals
+$meet_slug = $_GET['meet'] ?? '2026-wz-sc';  // e.g. ?meet=2026-sectionals
+//$meet_slug = $_GET['meet'] ?? 'csi-state-ag-sc';  // e.g. ?meet=2026-sectionals
 $meet_file = __DIR__ . '/config/meets/' . basename($meet_slug) . '.json';
 
 if (!file_exists($meet_file)) {
@@ -338,6 +338,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $client->setScopes([Sheets::SPREADSHEETS]);
     $client->setAuthConfig(GOOGLE_SHEETS_CREDENTIALS_PATH);
     $service = new Sheets($client);
+
+    // ADD THIS LINE – impersonate a real user in your organization who has access to the sheet
+//    $client->setSubject('adminref@swimcolorado.org');  // <-- CHANGE THIS
+
+//    $service = new Sheets($client);
 
     $rowsToAppend = [];
     $submitted_at = $submittedTime->format('Y-m-d H:i:s');
