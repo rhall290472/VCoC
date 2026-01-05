@@ -1,0 +1,72 @@
+[05-Jan-2026 21:57:32 Europe/Berlin] PHP Warning:  Undefined array key "events" in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 96
+[05-Jan-2026 21:57:32 Europe/Berlin] PHP Warning:  foreach() argument must be of type array|object, null given in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 96
+[05-Jan-2026 21:57:32 Europe/Berlin] PHP Warning:  Undefined array key "lines" in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 101
+[05-Jan-2026 21:57:32 Europe/Berlin] PHP Warning:  foreach() argument must be of type array|object, null given in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 101
+[05-Jan-2026 21:57:32 Europe/Berlin] PHP Warning:  Undefined array key "events" in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 96
+[05-Jan-2026 21:57:32 Europe/Berlin] PHP Warning:  foreach() argument must be of type array|object, null given in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 96
+[05-Jan-2026 21:57:32 Europe/Berlin] PHP Warning:  Undefined array key "lines" in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 101
+[05-Jan-2026 21:57:32 Europe/Berlin] PHP Warning:  foreach() argument must be of type array|object, null given in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 101
+[05-Jan-2026 22:01:34 Europe/Berlin] PHP Warning:  Undefined array key "name" in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 433
+[05-Jan-2026 22:01:34 Europe/Berlin] PHP Warning:  Undefined array key "name" in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 433
+[05-Jan-2026 22:03:45 Europe/Berlin] PHP Warning:  Undefined array key "name" in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 433
+[05-Jan-2026 22:03:45 Europe/Berlin] PHP Warning:  Undefined array key "name" in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 433
+[05-Jan-2026 22:13:59 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'relays.swimmers' doesn't exist in C:\xampp\htdocs\VCoC\relays\get_swimmers.php:29
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29
+[05-Jan-2026 22:13:59 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'relays.swimmers' doesn't exist in C:\xampp\htdocs\VCoC\relays\get_swimmers.php:29
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29
+[05-Jan-2026 22:13:59 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'relays.swimmers' doesn't exist in C:\xampp\htdocs\VCoC\relays\get_swimmers.php:29
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29
+[05-Jan-2026 22:14:08 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'relays.swimmers' doesn't exist in C:\xampp\htdocs\VCoC\relays\get_swimmers.php:29
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29
+[05-Jan-2026 22:14:08 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'relays.swimmers' doesn't exist in C:\xampp\htdocs\VCoC\relays\get_swimmers.php:29
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29
+[05-Jan-2026 22:14:08 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'relays.swimmers' doesn't exist in C:\xampp\htdocs\VCoC\relays\get_swimmers.php:29
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29
+[05-Jan-2026 22:15:50 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'relays.swimmers' doesn't exist in C:\xampp\htdocs\VCoC\relays\get_swimmers.php:29
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29
+[05-Jan-2026 22:15:50 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'relays.swimmers' doesn't exist in C:\xampp\htdocs\VCoC\relays\get_swimmers.php:29
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29
+[05-Jan-2026 22:15:50 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'relays.swimmers' doesn't exist in C:\xampp\htdocs\VCoC\relays\get_swimmers.php:29
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29
+[05-Jan-2026 22:23:31 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'relays.swimmers' doesn't exist in C:\xampp\htdocs\VCoC\relays\get_swimmers.php:29
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29
+[05-Jan-2026 22:23:31 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'relays.swimmers' doesn't exist in C:\xampp\htdocs\VCoC\relays\get_swimmers.php:29
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29
+[05-Jan-2026 22:23:31 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'relays.swimmers' doesn't exist in C:\xampp\htdocs\VCoC\relays\get_swimmers.php:29
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
+#1 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29

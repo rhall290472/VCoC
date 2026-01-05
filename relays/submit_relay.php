@@ -1,4 +1,5 @@
 <?php
+
 /**
  * submit_relay.php - Multi-day relay entry submission and edit handler
  *
@@ -32,7 +33,7 @@
  *   - config/config.php (database and SMTP constants)
  *   - config/relay-credentials.json (Google service account credentials)
  *
- * @author  [Your Name/Team]
+ * @author  Richard Hall
  * @version 1.0
  * @date    2026-01-05
  */
@@ -70,7 +71,8 @@ $teams = $stmt->fetchAll(PDO::FETCH_COLUMN);
  */
 
 // Load meet configuration
-$meet_slug = $_GET['meet'] ?? '2026-wz-sc';  // e.g. ?meet=2026-sectionals
+//$meet_slug = $_GET['meet'] ?? '2026-wz-sc';  // e.g. ?meet=2026-sectionals
+$meet_slug = $_GET['meet'] ?? 'csi-state-ag-sc';  // e.g. ?meet=2026-sectionals
 $meet_file = __DIR__ . '/config/meets/' . basename($meet_slug) . '.json';
 
 if (!file_exists($meet_file)) {
@@ -78,20 +80,28 @@ if (!file_exists($meet_file)) {
 }
 
 $meet_config = json_decode(file_get_contents($meet_file), true);
-if (json_last_error() !== JSON_ERROR_NONE) {  die("Invalid meet configuration JSON.");
+if (json_last_error() !== JSON_ERROR_NONE) {
+  die("Invalid meet configuration JSON.");
 }
 
 // Convert to the format the rest of the script expects
+// Convert to consistent internal format
 $event_configs = [];
 foreach ($meet_config['days'] as $day_key => $day_data) {
   $event_configs[$day_key] = [
-    'events' => [],
+    'events' => [],  // will be: gender => [event1, event2, ...]
     'lines'  => []
   ];
 
-  // Convert events: "women" => {...} becomes same structure
-  foreach ($day_data['events'] as $gender_key => $event) {
-    $event_configs[$day_key]['events'][$gender_key] = $event;
+  // Normalize events: ensure each gender has an ARRAY of events
+  foreach ($day_data['events'] as $gender_key => $event_data) {
+    if (isset($event_data['id']) && isset($event_data['name'])) {
+      // Old format: single object → wrap in array
+      $event_configs[$day_key]['events'][$gender_key] = [$event_data];
+    } else {
+      // New format: already an array → use as-is
+      $event_configs[$day_key]['events'][$gender_key] = $event_data;
+    }
   }
 
   // Convert lines array ["A","B","C"] → ['a'=>'A', 'b'=>'B', 'c'=>'C']
@@ -141,26 +151,40 @@ if ($edit_token) {
     $stmt->execute([$submission['id']]);
     $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    foreach ($event_configs[$day]['events'] as $gender_key => $event) {
+    // foreach ($event_configs[$day]['events'] as $gender_key => $event) {
+    //   $entries_index[$gender_key] = [];
+    //   foreach ($event_configs[$day]['lines'] as $line_key => $line_label) {
+    //     $entries_index[$gender_key][$line_key] = [];
+    //   }
+    // }
+
+    // foreach ($entries as $row) {
+    //   foreach ($event_configs[$day]['events'] as $gender_key => $event) {
+    //     if ($row['event_id'] == $event['id']) {
+    // Initialize empty structure
+    foreach ($event_configs[$day]['events'] as $gender_key => $events_list) {
       $entries_index[$gender_key] = [];
       foreach ($event_configs[$day]['lines'] as $line_key => $line_label) {
         $entries_index[$gender_key][$line_key] = [];
       }
     }
 
+    // Load existing entries
     foreach ($entries as $row) {
-      foreach ($event_configs[$day]['events'] as $gender_key => $event) {
-        if ($row['event_id'] == $event['id']) {
-          $line = strtolower($row['line']);
-          $entries_index[$gender_key][$line] = [
-            'scratch' => $row['scratch'],
-            'prelim'  => $row['swim_prelim'],
-            's1' => htmlspecialchars($row['swimmer1'] ?? ''),
-            's2' => htmlspecialchars($row['swimmer2'] ?? ''),
-            's3' => htmlspecialchars($row['swimmer3'] ?? ''),
-            's4' => htmlspecialchars($row['swimmer4'] ?? ''),
-          ];
-          break;
+      foreach ($event_configs[$day]['events'] as $gender_key => $events_list) {
+        foreach ($events_list as $event) {
+          if ($row['event_id'] == $event['id']) {
+            $line = strtolower($row['line']);
+            $entries_index[$gender_key][$line] = [
+              'scratch' => $row['scratch'],
+              'prelim'  => $row['swim_prelim'],
+              's1' => htmlspecialchars($row['swimmer1'] ?? ''),
+              's2' => htmlspecialchars($row['swimmer2'] ?? ''),
+              's3' => htmlspecialchars($row['swimmer3'] ?? ''),
+              's4' => htmlspecialchars($row['swimmer4'] ?? ''),
+            ];
+            break 2; // exit both inner loops once matched
+          }
         }
       }
     }
@@ -174,7 +198,7 @@ else {
   if (!isset($event_configs[$day])) {
     die("Invalid or missing day parameter.");
   }
-  foreach ($event_configs[$day]['events'] as $gender_key => $event) {
+  foreach ($event_configs[$day]['events'] as $gender_key => $events_list) {
     $entries_index[$gender_key] = [];
     foreach ($event_configs[$day]['lines'] as $line_key => $line_label) {
       $entries_index[$gender_key][$line_key] = [];
@@ -354,9 +378,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port       = SMTP_PORT;
 
-    $mail->setFrom(SMTP_USER, 'WZ SC ' . ucfirst($day) . ' Relays - ' . htmlspecialchars($team));
+    // Add BCC addresses from the config (supports single or multiple)
+    if (isset($config['bcc']) && is_array($config['bcc'])) {
+      foreach ($config['bcc'] as $bccEmail) {
+        if (!empty(trim($bccEmail))) {
+          $mail->addBCC(trim($bccEmail)); // Optional: add a name as second param, e.g. addBCC($bccEmail, 'Name')
+        }
+      }
+    }
+
+    $mail->setFrom(SMTP_USER, ucfirst($day) . ' Relays - ' . htmlspecialchars($team));
     $mail->addAddress($email, $full_name);
-    $mail->addBCC('acescsiar+relays@gmail.com');
+    //$mail->addBCC('acescsiar+relays@gmail.com');
     $mail->isHTML(true);
     $mail->Subject = ucfirst($day) . ' Relay Entry Confirmation & Edit Link - ' . $team;
     $mail->Body    = $email_body;
@@ -417,46 +450,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     ?>
 
-    <?php foreach ($config['events'] as $gender_key => $event): ?>
-      <h2 class="event-title"><?= $event['name'] ?></h2>
-      <table class="relay-table">
-        <thead>
-          <tr>
-            <th>Relay</th>
-            <th>Scratch</th>
-            <th>Swim Prelim</th>
-            <th>Swimmer 1</th>
-            <th>Swimmer 2</th>
-            <th>Swimmer 3</th>
-            <th>Swimmer 4</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($config['lines'] as $key => $label): ?>
+    <?php foreach ($config['events'] as $gender_key => $events_list): ?>
+      <?php foreach ($events_list as $event): ?>
+        <h2 class="event-title"><?= htmlspecialchars($event['name']) ?></h2>
+        <table class="relay-table">
+          <thead>
             <tr>
-              <td data-label="Relay"><strong><?= $label ?></strong></td>
-              <td data-label="Scratch"><input type="checkbox" name="<?= $gender_key ?>_<?= $key ?>_scratch" <?= checked($gender_key, $key, 'scratch', $entries_index) ?>></td>
-              <td data-label="Swim Prelim">
-                <?php
-                $force_prelim = in_array($day, ['thursday', 'friday']) && ($label === 'C') || in_array($day, ['saturday', 'sunday']) && in_array($label, ['E', 'F']);
-                $is_checked = $force_prelim || (!empty($entries_index[$gender_key][$key]['prelim']));
-                $disabled = $force_prelim ? 'disabled' : '';
-                ?>
-                <input type="checkbox" name="<?= $gender_key ?>_<?= $key ?>_prelim" <?= $is_checked ? 'checked' : '' ?> <?= $disabled ?>>
-                <?php if ($force_prelim): ?>
-                  <input type="hidden" name="<?= $gender_key ?>_<?= $key ?>_prelim" value="on">
-                  <br><small style="color: #555; font-style: italic;">(Required)</small>
-                <?php endif; ?>
-              </td>
-              <td><input type="text" name="<?= $gender_key ?>_<?= $key ?>_1" value="<?= val($gender_key, $key, 's1', $entries_index) ?>"></td>
-              <td><input type="text" name="<?= $gender_key ?>_<?= $key ?>_2" value="<?= val($gender_key, $key, 's2', $entries_index) ?>"></td>
-              <td><input type="text" name="<?= $gender_key ?>_<?= $key ?>_3" value="<?= val($gender_key, $key, 's3', $entries_index) ?>"></td>
-              <td><input type="text" name="<?= $gender_key ?>_<?= $key ?>_4" value="<?= val($gender_key, $key, 's4', $entries_index) ?>"></td>
+              <th>Relay</th>
+              <th>Scratch</th>
+              <th>Swim Prelim</th>
+              <th>Swimmer 1</th>
+              <th>Swimmer 2</th>
+              <th>Swimmer 3</th>
+              <th>Swimmer 4</th>
             </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <?php foreach ($config['lines'] as $line_key => $line_label): ?>
+              <tr>
+                <td data-label="Relay"><strong><?= $line_label ?></strong></td>
+                <td data-label="Scratch">
+                  <input type="checkbox" name="<?= $gender_key ?>_<?= $line_key ?>_scratch" <?= checked($gender_key, $line_key, 'scratch', $entries_index) ?>>
+                </td>
+                <td data-label="Swim Prelim">
+                  <?php
+                  $force_prelim = in_array($line_label, $forced_prelim_rules[$day] ?? []);
+                  $is_checked = $force_prelim || (!empty($entries_index[$gender_key][$line_key]['prelim']));
+                  $disabled = $force_prelim ? 'disabled' : '';
+                  ?>
+                  <input type="checkbox" name="<?= $gender_key ?>_<?= $line_key ?>_prelim" <?= $is_checked ? 'checked' : '' ?> <?= $disabled ?>>
+                  <?php if ($force_prelim): ?>
+                    <input type="hidden" name="<?= $gender_key ?>_<?= $line_key ?>_prelim" value="on">
+                    <br><small style="color: #555; font-style: italic;">(Required)</small>
+                  <?php endif; ?>
+                </td>
+                <td><input type="text" name="<?= $gender_key ?>_<?= $line_key ?>_1" value="<?= val($gender_key, $line_key, 's1', $entries_index) ?>"></td>
+                <td><input type="text" name="<?= $gender_key ?>_<?= $line_key ?>_2" value="<?= val($gender_key, $line_key, 's2', $entries_index) ?>"></td>
+                <td><input type="text" name="<?= $gender_key ?>_<?= $line_key ?>_3" value="<?= val($gender_key, $line_key, 's3', $entries_index) ?>"></td>
+                <td><input type="text" name="<?= $gender_key ?>_<?= $line_key ?>_4" value="<?= val($gender_key, $line_key, 's4', $entries_index) ?>"></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      <?php endforeach; ?>
     <?php endforeach; ?>
+
 
     <div class="submit-btn">
       <input type="submit" value="<?= $is_edit_mode ? 'Update Entry' : 'Submit Entry' ?>">

@@ -12,10 +12,31 @@
       "port": 9003
     },
     {
-      "name": "relays",
+      "name": "relays-Thursday",
       "request": "launch",
       "type": "chrome",
       "url": "https://localhost/VCoC/relays/submit_relay.php?day=thursday",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "relays-Friday",
+      "request": "launch",
+      "type": "chrome",
+      "url": "https://localhost/VCoC/relays/submit_relay.php?day=thurfridayday",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "relays-Saturday",
+      "request": "launch",
+      "type": "chrome",
+      "url": "https://localhost/VCoC/relays/submit_relay.php?day=saturday",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "relays-Sunday",
+      "request": "launch",
+      "type": "chrome",
+      "url": "https://localhost/VCoC/relays/submit_relay.php?day=sunday",
       "webRoot": "${workspaceFolder}"
     }
   ]

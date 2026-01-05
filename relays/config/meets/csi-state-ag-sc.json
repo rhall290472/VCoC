@@ -2,35 +2,84 @@
   "name": "CSI Age Group State SC",
   "days": {
     "saturday": {
+      "events": {
         "women": [
-          { "id": 27, "name": "Event 27 Women 12-U 200 Medley Relay" },
-          { "id": 29, "name": "Event 29 Women 14-U 400 Medley Relay" },
-          { "id": 31, "name": "Event 31 Women 10-U 400 Medley Relay" }
+          {
+            "id": 27,
+            "name": "Event 27 Women 12-U 200 Medley Relay"
+          },
+          {
+            "id": 29,
+            "name": "Event 29 Women 14-U 400 Medley Relay"
+          },
+          {
+            "id": 31,
+            "name": "Event 31 Women 10-U 400 Medley Relay"
+          }
         ],
         "men": [
-          { "id": 28, "name": "Event 28 Men 12-U 200 Medley Relay" },
-          { "id": 30, "name": "Event 30 Men 14-U 400 Medley Relay" },
-          { "id": 32, "name": "Event 32 Men 10-U 400 Medley Relay" }
+          {
+            "id": 28,
+            "name": "Event 28 Men 12-U 200 Medley Relay"
+          },
+          {
+            "id": 30,
+            "name": "Event 30 Men 14-U 400 Medley Relay"
+          },
+          {
+            "id": 32,
+            "name": "Event 32 Men 10-U 400 Medley Relay"
+          }
         ]
       },
+      "lines": [
+        "A",
+        "B"
+      ]
+    },
     "sunday": {
+      "events": {
         "women": [
-          { "id": 63, "name": "Event 27 Women 12-U 200 Free Relay" },
-          { "id": 65, "name": "Event 29 Women 14-U 400 Free Relay" },
-          { "id": 67, "name": "Event 31 Women 10-U 400 Free Relay" }
+          {
+            "id": 63,
+            "name": "Event 27 Women 12-U 200 Free Relay"
+          },
+          {
+            "id": 65,
+            "name": "Event 29 Women 14-U 400 Free Relay"
+          },
+          {
+            "id": 67,
+            "name": "Event 31 Women 10-U 400 Free Relay"
+          }
         ],
         "men": [
-          { "id": 64, "name": "Event 28 Men 12-U 200 Free Relay" },
-          { "id": 66, "name": "Event 30 Men 14-U 400 Free Relay" },
-          { "id": 68, "name": "Event 32 Men 10-U 400 Free Relay" }
+          {
+            "id": 64,
+            "name": "Event 28 Men 12-U 200 Free Relay"
+          },
+          {
+            "id": 66,
+            "name": "Event 30 Men 14-U 400 Free Relay"
+          },
+          {
+            "id": 68,
+            "name": "Event 32 Men 10-U 400 Free Relay"
+          }
         ]
-      }
+      },
+      "lines": [
+        "A",
+        "B"
+      ]
+    }
   },
-  "_comment":"If relay must be swum in prelims, list the lines here.",
+  "_comment": "If relay must be swum in prelims, list the lines here.",
   "forced_prelim": {
-    "saturday": ["A", "B"],
-    "sunday":   ["A", "B"]
+    "saturday": [ "A", "B" ],
+    "sunday": ["A", "B" ]
   },
   "google_sheet_id": "1MD_npqt5_0Uvq02-WNVQy6ZQ3d2YoVHMKMg_CfnPxPE",
-  "google_sheet_range": "Sheet1!A:M"
+  "google_sheet_range": "Sheet1!A:M",
+  "bcc":["acescsiar+relays@gmail.com"]
 }

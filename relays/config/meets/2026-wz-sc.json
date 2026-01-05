@@ -36,5 +36,6 @@
     "sunday":   ["E", "F"]
   },
   "google_sheet_id": "1MD_npqt5_0Uvq02-WNVQy6ZQ3d2YoVHMKMg_CfnPxPE",
-  "google_sheet_range": "Sheet1!A:M"
+  "google_sheet_range": "Sheet1!A:M",
+  "bcc":["acescsiar+relays@gmail.com"]
 }
