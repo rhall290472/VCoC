@@ -1,5 +1,41 @@
 <?php
-// submit_relay.php - Expanded multi-day version
+/**
+ * submit_relay.php - Multi-day relay entry submission and edit handler
+ *
+ * This script handles the submission of relay team entries for a swimming competition
+ * across multiple days (Thursday–Sunday). It supports:
+ *   - New submissions
+ *   - Editing existing submissions via a unique edit token
+ *   - Validation and storage in a MySQL database
+ *   - Appending entries to a Google Sheet for administrative use
+ *   - Sending a richly formatted confirmation email with a one-time edit link
+ *
+ * Features:
+ *   - Dynamic form generation based on the selected day and event configuration
+ *   - Pre-filled forms when editing
+ *   - Forced "Swim Prelim" checkboxes for certain relays (C on Thu/Fri, E/F on Sat/Sun)
+ *   - Secure edit tokens (random_bytes)
+ *   - PHPMailer for SMTP email delivery
+ *   - Google Sheets API integration for real-time export
+ *
+ * Security considerations:
+ *   - Uses prepared statements to prevent SQL injection
+ *   - htmlspecialchars() on output to prevent XSS
+ *   - Edit links are unguessable 32-byte tokens
+ *   - Input is trimmed and validated
+ *
+ * Dependencies (via Composer):
+ *   - phpmailer/phpmailer
+ *   - google/apiclient
+ *
+ * Required configuration files:
+ *   - config/config.php (database and SMTP constants)
+ *   - config/relay-credentials.json (Google service account credentials)
+ *
+ * @author  [Your Name/Team]
+ * @version 1.0
+ * @date    2026-01-05
+ */
 
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 
@@ -12,55 +48,72 @@ use Google\Service\Sheets\ValueRange;
 require 'vendor/autoload.php';
 require 'config/config.php';
 
+/*
+ * Constants for Google Sheets integration
+ */
 define('GOOGLE_SHEETS_SPREADSHEET_ID', '1MD_npqt5_0Uvq02-WNVQy6ZQ3d2YoVHMKMg_CfnPxPE');
 define('GOOGLE_SHEETS_CREDENTIALS_PATH', __DIR__ . '/config/relay-credentials.json');
 define('GOOGLE_SHEETS_RANGE', 'Sheet1!A:M');
 
+/*
+ * Establish database connection
+ */
 try {
-  $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
-  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-  die("Database connection failed: " . $e->getMessage());
+    die("Database connection failed: " . $e->getMessage());
 }
 
+/*
+ * Fetch list of teams for the dropdown
+ */
 $stmt = $pdo->query("SELECT name FROM teams ORDER BY name ASC");
 $teams = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+/*
+ * Event configuration per day
+ * Defines which events exist on each day and how many relay lines (A, B, C, etc.) are available
+ */
 $event_configs = [
-  'thursday' => [
-    'events' => [
-      'women' => ['id' => 7, 'name' => 'Event 9 Women 200 Medley Relay'],
-      'men' => ['id' => 8, 'name' => 'Event 10 Men 200 Medley Relay'],
+    'thursday' => [
+        'events' => [
+            'women' => ['id' => 7, 'name' => 'Event 9 Women 200 Medley Relay'],
+            'men'   => ['id' => 8, 'name' => 'Event 10 Men 200 Medley Relay'],
+        ],
+        'lines' => ['a' => 'A', 'b' => 'B', 'c' => 'C'],
     ],
-    'lines' => ['a' => 'A', 'b' => 'B', 'c' => 'C'],
-  ],
-  'friday' => [
-    'events' => [
-      'women' => ['id' => 15, 'name' => 'Event 19 Women 200 Freestyle Relay'],
-      'men' => ['id' => 16, 'name' => 'Event 20 Men 200 Freestyle Relay'],
+    'friday' => [
+        'events' => [
+            'women' => ['id' => 15, 'name' => 'Event 19 Women 200 Freestyle Relay'],
+            'men'   => ['id' => 16, 'name' => 'Event 20 Men 200 Freestyle Relay'],
+        ],
+        'lines' => ['a' => 'A', 'b' => 'B', 'c' => 'C'],
     ],
-    'lines' => ['a' => 'A', 'b' => 'B', 'c' => 'C'],
-  ],
-  'saturday' => [
-    'events' => [
-      'mixed' => ['id' => 23, 'name' => 'Event 29 200 Mixed Medley Relay'],
+    'saturday' => [
+        'events' => [
+            'mixed' => ['id' => 23, 'name' => 'Event 29 200 Mixed Medley Relay'],
+        ],
+        'lines' => ['a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D', 'e' => 'E', 'f' => 'F'],
     ],
-    'lines' => ['a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D', 'e' => 'E', 'f' => 'F'],
-  ],
-  'sunday' => [
-    'events' => [
-      'mixed' => ['id' => 32, 'name' => 'Event 38 200 Mixed Freestyle Relay'],
+    'sunday' => [
+        'events' => [
+            'mixed' => ['id' => 32, 'name' => 'Event 38 200 Mixed Freestyle Relay'],
+        ],
+        'lines' => ['a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D', 'e' => 'E', 'f' => 'F'],
     ],
-    'lines' => ['a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D', 'e' => 'E', 'f' => 'F'],
-  ],
 ];
 
-$edit_token = $_GET['edit'] ?? '';
-$is_edit_mode = false;
+/*
+ * Handle edit mode – load existing submission if a valid edit token is provided
+ */
+$edit_token    = $_GET['edit'] ?? '';
+$is_edit_mode  = false;
 $first_name = $last_name = $email = $team = '';
 $day = strtolower($_GET['day'] ?? '');
 $entries_index = [];
 
+// Determine if we are in edit mode and load existing data
 if ($edit_token) {
   $stmt = $pdo->prepare("SELECT * FROM relay_submissions WHERE edit_token = ?");
   $stmt->execute([$edit_token]);
@@ -110,7 +163,9 @@ if ($edit_token) {
     echo "<h2>Sorry – this edit link is no longer valid.</h2>";
     exit;
   }
-} else {
+}
+// Initialize empty structure for new submissions
+else {
   if (!isset($event_configs[$day])) {
     die("Invalid or missing day parameter.");
   }
@@ -124,7 +179,9 @@ if ($edit_token) {
 
 $config = $event_configs[$day];
 
+// Process form submission (new or update)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  // Validate required fields
   $first_name = trim($_POST['first_name'] ?? '');
   $last_name  = trim($_POST['last_name'] ?? '');
   $full_name  = $first_name . ' ' . $last_name;
@@ -143,19 +200,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $submission_id = null;
   $edit_token = $existing_token;
 
+  // Handle update vs insert logic
   if ($is_edit_mode && $existing_token === $edit_token && isset($submission)) {
+    // Update existing submission
     $submission_id = $submission['id'];
     $stmt = $pdo->prepare("UPDATE relay_submissions SET first_name = ?, last_name = ?, email = ?, team = ?, submitted_at = NOW() WHERE id = ? AND edit_token = ?");
     $stmt->execute([$first_name, $last_name, $email, $team, $submission_id, $edit_token]);
     $stmt = $pdo->prepare("DELETE FROM relay_entries WHERE submission_id = ?");
     $stmt->execute([$submission_id]);
   } else {
+    // Create new submission with fresh edit token
     $edit_token = bin2hex(random_bytes(32));
     $stmt = $pdo->prepare("INSERT INTO relay_submissions (first_name, last_name, email, team, day, edit_token, submitted_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
     $stmt->execute([$first_name, $last_name, $email, $team, $day, $edit_token]);
     $submission_id = $pdo->lastInsertId();
   }
 
+  // Helper functions for checkbox and swimmer fields
   function chk($name)
   {
     return isset($_POST[$name]) && $_POST[$name] === 'on' ? 'Yes' : 'No';
@@ -165,7 +226,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     return trim($_POST[$name] ?? '');
   }
 
+  // Insert relay entries into database
   foreach ($config['events'] as $gender_key => $event) {
+    // ... loop through lines and insert ...
     $event_id = $event['id'];
     foreach ($config['lines'] as $line_key => $line_label) {
       $scratch = chk("{$gender_key}_{$line_key}_scratch");
