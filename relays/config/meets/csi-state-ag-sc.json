@@ -1,0 +1,31 @@
+{
+  "name": "CSI Age Group State SC",
+  "days": {
+    "saturday": {
+      "events": {
+        "women": { "id": 27, "name": "Event 27 Women 12-U 200 Medley Relay" },
+        "women": { "id": 29, "name": "Event 29 Women 14-U 400 Medley Relay" },
+        "women": { "id": 31, "name": "Event 31 Women 10-U 400 Medley Relay" },
+        "men":   { "id": 28, "name": "Event 28 Men 12-U 200 Medley Relay" },
+        "men":   { "id": 30, "name": "Event 28 Men 14-U 400 Medley Relay" },
+        "men":   { "id": 32, "name": "Event 28 Men 10-U 400 Medley Relay" }
+      },
+      "lines": ["A", "B"]
+    },
+    "sunday": {
+      "events": {
+        "mixed": { "id": 32, "name": "Event 38 200 Mixed Freestyle Relay" }
+      },
+      "lines": ["A", "B", "C", "D", "E", "F"]
+    }
+  },
+  "_comment":"If relay must be swum in prelims, list the lines here.",
+  "forced_prelim": {
+    "thursday": ["C"],
+    "friday":   ["C"],
+    "saturday": ["E", "F"],
+    "sunday":   ["E", "F"]
+  },
+  "google_sheet_id": "1MD_npqt5_0Uvq02-WNVQy6ZQ3d2YoVHMKMg_CfnPxPE",
+  "google_sheet_range": "Sheet1!A:M"
+}
