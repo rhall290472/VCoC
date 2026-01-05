@@ -276,29 +276,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   $relay_data = [];
   foreach ($config['events'] as $gender_key => $events_list) {
-  foreach ($events_list as $event) {
-    $event_name = $event['name'];
-    $relay_data[$event_name] = [];
-    foreach ($config['lines'] as $line_key => $line_label) {
-      $scratch = chk("{$gender_key}_{$line_key}_scratch");
-      $prelim  = chk("{$gender_key}_{$line_key}_prelim");
-      $s1 = swimmer("{$gender_key}_{$line_key}_1");
-      $s2 = swimmer("{$gender_key}_{$line_key}_2");
-      $s3 = swimmer("{$gender_key}_{$line_key}_3");
-      $s4 = swimmer("{$gender_key}_{$line_key}_4");
+    foreach ($events_list as $event) {
+      $event_name = $event['name'];
+      $relay_data[$event_name] = [];
+      foreach ($config['lines'] as $line_key => $line_label) {
+        $scratch = chk("{$gender_key}_{$line_key}_scratch");
+        $prelim  = chk("{$gender_key}_{$line_key}_prelim");
+        $s1 = swimmer("{$gender_key}_{$line_key}_1");
+        $s2 = swimmer("{$gender_key}_{$line_key}_2");
+        $s3 = swimmer("{$gender_key}_{$line_key}_3");
+        $s4 = swimmer("{$gender_key}_{$line_key}_4");
 
-      if ($scratch === 'Yes' || $prelim === 'Yes' || $s1 || $s2 || $s3 || $s4) {
-        $relay_data[$event_name][$line_label] = [
-          'Scratch'     => $scratch,
-          'Swim Prelim' => $prelim,
-          'Swimmer 1'   => $s1 ?: '&nbsp;',
-          'Swimmer 2'   => $s2 ?: '&nbsp;',
-          'Swimmer 3'   => $s3 ?: '&nbsp;',
-          'Swimmer 4'   => $s4 ?: '&nbsp;',
-        ];
+        if ($scratch === 'Yes' || $prelim === 'Yes' || $s1 || $s2 || $s3 || $s4) {
+          $relay_data[$event_name][$line_label] = [
+            'Scratch'     => $scratch,
+            'Swim Prelim' => $prelim,
+            'Swimmer 1'   => $s1 ?: '&nbsp;',
+            'Swimmer 2'   => $s2 ?: '&nbsp;',
+            'Swimmer 3'   => $s3 ?: '&nbsp;',
+            'Swimmer 4'   => $s4 ?: '&nbsp;',
+          ];
+        }
       }
     }
   }
+
 
   $edit_url = EDIT_URL . $edit_token;
   $timezone = new DateTimeZone('-07:00');
