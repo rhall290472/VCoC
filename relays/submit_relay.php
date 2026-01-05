@@ -49,20 +49,13 @@ require 'vendor/autoload.php';
 require 'config/config.php';
 
 /*
- * Constants for Google Sheets integration
- */
-define('GOOGLE_SHEETS_SPREADSHEET_ID', '1MD_npqt5_0Uvq02-WNVQy6ZQ3d2YoVHMKMg_CfnPxPE');
-define('GOOGLE_SHEETS_CREDENTIALS_PATH', __DIR__ . '/config/relay-credentials.json');
-define('GOOGLE_SHEETS_RANGE', 'Sheet1!A:M');
-
-/*
  * Establish database connection
  */
 try {
-    $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
+  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
+  die("Database connection failed: " . $e->getMessage());
 }
 
 /*
@@ -75,35 +68,47 @@ $teams = $stmt->fetchAll(PDO::FETCH_COLUMN);
  * Event configuration per day
  * Defines which events exist on each day and how many relay lines (A, B, C, etc.) are available
  */
-$event_configs = [
-    'thursday' => [
-        'events' => [
-            'women' => ['id' => 7, 'name' => 'Event 9 Women 200 Medley Relay'],
-            'men'   => ['id' => 8, 'name' => 'Event 10 Men 200 Medley Relay'],
-        ],
-        'lines' => ['a' => 'A', 'b' => 'B', 'c' => 'C'],
-    ],
-    'friday' => [
-        'events' => [
-            'women' => ['id' => 15, 'name' => 'Event 19 Women 200 Freestyle Relay'],
-            'men'   => ['id' => 16, 'name' => 'Event 20 Men 200 Freestyle Relay'],
-        ],
-        'lines' => ['a' => 'A', 'b' => 'B', 'c' => 'C'],
-    ],
-    'saturday' => [
-        'events' => [
-            'mixed' => ['id' => 23, 'name' => 'Event 29 200 Mixed Medley Relay'],
-        ],
-        'lines' => ['a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D', 'e' => 'E', 'f' => 'F'],
-    ],
-    'sunday' => [
-        'events' => [
-            'mixed' => ['id' => 32, 'name' => 'Event 38 200 Mixed Freestyle Relay'],
-        ],
-        'lines' => ['a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D', 'e' => 'E', 'f' => 'F'],
-    ],
-];
 
+// Load meet configuration
+$meet_slug = $_GET['meet'] ?? '2026-wz-sc';  // e.g. ?meet=2026-sectionals
+$meet_file = __DIR__ . '/config/meets/' . basename($meet_slug) . '.json';
+
+if (!file_exists($meet_file)) {
+  die("Meet configuration not found.");
+}
+
+$meet_config = json_decode(file_get_contents($meet_file), true);
+if (json_last_error() !== JSON_ERROR_NONE) {  die("Invalid meet configuration JSON.");
+}
+
+// Convert to the format the rest of the script expects
+$event_configs = [];
+foreach ($meet_config['days'] as $day_key => $day_data) {
+  $event_configs[$day_key] = [
+    'events' => [],
+    'lines'  => []
+  ];
+
+  // Convert events: "women" => {...} becomes same structure
+  foreach ($day_data['events'] as $gender_key => $event) {
+    $event_configs[$day_key]['events'][$gender_key] = $event;
+  }
+
+  // Convert lines array ["A","B","C"] → ['a'=>'A', 'b'=>'B', 'c'=>'C']
+  foreach ($day_data['lines'] as $i => $label) {
+    $key = strtolower(chr(97 + $i)); // a, b, c, ...
+    $event_configs[$day_key]['lines'][$key] = $label;
+  }
+}
+
+// Optional overrides
+define('GOOGLE_SHEETS_SPREADSHEET_ID', $meet_config['google_sheet_id'] ?? GOOGLE_SHEETS_SPREADSHEET_ID);
+define('GOOGLE_SHEETS_RANGE', $meet_config['google_sheet_range'] ?? 'Sheet1!A:M');
+
+define('GOOGLE_SHEETS_CREDENTIALS_PATH', __DIR__ . '/config/relay-credentials.json');
+
+// Store forced prelim rules for later use
+$forced_prelim_rules = $meet_config['forced_prelim'] ?? [];
 /*
  * Handle edit mode – load existing submission if a valid edit token is provided
  */

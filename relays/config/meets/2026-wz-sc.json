@@ -1,0 +1,40 @@
+{
+  "name": "2026 Winter Zone SC Championship",
+  "days": {
+    "thursday": {
+      "events": {
+        "women": { "id": 7,  "name": "Event 9 Women 200 Medley Relay" },
+        "men":   { "id": 8,  "name": "Event 10 Men 200 Medley Relay" }
+      },
+      "lines": ["A", "B", "C"]
+    },
+    "friday": {
+      "events": {
+        "women": { "id": 15, "name": "Event 19 Women 200 Freestyle Relay" },
+        "men":   { "id": 16, "name": "Event 20 Men 200 Freestyle Relay" }
+      },
+      "lines": ["A", "B", "C"]
+    },
+    "saturday": {
+      "events": {
+        "mixed": { "id": 23, "name": "Event 29 200 Mixed Medley Relay" }
+      },
+      "lines": ["A", "B", "C", "D", "E", "F"]
+    },
+    "sunday": {
+      "events": {
+        "mixed": { "id": 32, "name": "Event 38 200 Mixed Freestyle Relay" }
+      },
+      "lines": ["A", "B", "C", "D", "E", "F"]
+    }
+  },
+  "_comment":"If relay must be swum in prelims, list the lines here.",
+  "forced_prelim": {
+    "thursday": ["C"],
+    "friday":   ["C"],
+    "saturday": ["E", "F"],
+    "sunday":   ["E", "F"]
+  },
+  "google_sheet_id": "1MD_npqt5_0Uvq02-WNVQy6ZQ3d2YoVHMKMg_CfnPxPE",
+  "google_sheet_range": "Sheet1!A:M"
+}
