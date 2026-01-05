@@ -1,2 +1,3 @@
 # Ignore the Google account file
 relays/config/relay-credentials.json
+relays/config/csi-relay-credentials.json
