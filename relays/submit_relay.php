@@ -388,18 +388,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port       = SMTP_PORT;
 
+    $mail->setFrom(SMTP_USER, ucfirst($day) . ' Relays - ' . htmlspecialchars($team));
+    $mail->addAddress($email, $full_name);
+    //$mail->addBCC('acescsiar+relays@gmail.com');
     // Add BCC addresses from the config (supports single or multiple)
-    if (isset($config['bcc']) && is_array($config['bcc'])) {
-      foreach ($config['bcc'] as $bccEmail) {
+    if (isset($meet_config['bcc']) && is_array($meet_config['bcc'])) {
+      foreach ($meet_config['bcc'] as $bccEmail) {
         if (!empty(trim($bccEmail))) {
           $mail->addBCC(trim($bccEmail)); // Optional: add a name as second param, e.g. addBCC($bccEmail, 'Name')
         }
       }
     }
-
-    $mail->setFrom(SMTP_USER, ucfirst($day) . ' Relays - ' . htmlspecialchars($team));
-    $mail->addAddress($email, $full_name);
-    //$mail->addBCC('acescsiar+relays@gmail.com');
     $mail->isHTML(true);
     $mail->Subject = ucfirst($day) . ' Relay Entry Confirmation & Edit Link - ' . $team;
     $mail->Body    = $email_body;

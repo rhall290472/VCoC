@@ -22,7 +22,7 @@
       "name": "relays-Friday",
       "request": "launch",
       "type": "chrome",
-      "url": "https://localhost/VCoC/relays/submit_relay.php?day=thurfridayday",
+      "url": "https://localhost/VCoC/relays/submit_relay.php?day=friday",
       "webRoot": "${workspaceFolder}"
     },
     {
