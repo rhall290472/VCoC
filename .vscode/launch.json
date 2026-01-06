@@ -43,7 +43,7 @@
       "name": "View Entries",
       "request": "launch",
       "type": "chrome",
-      "url": "https://localhost/VCoC/relays/view_entries.php?meet=2026-wz-sc",
+      "url": "https://localhost/VCoC/relays/view-entries.php?meet=2026-wz-sc",
       "webRoot": "${workspaceFolder}"
     }
 
