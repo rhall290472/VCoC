@@ -451,7 +451,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <label for="email" class="required">Email</label>
     <input type="email" name="email" id="email" value="<?= $email ?>" placeholder="example@example.com" autocomplete="email" required>
-    <p class="help-text"><strong>Important:</strong> A personal edit link will be sent to this email address after submission.</p>
+    <p class="help-text"><strong>Important:</strong> A personal edit link will be sent to this email address after submission. Ensure you have access to this email.</p>
 
     <label for="team" class="required">Team</label>
     <select name="team" required>

@@ -44,3 +44,7 @@ CREATE TABLE swimmers (
     -- If you need text ages, use: age VARCHAR(10) NOT NULL,
     INDEX idx_team_gender (team, gender)  -- Named composite index for faster queries
 );
+
+ALTER TABLE teams ADD COLUMN meet_slug VARCHAR(50) NOT NULL DEFAULT '';
+ALTER TABLE swimmers ADD COLUMN meet_slug VARCHAR(50) NOT NULL DEFAULT '';
+ALTER TABLE relay_submissions ADD COLUMN meet_slug VARCHAR(50) NOT NULL DEFAULT '';
