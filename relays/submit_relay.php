@@ -82,7 +82,7 @@ if (json_last_error() !== JSON_ERROR_NONE) {
  * Fetch list of teams for the dropdown
  */
 $stmt = $pdo->prepare("SELECT name FROM teams WHERE meet_slug = ? ORDER BY name ASC");
-    $stmt->execute([$meet_slug]);
+$stmt->execute([$meet_slug]);
 $teams = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
 
@@ -459,7 +459,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <label for="team" class="required">Team</label>
     <select name="team" required>
-      <option value="">Please Select Your Team</option>
       <?php foreach ($teams as $team_name): ?>
         <option value="<?= htmlspecialchars($team_name) ?>" <?= $team === $team_name ? 'selected' : '' ?>><?= htmlspecialchars($team_name) ?></option>
       <?php endforeach; ?>

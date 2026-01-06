@@ -3,7 +3,16 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!teamSelect) return;
 
   // Add TomSelect to team dropdown
-  new TomSelect(teamSelect, { maxOptions: null });
+  //new TomSelect(teamSelect, { maxOptions: null });
+  // Add TomSelect to team dropdown with ability to create new teams
+  new TomSelect(teamSelect, {
+    maxOptions: null,
+    create: true,                    // ← This enables typing new teams
+    createOnBlur: true,              // Creates the new option if user tabs/blurs after typing
+    placeholder: 'Select or type your team...',
+    highlight: true,
+    maxItems: 1
+  });
 
   // Extract meet_slug from URL (e.g., ?meet=2026-wz-sc or ?meet=csi-state-ag-sc)
   const urlParams = new URLSearchParams(window.location.search);
@@ -60,12 +69,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Convert to TomSelect format
     allSwimmers.women = womenList.map(n => ({ value: n, text: n }));
-    allSwimmers.men   = menList.map(n => ({ value: n, text: n }));
+    allSwimmers.men = menList.map(n => ({ value: n, text: n }));
     allSwimmers.mixed = mixedList.map(n => ({ value: n, text: n }));
 
     // Available starts as full copy
     available.women = [...allSwimmers.women];
-    available.men   = [...allSwimmers.men];
+    available.men = [...allSwimmers.men];
     available.mixed = [...allSwimmers.mixed];
 
     initSwimmers();
