@@ -111,3 +111,5 @@ Stack trace:
 #7 C:\xampp\htdocs\VCoC\relays\submit_relay.php(374): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1kkL1FbuhgBWlkC...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
 #8 {main}
   thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php on line 134
+[06-Jan-2026 18:24:56 Europe/Berlin] PHP Warning:  Undefined variable $meet_slug in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 66
+[06-Jan-2026 18:25:55 Europe/Berlin] PHP Warning:  Undefined variable $meet_slug in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 66

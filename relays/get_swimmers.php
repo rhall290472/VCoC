@@ -9,15 +9,16 @@ try {
 }
 
 $team = $_GET['team'] ?? '';
-$gender = $_GET['gender'] ?? '';  // 'women', 'men', or 'mixed'
+$gender = $_GET['gender'] ?? '';
+$meet_slug = $_GET['meet'] ?? '';  // 'women', 'men', or 'mixed'
 
 if (empty($team)) {
     die(json_encode(['error' => 'Team required']));
 }
 
 $swimmers = [];
-$query = "SELECT name FROM swimmers WHERE team = :team";
-$params = [':team' => $team];
+$query = "SELECT name FROM swimmers WHERE meet_slug = :meet_slug AND team = :team";
+$params = [':meet_slug' => $meet_slug, ':team' => $team];
 
 if ($gender === 'women') {
     $query .= " AND gender = 'F'";

@@ -60,12 +60,6 @@ try {
 }
 
 /*
- * Fetch list of teams for the dropdown
- */
-$stmt = $pdo->query("SELECT name FROM teams ORDER BY name ASC");
-$teams = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-/*
  * Event configuration per day
  * Defines which events exist on each day and how many relay lines (A, B, C, etc.) are available
  */
@@ -83,6 +77,14 @@ $meet_config = json_decode(file_get_contents($meet_file), true);
 if (json_last_error() !== JSON_ERROR_NONE) {
   die("Invalid meet configuration JSON.");
 }
+
+/*
+ * Fetch list of teams for the dropdown
+ */
+$stmt = $pdo->prepare("SELECT name FROM teams WHERE meet_slug = ? ORDER BY name ASC");
+    $stmt->execute([$meet_slug]);
+$teams = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
 
 // Convert to the format the rest of the script expects
 // Convert to consistent internal format
@@ -130,8 +132,8 @@ $entries_index = [];
 
 // Determine if we are in edit mode and load existing data
 if ($edit_token) {
-  $stmt = $pdo->prepare("SELECT * FROM relay_submissions WHERE edit_token = ?");
-  $stmt->execute([$edit_token]);
+  $stmt = $pdo->prepare("SELECT * FROM relay_submissions WHERE edit_token = ? AND meet_slug = ?");
+  $stmt->execute([$edit_token, $meet_slug]);
   $submission = $stmt->fetch(PDO::FETCH_ASSOC);
 
   if ($submission) {
@@ -217,6 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $email      = trim($_POST['email'] ?? '');
   $team       = trim($_POST['team'] ?? '');
   $post_day   = strtolower(trim($_POST['day'] ?? ''));
+  $meet_slug = $_POST["meet"] ?? $meet_slug;
 
   if (empty($first_name) || empty($last_name) || empty($email) || empty($team) || !isset($event_configs[$post_day])) {
     die("Required fields are missing or invalid day.");
@@ -233,15 +236,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($is_edit_mode && $existing_token === $edit_token && isset($submission)) {
     // Update existing submission
     $submission_id = $submission['id'];
-    $stmt = $pdo->prepare("UPDATE relay_submissions SET first_name = ?, last_name = ?, email = ?, team = ?, submitted_at = NOW() WHERE id = ? AND edit_token = ?");
-    $stmt->execute([$first_name, $last_name, $email, $team, $submission_id, $edit_token]);
+    $stmt = $pdo->prepare("UPDATE relay_submissions SET meet_slug = ?, first_name = ?, last_name = ?, email = ?, team = ?, submitted_at = NOW() WHERE id = ? AND edit_token = ?");
+    $stmt->execute([$meet_slug, $first_name, $last_name, $email, $team, $submission_id, $edit_token]);
     $stmt = $pdo->prepare("DELETE FROM relay_entries WHERE submission_id = ?");
     $stmt->execute([$submission_id]);
   } else {
     // Create new submission with fresh edit token
     $edit_token = bin2hex(random_bytes(32));
-    $stmt = $pdo->prepare("INSERT INTO relay_submissions (first_name, last_name, email, team, day, edit_token, submitted_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
-    $stmt->execute([$first_name, $last_name, $email, $team, $day, $edit_token]);
+    $stmt = $pdo->prepare("INSERT INTO relay_submissions (meet_slug, first_name, last_name, email, team, day, edit_token, submitted_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+    $stmt->execute([$meet_slug, $first_name, $last_name, $email, $team, $day, $edit_token]);
     $submission_id = $pdo->lastInsertId();
   }
 
@@ -442,6 +445,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php if ($is_edit_mode): ?><p><strong>You are editing your previous submission.</strong></p><?php endif; ?>
 
   <form action="" method="POST">
+    <input type="hidden" name="meet" value="<?= $meet_slug ?>">
     <?php if ($is_edit_mode): ?><input type="hidden" name="edit_token" value="<?= $edit_token ?>"><?php endif; ?>
     <input type="hidden" name="day" value="<?= $day ?>">
 

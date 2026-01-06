@@ -15,28 +15,28 @@
       "name": "relays-Thursday",
       "request": "launch",
       "type": "chrome",
-      "url": "https://localhost/VCoC/relays/submit_relay.php?day=thursday",
+      "url": "https://localhost/VCoC/relays/submit_relay.php?meet=2026-wz-sc&day=thursday",
       "webRoot": "${workspaceFolder}"
     },
     {
       "name": "relays-Friday",
       "request": "launch",
       "type": "chrome",
-      "url": "https://localhost/VCoC/relays/submit_relay.php?day=friday",
+      "url": "https://localhost/VCoC/relays/submit_relay.php?meet=2026-wz-sc&day=friday",
       "webRoot": "${workspaceFolder}"
     },
     {
       "name": "relays-Saturday",
       "request": "launch",
       "type": "chrome",
-      "url": "https://localhost/VCoC/relays/submit_relay.php?day=saturday",
+      "url": "https://localhost/VCoC/relays/submit_relay.php?meet=2026-wz-sc&day=saturday",
       "webRoot": "${workspaceFolder}"
     },
     {
       "name": "relays-Sunday",
       "request": "launch",
       "type": "chrome",
-      "url": "https://localhost/VCoC/relays/submit_relay.php?day=sunday",
+      "url": "https://localhost/VCoC/relays/submit_relay.php?meet=2026-wz-sc&day=sunday",
       "webRoot": "${workspaceFolder}"
     },
     {

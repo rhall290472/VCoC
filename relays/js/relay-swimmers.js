@@ -2,20 +2,47 @@ document.addEventListener('DOMContentLoaded', function () {
   const teamSelect = document.querySelector('select[name="team"]');
   if (!teamSelect) return;
 
+  // Add TomSelect to team dropdown
   new TomSelect(teamSelect, { maxOptions: null });
+
+  // Extract meet_slug from URL (e.g., ?meet=2026-wz-sc or ?meet=csi-state-ag-sc)
+  const urlParams = new URLSearchParams(window.location.search);
+  const meet_slug = urlParams.get('meet') || '';
 
   let allSwimmers = { women: [], men: [], mixed: [] };
   let available = { women: [], men: [], mixed: [] };
 
+  /**
+   * Fetch swimmers for a team + gender + meet
+   */
   async function fetchSwimmers(team, gender) {
-    if (!team) return [];
-    const res = await fetch(`get_swimmers.php?team=${encodeURIComponent(team)}&gender=${gender}`);
-    if (!res.ok) return [];
-    return await res.json();
+    if (!team || !meet_slug) return [];
+
+    const url = new URL('get_swimmers.php', window.location.href);
+    url.searchParams.set('team', team);
+    url.searchParams.set('gender', gender);
+    url.searchParams.set('meet', meet_slug);
+
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.warn(`Failed to fetch ${gender} swimmers for ${team} (${meet_slug})`);
+        return [];
+      }
+      return await res.json();
+    } catch (err) {
+      console.error('Error fetching swimmers:', err);
+      return [];
+    }
   }
 
+  /**
+   * When team changes: reload swimmers for this meet
+   */
   teamSelect.addEventListener('change', async function () {
     const team = this.value;
+
+    // Reset swimmer pools
     allSwimmers = { women: [], men: [], mixed: [] };
     available = { women: [], men: [], mixed: [] };
 
@@ -24,43 +51,48 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
 
-    const [w, m, x] = await Promise.all([
+    // Fetch all gender groups in parallel
+    const [womenList, menList, mixedList] = await Promise.all([
       fetchSwimmers(team, 'women'),
       fetchSwimmers(team, 'men'),
       fetchSwimmers(team, 'mixed')
     ]);
 
-    allSwimmers.women = w.map(n => ({ value: n, text: n }));
-    allSwimmers.men = m.map(n => ({ value: n, text: n }));
-    allSwimmers.mixed = x.map(n => ({ value: n, text: n }));
+    // Convert to TomSelect format
+    allSwimmers.women = womenList.map(n => ({ value: n, text: n }));
+    allSwimmers.men   = menList.map(n => ({ value: n, text: n }));
+    allSwimmers.mixed = mixedList.map(n => ({ value: n, text: n }));
 
+    // Available starts as full copy
     available.women = [...allSwimmers.women];
-    available.men = [...allSwimmers.men];
+    available.men   = [...allSwimmers.men];
     available.mixed = [...allSwimmers.mixed];
 
     initSwimmers();
   });
 
+  /**
+   * Initialize or reinitialize all swimmer inputs with TomSelect
+   */
   function initSwimmers() {
+    // Destroy existing TomSelect instances
     document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]').forEach(el => {
       if (el.tomselect) el.tomselect.destroy();
     });
 
     const used = new Set();
 
-    // Collect pre-filled swimmers
+    // Collect any pre-filled swimmers (e.g., in edit mode)
     document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]').forEach(field => {
-      if (field.value.trim()) {
-        const name = field.value.trim();
-        used.add(name);
-        // Remove from available (guess gender from name pattern or skip for simplicity)
-        // For simplicity, remove from all if needed, but better: use data-attribute or class
-      }
+      const val = field.value.trim();
+      if (val) used.add(val);
     });
 
-    // Simple version without PHP loop issues - use gender from input name
-   document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]').forEach(input => {
+    // Apply TomSelect to each swimmer field
+    document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]').forEach(input => {
       const name = input.name;
+
+      // Determine gender from field name prefix
       let gender = 'mixed';
       if (name.startsWith('women_')) gender = 'women';
       else if (name.startsWith('men_')) gender = 'men';
@@ -70,38 +102,46 @@ document.addEventListener('DOMContentLoaded', function () {
       new TomSelect(input, {
         options: opts,
         items: input.value ? [input.value.trim()] : [],
-        create: true,
+        create: true, // Allow typing new names
         placeholder: 'Swimmer name...',
-        load: function (q, cb) {
-          if (!q.length) return cb([]);
-          cb(opts.filter(o => o.text.toLowerCase().includes(q.toLowerCase())));
+        load: function (query, callback) {
+          if (!query.length) return callback([]);
+          const filtered = opts.filter(option =>
+            option.text.toLowerCase().includes(query.toLowerCase())
+          );
+          callback(filtered);
         },
-        onItemAdd: function (val) {
-          val = val.trim();
-          used.add(val);
-          this.settings.placeholder = null;
+        onItemAdd: function (value) {
+          value = value.trim();
+          used.add(value);
           this.refreshState();
 
-          const idx = opts.findIndex(o => o.value === val);
+          // Remove from this field's available options
+          const idx = opts.findIndex(o => o.value === value);
           if (idx > -1) opts.splice(idx, 1);
 
+          // Remove from all other fields
           document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]').forEach(other => {
-            if (other !== this.input && other.tomselect) other.tomselect.removeOption(val);
+            if (other !== this.input && other.tomselect) {
+              other.tomselect.removeOption(value);
+            }
           });
         },
-        onItemRemove: function (val) {
-          val = val.trim();
-          used.delete(val);
+        onItemRemove: function (value) {
+          value = value.trim();
+          used.delete(value);
 
-          const orig = allSwimmers[gender].find(o => o.value === val);
-          if (orig && !opts.some(o => o.value === val)) {
-            opts.push(orig);
+          // Restore to available list if it was an original roster swimmer
+          const original = allSwimmers[gender].find(o => o.value === value);
+          if (original && !opts.some(o => o.value === value)) {
+            opts.push(original);
             opts.sort((a, b) => a.text.localeCompare(b.text));
           }
 
+          // Add back to all other fields
           document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]').forEach(other => {
-            if (other.tomselect && orig && !other.tomselect.options[val]) {
-              other.tomselect.addOption(orig);
+            if (other.tomselect && original && !other.tomselect.options[value]) {
+              other.tomselect.addOption(original);
             }
           });
         },
@@ -115,6 +155,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Initial setup
   initSwimmers();
-  if (teamSelect.value) teamSelect.dispatchEvent(new Event('change'));
+
+  // If a team is already selected (e.g., edit mode), trigger load
+  if (teamSelect.value) {
+    teamSelect.dispatchEvent(new Event('change'));
+  }
 });
