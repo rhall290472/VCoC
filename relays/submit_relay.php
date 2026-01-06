@@ -71,8 +71,8 @@ $teams = $stmt->fetchAll(PDO::FETCH_COLUMN);
  */
 
 // Load meet configuration
-$meet_slug = $_GET['meet'] ?? '2026-wz-sc';  // e.g. ?meet=2026-sectionals
-//$meet_slug = $_GET['meet'] ?? 'csi-state-ag-sc';  // e.g. ?meet=2026-sectionals
+//$meet_slug = $_GET['meet'] ?? '2026-wz-sc';  // e.g. ?meet=2026-sectionals
+$meet_slug = $_GET['meet'] ?? 'csi-state-ag-sc';  // e.g. ?meet=2026-sectionals
 $meet_file = __DIR__ . '/config/meets/' . basename($meet_slug) . '.json';
 
 if (!file_exists($meet_file)) {
@@ -337,12 +337,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $client->setApplicationName('Relay Entries');
     $client->setScopes([Sheets::SPREADSHEETS]);
     $client->setAuthConfig(GOOGLE_SHEETS_CREDENTIALS_PATH);
+
+    // Remove or comment out impersonation unless you know it's configured
+    // $client->setSubject('adminref@swimcolorado.org');
+
     $service = new Sheets($client);
-
-    // ADD THIS LINE – impersonate a real user in your organization who has access to the sheet
-//    $client->setSubject('adminref@swimcolorado.org');  // <-- CHANGE THIS
-
-//    $service = new Sheets($client);
 
     $rowsToAppend = [];
     $submitted_at = $submittedTime->format('Y-m-d H:i:s');
@@ -373,10 +372,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $params = ['valueInputOption' => 'RAW'];
       $service->spreadsheets_values->append(GOOGLE_SHEETS_SPREADSHEET_ID, GOOGLE_SHEETS_RANGE, $body, $params);
     }
+  } catch (Google\Service\Exception $e) {
+    // Parse the JSON error payload from the message to get the HTTP code
+    $errorPayload = json_decode($e->getMessage(), true);
+    $statusCode = $errorPayload['error']['code'] ?? 0;
+
+    if ($statusCode === 403 || stripos($e->getMessage(), 'permission') !== false) {
+      // Gracefully skip for permission-denied cases (common with restricted Workspace sheets)
+      error_log("Google Sheets append skipped (permission denied): " . $e->getMessage() . " | Sheet ID: " . GOOGLE_SHEETS_SPREADSHEET_ID);
+      // No user-facing notice needed – entry is still saved to DB and emailed
+    } else {
+      // Log other Google API errors (e.g., rate limit, invalid range)
+      error_log("Google Sheets append failed (HTTP {$statusCode}): " . $e->getMessage());
+    }
   } catch (Exception $e) {
-    error_log('Google Sheets append failed: ' . $e->getMessage());
-    echo "<p><strong>Warning:</strong> Data saved, but export to Google Sheets failed. Admin notified.</p>";
+    // Catch any other unexpected errors
+    error_log('Unexpected error during Google Sheets append: ' . $e->getMessage());
   }
+
 
   $mail = new PHPMailer(true);
   try {

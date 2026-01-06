@@ -38,6 +38,14 @@
       "type": "chrome",
       "url": "https://localhost/VCoC/relays/submit_relay.php?day=sunday",
       "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "View Entries",
+      "request": "launch",
+      "type": "chrome",
+      "url": "https://localhost/VCoC/relays/view_entries.php?meet=2026-wz-sc",
+      "webRoot": "${workspaceFolder}"
     }
+
   ]
 }

@@ -70,3 +70,44 @@ Stack trace:
 #0 C:\xampp\htdocs\VCoC\relays\get_swimmers.php(29): PDOStatement->execute(Array)
 #1 {main}
   thrown in C:\xampp\htdocs\VCoC\relays\get_swimmers.php on line 29
+[06-Jan-2026 00:30:17 UTC] PHP Fatal error:  Uncaught Google\Service\Exception: {
+  "error": "unauthorized_client",
+  "error_description": "Client is unauthorized to retrieve access tokens using this method, or client not authorized for any of the scopes requested."
+} in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php:134
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php(107): Google\Http\REST::decodeHttpResponse(Object(GuzzleHttp\Psr7\Response), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#1 [internal function]: Google\Http\REST::doExecute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#2 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Task\Runner.php(187): call_user_func_array(Array, Array)
+#3 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php(66): Google\Task\Runner->run()
+#4 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Client.php(967): Google\Http\REST::execute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...', Array, NULL)
+#5 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Service\Resource.php(248): Google\Client->execute(Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#6 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google\Service\Resource->call('append', Array, 'Google\\Service\\...')
+#7 C:\xampp\htdocs\VCoC\relays\submit_relay.php(374): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1kkL1FbuhgBWlkC...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#8 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php on line 134
+[06-Jan-2026 00:38:04 UTC] PHP Fatal error:  Uncaught Google\Service\Exception: {
+  "error": {
+    "code": 403,
+    "message": "The caller does not have permission",
+    "errors": [
+      {
+        "message": "The caller does not have permission",
+        "domain": "global",
+        "reason": "forbidden"
+      }
+    ],
+    "status": "PERMISSION_DENIED"
+  }
+}
+ in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php:134
+Stack trace:
+#0 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php(107): Google\Http\REST::decodeHttpResponse(Object(GuzzleHttp\Psr7\Response), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#1 [internal function]: Google\Http\REST::doExecute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#2 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Task\Runner.php(187): call_user_func_array(Array, Array)
+#3 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php(66): Google\Task\Runner->run()
+#4 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Client.php(967): Google\Http\REST::execute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...', Array, NULL)
+#5 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Service\Resource.php(248): Google\Client->execute(Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#6 C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient-services\src\Sheets\Resource\SpreadsheetsValues.php(85): Google\Service\Resource->call('append', Array, 'Google\\Service\\...')
+#7 C:\xampp\htdocs\VCoC\relays\submit_relay.php(374): Google\Service\Sheets\Resource\SpreadsheetsValues->append('1kkL1FbuhgBWlkC...', 'Sheet1!A:M', Object(Google\Service\Sheets\ValueRange), Array)
+#8 {main}
+  thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php on line 134
