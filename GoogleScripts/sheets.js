@@ -18,19 +18,21 @@
  * Version: 16Dec25 - Add import sheet, get URL for sheet
  * Version: 31Dec25 - Updated sidebar
  * Version: 03Jan26 - splitEventsInColumnsGHIJ Updated
+ * Version: 06Jan26 - Added Protected Heat
  * 
  * 
  */
-const SCRIPT_VERSION = "03Jan26";  // Update this whenever you make changes
-const VERSION_DESCRIPTION = "splitEventsInColumnsGHIJ Updated";  // Optional: short note
+const SCRIPT_VERSION = "06Jan26";  // Update this whenever you make changes
+const VERSION_DESCRIPTION = "Added Protected Heat";  // Optional: short note
 
 
 const COLOR_TIE = "#FF66FF"; // Color for ties
 const COLOR_DQ = "Pink";    // Color for DQ
-const COLOR_NS = "Green";   // Color for NS
+const COLOR_NS = "#90ee90";   // Color for NS
 const COLOR_SCR = "Yellow";  // Color for Scr
 const COLOR_DFS = "Orange";  // Color for DFS
 const COLOR_INTENT = "Cyan"; // Color for Intent to Scr
+const COLOR_PROT = "#adff2f";  // Green for protected - adjust to your preference
 
 const SUCESS = "SUCCESS";
 
@@ -69,6 +71,7 @@ function onOpen(e) {
       .addItem('Intent to Scratch', 'IntentscrSwimmer')
       .addItem('Unscratch swimmer', 'UnscratchSwimmer')
       .addItem('Rerank swimmers', 'renumberRankings')
+      .addItem('Protected 16&U', 'protSwimmer')
       .addSeparator()
       .addItem('Draw heat line', 'drawHeatLine')
       .addItem('Remove all heat lines', 'removeAllBorders')
@@ -105,6 +108,7 @@ function showSidebar() {
     <button onclick="google.script.run.IntentscrSwimmer()">Intent to Scratch</button><br><br>
     <button onclick="google.script.run.UnscratchSwimmer()">Unscratch Swimmer</button><br><br>
     <button onclick="google.script.run.renumberRankings()">Rerank Swimmers</button><br><br>
+    <button onclick="google.script.run.protSwimmer()">Protected 16&U</button><br><br>
     <button onclick="google.script.run.drawHeatLine()">Draw Heat Line</button><br><br>
     <button onclick="google.script.run.removeAllBorders()">Remove All Heat Lines</button><br><br>
     <button onclick="google.script.run.MarkEventClosed()">Mark Event Closed</button><br><br>
@@ -203,56 +207,115 @@ function expandAllRows() {
  * Scratch the current swimmer
  * 
  */
+
 function scrSwimmer() {
+  markSwimmer("scratch");
+}
+
+function protSwimmer() {
+  markSwimmer("protected");
+}
+
+function markSwimmer(mode) {
   try {
     var sheet = SpreadsheetApp.getActiveSheet();
-    if (!sheet) {
-      throw new Error("No active sheet found.");
-    }
+    if (!sheet) throw new Error("No active sheet found.");
 
     var cell = sheet.getActiveCell();
-    if (!cell) {
-      throw new Error("No active cell selected.");
-    }
+    if (!cell) throw new Error("No active cell selected.");
 
     var row = cell.getRow();
-    if (row < 1) {
-      throw new Error("Invalid row selected.");
-    }
+    if (row < 2) throw new Error("Select a valid swimmer row (row 2 or below)."); // Assuming header in row 1
 
     var lastRow = sheet.getLastRow();
-    if (lastRow < row) {
-      throw new Error("Selected row is beyond the last used row.");
-    }
+    if (lastRow < row) throw new Error("Selected row is beyond the last used row.");
 
+    // Clear first two columns (common to both modes)
     sheet.getRange(row, 1, 1, 2).clearContent();
 
     var lastColumn = sheet.getLastColumn();
-    if (lastColumn < 1) {
-      throw new Error("Sheet has no columns.");
-    }
+    if (lastColumn < 1) throw new Error("Sheet has no columns.");
 
-    sheet.getRange(row, 1, 1, lastColumn).setBackground(COLOR_SCR);
+    // Set row background color based on mode
+    var color = (mode === "scratch") ? COLOR_SCR : COLOR_PROT;
+    sheet.getRange(row, 1, 1, lastColumn).setBackground(color);
 
+    // Find last used column (assuming your function exists)
     if (typeof findLastUsedColumn !== "function") {
       throw new Error("Function findLastUsedColumn is not defined.");
     }
     var lastUsedColumn = findLastUsedColumn();
     if (lastUsedColumn < 1 || lastUsedColumn > lastColumn) {
-      throw new Error("Invalid last used column: " + lastUsedColumn);
+      throw new Error("Invalid last used column.");
     }
 
-    sheet.getRange(row, lastUsedColumn).setValue("Scr");
+    // Set label in last used column
+    var label = (mode === "scratch") ? "Scr" : "Prot"; // Or "16&U" / "Protected" - change as needed
+    sheet.getRange(row, lastUsedColumn).setValue(label);
 
     SpreadsheetApp.flush();
+
   } catch (error) {
-    Logger.log("Error in scrSwimmer: " + error.message);
+    Logger.log("Error in markSwimmer: " + error.message);
     SpreadsheetApp.getUi().alert("Error: " + error.message);
+    return;
   }
+
   renumberRankings();
   SpreadsheetApp.flush();
-  return SUCESS;
+  // Optional: Ui alert on success
+  //SpreadsheetApp.getUi().alert(mode === "scratch" ? "Swimmer scratched successfully." : "Swimmer marked as protected (16&U).");
 }
+// function scrSwimmer() {
+//   try {
+//     var sheet = SpreadsheetApp.getActiveSheet();
+//     if (!sheet) {
+//       throw new Error("No active sheet found.");
+//     }
+
+//     var cell = sheet.getActiveCell();
+//     if (!cell) {
+//       throw new Error("No active cell selected.");
+//     }
+
+//     var row = cell.getRow();
+//     if (row < 1) {
+//       throw new Error("Invalid row selected.");
+//     }
+
+//     var lastRow = sheet.getLastRow();
+//     if (lastRow < row) {
+//       throw new Error("Selected row is beyond the last used row.");
+//     }
+
+//     sheet.getRange(row, 1, 1, 2).clearContent();
+
+//     var lastColumn = sheet.getLastColumn();
+//     if (lastColumn < 1) {
+//       throw new Error("Sheet has no columns.");
+//     }
+
+//     sheet.getRange(row, 1, 1, lastColumn).setBackground(COLOR_SCR);
+
+//     if (typeof findLastUsedColumn !== "function") {
+//       throw new Error("Function findLastUsedColumn is not defined.");
+//     }
+//     var lastUsedColumn = findLastUsedColumn();
+//     if (lastUsedColumn < 1 || lastUsedColumn > lastColumn) {
+//       throw new Error("Invalid last used column: " + lastUsedColumn);
+//     }
+
+//     sheet.getRange(row, lastUsedColumn).setValue("Scr");
+
+//     SpreadsheetApp.flush();
+//   } catch (error) {
+//     Logger.log("Error in scrSwimmer: " + error.message);
+//     SpreadsheetApp.getUi().alert("Error: " + error.message);
+//   }
+//   renumberRankings();
+//   SpreadsheetApp.flush();
+//   return SUCESS;
+// }
 
 /**
  * Unscratch the current swimmer
@@ -818,7 +881,8 @@ function renumberRankings() {
     var rankCell = data[row][rankColumn];
 
     // Skip rows with no time or marked as Scr, DFS, DQ, NS
-    if (!timeCell || timeCell === "" || scrCell === "Scr" || timeCell === "DFS" || timeCell === "DQ" || timeCell === "NS" || timeCell === "DNF") {
+    if (!timeCell || timeCell === "" || scrCell === "Scr" || timeCell === "DFS" || timeCell === "DQ" || timeCell === "NS" || timeCell === "DNF" ||
+      scrCell == "Prot") {
       // Clear rank if it exists
       if (rankCell !== "") {
         sheet.getRange(row + 1, rankColumn + 1).setValue("");
@@ -836,6 +900,8 @@ function renumberRankings() {
         sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_NS);
       } else if (normalizedScrCell === "SCR") {
         sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_SCR);
+      } else if (normalizedScrCell === "Prot") {
+        sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_PROT);
       }
       continue;
     }
