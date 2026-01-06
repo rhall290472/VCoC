@@ -24,6 +24,7 @@ CREATE TABLE relay_entries (
     swimmer2 VARCHAR(100),
     swimmer3 VARCHAR(100),
     swimmer4 VARCHAR(100),
+    mm TINYINT(1) DEFAULT 0,
     FOREIGN KEY (submission_id) REFERENCES relay_submissions(id) ON DELETE CASCADE
 );
 

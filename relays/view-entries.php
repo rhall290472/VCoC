@@ -95,7 +95,8 @@ $stmt = $pdo->query("
         re.swimmer1,
         re.swimmer2,
         re.swimmer3,
-        re.swimmer4
+        re.swimmer4,
+        re.mm
     FROM relay_submissions rs
     LEFT JOIN relay_entries re ON rs.id = re.submission_id
     ORDER BY rs.submitted_at DESC, rs.team, rs.day, re.event_id, re.line
@@ -134,6 +135,36 @@ $teams_from_data = array_unique(array_filter(array_column($entries, 'team')));
 sort($teams_from_data);
 $available_teams = $teams_from_data;
 
+
+
+
+// AJAX handler for MM checkbox
+if (isset($_POST['action']) && $_POST['action'] === 'update_mm') {
+  header('Content-Type: application/json');
+
+  $submission_id = (int)$_POST['submission_id'];
+  $event_id      = (int)$_POST['event_id'];
+  $line          = $_POST['line'];
+  $mm            = (int)$_POST['mm']; // 1 or 0
+
+  $update = $pdo->prepare("
+        UPDATE relay_entries 
+        SET mm = :mm 
+        WHERE submission_id = :submission_id 
+          AND event_id = :event_id 
+          AND line = :line
+    ");
+
+  $success = $update->execute([
+    ':mm' => $mm,
+    ':submission_id' => $submission_id,
+    ':event_id' => $event_id,
+    ':line' => $line
+  ]);
+
+  echo json_encode(['success' => $success]);
+  exit;
+}
 ?>
 
 
@@ -200,30 +231,6 @@ $available_teams = $teams_from_data;
       margin-bottom: 10px;
     }
 
-    td.details-control {
-      cursor: pointer;
-      text-align: center;
-      font-weight: bold;
-      color: #007cba;
-    }
-
-    td.details-control::before {
-      content: '▶ ';
-    }
-
-    tr.shown td.details-control::before {
-      content: '▼ ';
-    }
-
-    table.child-details {
-      width: 100%;
-      background: #f5f5f5;
-      margin: 10px 0;
-    }
-
-    table.child-details td {
-      padding: 8px;
-    }
 
     .scratch-yes {
       background: #ffcccc !important;
@@ -288,7 +295,6 @@ $available_teams = $teams_from_data;
   <table id="entriesTable" class="display" style="width:100%">
     <thead>
       <tr>
-        <th></th> <!-- Expand control -->
         <th>Submitted</th>
         <th>Day</th>
         <th>Team</th>
@@ -302,12 +308,12 @@ $available_teams = $teams_from_data;
         <th>Swimmer 2</th>
         <th>Swimmer 3</th>
         <th>Swimmer 4</th>
+        <th>MM</th> <!-- NEW -->
       </tr>
     </thead>
     <tbody>
       <?php foreach ($entries as $row): ?>
         <tr>
-          <td class="details-control"></td>
           <td><?= htmlspecialchars($row['submitted_at']) ?></td>
           <td><?= htmlspecialchars(ucfirst($row['day'] ?? '')) ?></td>
           <td><?= htmlspecialchars($row['team'] ?? '') ?></td>
@@ -321,6 +327,13 @@ $available_teams = $teams_from_data;
           <td><?= htmlspecialchars($row['swimmer2'] ?? '') ?></td>
           <td><?= htmlspecialchars($row['swimmer3'] ?? '') ?></td>
           <td><?= htmlspecialchars($row['swimmer4'] ?? '') ?></td>
+          <td class="mm-checkbox">
+            <input type="checkbox"
+              data-entry-id="<?= (int)$row['submission_id'] ?>"
+              data-event-id="<?= (int)$row['event_id'] ?>"
+              data-line="<?= htmlspecialchars($row['line']) ?>"
+              <?= $row['mm'] ? 'checked' : '' ?>>
+          </td>
         </tr>
       <?php endforeach; ?>
     </tbody>
@@ -332,16 +345,6 @@ $available_teams = $teams_from_data;
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.colVis.min.js"></script>
 
   <script>
-    function formatSwimmers(d) {
-      // d is the row data array
-      return '<table class="child-details" cellpadding="5" cellspacing="0">' +
-        '<tr><td><strong>Swimmer 1:</strong></td><td>' + (d[10] || '<em>—</em>') + '</td></tr>' +
-        '<tr><td><strong>Swimmer 2:</strong></td><td>' + (d[11] || '<em>—</em>') + '</td></tr>' +
-        '<tr><td><strong>Swimmer 3:</strong></td><td>' + (d[12] || '<em>—</em>') + '</td></tr>' +
-        '<tr><td><strong>Swimmer 4:</strong></td><td>' + (d[13] || '<em>—</em>') + '</td></tr>' +
-        '</table>';
-    }
-
     $(document).ready(function() {
       const table = $('#entriesTable').DataTable({
         dom: 'Bfrtip',
@@ -354,12 +357,12 @@ $available_teams = $teams_from_data;
           [1, 'desc']
         ], // newest first
         pageLength: -1,
-        lengthMenu: [[-1], ["All"]],
+        lengthMenu: [
+          [-1],
+          ["All"]
+        ],
         responsive: true,
-        columnDefs: [{
-            targets: 0,
-            orderable: false
-          }, // expand column
+        columnDefs: [
           {
             targets: [8, 9],
             className: 'dt-center'
@@ -367,24 +370,6 @@ $available_teams = $teams_from_data;
         ]
       });
 
-      // Expand/collapse row details
-      $('#entriesTable tbody').on('click', 'td.details-control', function() {
-        const tr = $(this).closest('tr');
-        const row = table.row(tr);
-
-        if (row.child.isShown()) {
-          row.child.hide();
-          tr.removeClass('shown');
-        } else {
-          row.child(formatSwimmers(row.data())).show();
-          tr.addClass('shown');
-        }
-      });
-
-      // Optional: click anywhere on row to expand
-      $('#entriesTable tbody').on('click', 'tr td:not(.details-control)', function() {
-        $(this).parent().find('td.details-control').click();
-      });
 
       // Filters
       function applyFilters() {
@@ -406,6 +391,51 @@ $available_teams = $teams_from_data;
         window.location.href = window.location.pathname + '?meet=<?= urlencode($meet_slug) ?>';
       <?php endif; ?>
     });
+
+    // MM Checkbox handling
+    $('#entriesTable').on('change', '.mm-checkbox input[type="checkbox"]', function() {
+      const checkbox = $(this);
+      const row = checkbox.closest('tr');
+      const isChecked = checkbox.is(':checked') ? 1 : 0;
+
+      const data = {
+        action: 'update_mm',
+        submission_id: checkbox.data('entry-id'),
+        event_id: checkbox.data('event-id'),
+        line: checkbox.data('line'),
+        mm: isChecked
+      };
+
+      $.post(window.location.href, data)
+        .done(function(response) {
+          if (response.success) {
+            if (isChecked) {
+              // Hide the row with animation
+              row.fadeOut(400, function() {
+                table.row(row).remove().draw(false);
+              });
+            }
+            // If unchecked, just leave it visible (it was already there)
+          } else {
+            alert('Failed to update MM status');
+            checkbox.prop('checked', !isChecked); // revert
+          }
+        })
+        .fail(function() {
+          alert('Connection error');
+          checkbox.prop('checked', !isChecked);
+        });
+    });
+
+    // Optional: Hide already MM-checked rows on page load
+    table.rows().every(function() {
+      const data = this.data();
+      const mmCheckbox = $(this.node()).find('.mm-checkbox input');
+      if (mmCheckbox.is(':checked')) {
+        this.remove();
+      }
+    });
+    table.draw(false);
   </script>
 </body>
 
