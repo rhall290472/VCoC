@@ -113,3 +113,71 @@ Stack trace:
   thrown in C:\xampp\htdocs\VCoC\relays\vendor\google\apiclient\src\Http\REST.php on line 134
 [06-Jan-2026 18:24:56 Europe/Berlin] PHP Warning:  Undefined variable $meet_slug in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 66
 [06-Jan-2026 18:25:55 Europe/Berlin] PHP Warning:  Undefined variable $meet_slug in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 66
+[07-Jan-2026 01:19:46 UTC] PHP Warning:  Undefined variable $meet_slug in /hermes/bosnacweb05/bosnacweb05cf/b2482/ipg.rhall29047217205/VCoC/relays/view-entries.php on line 104
+[07-Jan-2026 01:20:08 UTC] PHP Warning:  Undefined variable $meet_slug in /hermes/bosnacweb05/bosnacweb05cf/b2482/ipg.rhall29047217205/VCoC/relays/view-entries.php on line 104
+[07-Jan-2026 01:21:09 UTC] PHP Warning:  Undefined variable $meet_slug in /hermes/bosnacweb05/bosnacweb05cf/b2482/ipg.rhall29047217205/VCoC/relays/view-entries.php on line 104
+[07-Jan-2026 02:46:55 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens in /hermes/bosnacweb05/bosnacweb05cf/b2482/ipg.rhall29047217205/VCoC/relays/submit_relay.php:136
+Stack trace:
+#0 /hermes/bosnacweb05/bosnacweb05cf/b2482/ipg.rhall29047217205/VCoC/relays/submit_relay.php(136): PDOStatement->execute()
+#1 {main}
+  thrown in /hermes/bosnacweb05/bosnacweb05cf/b2482/ipg.rhall29047217205/VCoC/relays/submit_relay.php on line 136
+[07-Jan-2026 02:47:41 UTC] PHP Fatal error:  Uncaught TypeError: PDOStatement::execute(): Argument #1 ($params) must be of type ?array, string given in /hermes/bosnacweb05/bosnacweb05cf/b2482/ipg.rhall29047217205/VCoC/relays/submit_relay.php:136
+Stack trace:
+#0 /hermes/bosnacweb05/bosnacweb05cf/b2482/ipg.rhall29047217205/VCoC/relays/submit_relay.php(136): PDOStatement->execute()
+#1 {main}
+  thrown in /hermes/bosnacweb05/bosnacweb05cf/b2482/ipg.rhall29047217205/VCoC/relays/submit_relay.php on line 136
+[07-Jan-2026 03:52:51 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 03:54:33 UTC] MATCHED! Assigned to gender mixed, line a
+[07-Jan-2026 03:54:37 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 03:54:40 UTC] MATCHED! Assigned to gender mixed, line b
+[07-Jan-2026 03:54:42 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 03:54:43 UTC] MATCHED! Assigned to gender mixed, line c
+[07-Jan-2026 03:54:45 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 03:54:47 UTC] MATCHED! Assigned to gender mixed, line d
+[07-Jan-2026 03:54:49 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 03:54:50 UTC] MATCHED! Assigned to gender mixed, line e
+[07-Jan-2026 03:54:53 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 03:54:55 UTC] MATCHED! Assigned to gender mixed, line f
+[07-Jan-2026 03:57:39 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 03:57:40 UTC] MATCHED! Assigned to gender mixed, line a
+[07-Jan-2026 03:57:44 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 03:57:45 UTC] MATCHED! Assigned to gender mixed, line b
+[07-Jan-2026 03:57:48 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 03:57:50 UTC] MATCHED! Assigned to gender mixed, line c
+[07-Jan-2026 03:57:53 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 03:57:54 UTC] MATCHED! Assigned to gender mixed, line d
+[07-Jan-2026 03:57:59 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 03:57:59 UTC] MATCHED! Assigned to gender mixed, line e
+[07-Jan-2026 03:58:02 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 03:58:02 UTC] MATCHED! Assigned to gender mixed, line f
+[07-Jan-2026 04:02:35 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 04:02:35 UTC] MATCHED! Assigned to gender mixed, line a
+[07-Jan-2026 04:02:36 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 04:02:36 UTC] MATCHED! Assigned to gender mixed, line b
+[07-Jan-2026 04:02:36 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 04:02:36 UTC] MATCHED! Assigned to gender mixed, line c
+[07-Jan-2026 04:02:37 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 04:02:37 UTC] MATCHED! Assigned to gender mixed, line d
+[07-Jan-2026 04:02:37 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 04:02:37 UTC] MATCHED! Assigned to gender mixed, line e
+[07-Jan-2026 04:02:38 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 04:02:38 UTC] MATCHED! Assigned to gender mixed, line f
+[07-Jan-2026 04:02:38 UTC] PHP Warning:  Undefined variable $s1 in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 583
+[07-Jan-2026 04:05:01 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 04:05:01 UTC] MATCHED! Assigned to gender mixed, line a
+[07-Jan-2026 04:05:01 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 04:05:01 UTC] MATCHED! Assigned to gender mixed, line b
+[07-Jan-2026 04:05:01 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 04:05:01 UTC] MATCHED! Assigned to gender mixed, line c
+[07-Jan-2026 04:05:02 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 04:05:02 UTC] MATCHED! Assigned to gender mixed, line d
+[07-Jan-2026 04:05:02 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 04:05:02 UTC] MATCHED! Assigned to gender mixed, line e
+[07-Jan-2026 04:05:02 UTC] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 04:05:02 UTC] MATCHED! Assigned to gender mixed, line f
+[07-Jan-2026 04:05:02 UTC] PHP Warning:  Undefined variable $s1 in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 583
+[07-Jan-2026 04:08:04 UTC] PHP Warning:  Undefined variable $s1 in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 583
+[07-Jan-2026 04:08:10 UTC] PHP Warning:  Undefined variable $s1 in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 583
+[07-Jan-2026 04:08:10 UTC] PHP Warning:  Undefined variable $s1 in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 583
+[07-Jan-2026 04:08:10 UTC] PHP Warning:  Undefined variable $s1 in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 583
+[07-Jan-2026 04:08:10 UTC] PHP Warning:  Undefined variable $s1 in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 583

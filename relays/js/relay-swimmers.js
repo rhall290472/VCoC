@@ -2,17 +2,18 @@ document.addEventListener('DOMContentLoaded', function () {
   const teamSelect = document.querySelector('select[name="team"]');
   if (!teamSelect) return;
 
-  // Add TomSelect to team dropdown
-  //new TomSelect(teamSelect, { maxOptions: null });
-  // Add TomSelect to team dropdown with ability to create new teams
+  // === FIX: Properly initialize TomSelect with create enabled ===
   new TomSelect(teamSelect, {
     maxOptions: null,
-    create: true,                    // ← This enables typing new teams
-    createOnBlur: true,              // Creates the new option if user tabs/blurs after typing
-    placeholder: 'Select or type your team...',
+    create: true,                    // Allow typing a new team name
+    createOnBlur: true,              // Create when user tabs away after typing
+    placeholder: 'Select or type your team name...',
     highlight: true,
-    maxItems: 1
+    maxItems: 1,
+    sortField: { field: 'text', direction: 'asc' }  // Optional: keep list sorted
   });
+
+  // ... rest of your existing code (fetching swimmers, etc.) remains unchanged
 
   // Extract meet_slug from URL (e.g., ?meet=2026-wz-sc or ?meet=csi-state-ag-sc)
   const urlParams = new URLSearchParams(window.location.search);

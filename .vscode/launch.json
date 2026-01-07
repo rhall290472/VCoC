@@ -45,7 +45,13 @@
       "type": "chrome",
       "url": "https://localhost/VCoC/relays/view-entries.php?meet=2026-wz-sc",
       "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug Edits",
+      "request": "launch",
+      "type": "chrome",
+      "url": "https://localhost/VCoC/relays/submit_relay.php?edit=bacfcbf8f37f386944cfa875fd5b6163abf67c8c1b787a41f27e28cb9ae5735f",
+      "webRoot": "${workspaceFolder}"
     }
-
   ]
 }

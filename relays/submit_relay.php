@@ -1,5 +1,6 @@
 <?php
-
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 /**
  * submit_relay.php - Multi-day relay entry submission and edit handler
  *
@@ -65,12 +66,26 @@ try {
  */
 
 // Load meet configuration
-//$meet_slug = $_GET['meet'] ?? '2026-wz-sc';  // e.g. ?meet=2026-sectionals
-$meet_slug = $_GET['meet'] ?? 'csi-state-ag-sc';  // e.g. ?meet=2026-sectionals
+// Determine meet_slug: use stored value in edit mode, otherwise GET param or default
+$meet_slug_from_get = $_GET['meet'] ?? null;
+$edit_token = $_GET['edit'] ?? '';
+$meet_slug = $meet_slug_from_get ?? 'csi-state-ag-sc';  // default fallback for new entries
+
+if ($edit_token) {
+  $stmt = $pdo->prepare("SELECT meet_slug FROM relay_submissions WHERE edit_token = ?");
+  $stmt->execute([$edit_token]);
+  $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+  if ($row) {
+    $meet_slug = $row['meet_slug'];  // ALWAYS use the original meet when editing
+  }
+  // If token invalid, we'll catch it later in the full submission load
+}
+
 $meet_file = __DIR__ . '/config/meets/' . basename($meet_slug) . '.json';
 
 if (!file_exists($meet_file)) {
-  die("Meet configuration not found.");
+  die("Meet configuration not found for: " . htmlspecialchars($meet_slug));
 }
 
 $meet_config = json_decode(file_get_contents($meet_file), true);
@@ -158,6 +173,31 @@ if ($edit_token) {
     $stmt->execute([$submission['id']]);
     $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+
+// TEMPORARY DEBUG - REMOVE AFTER FIXING
+echo "<pre style='background:#fff; padding:15px; border:1px solid #ccc; margin:20px; max-height:400px; overflow:auto;'>";
+echo "DEBUG EDIT LOAD FOR SUBMISSION ID: " . htmlspecialchars($submission['id']) . "\n";
+echo "Day: $day\n";
+echo "Number of DB entries: " . count($entries) . "\n\n";
+
+echo "Config events for $day:\n";
+foreach ($event_configs[$day]['events'] as $g => $list) {
+  foreach ($list as $ev) {
+    echo "  Gender: $g | ID: " . $ev['id'] . " (type: " . gettype($ev['id']) . ") | Name: " . $ev['name'] . "\n";
+  }
+}
+
+echo "\nDB entries:\n";
+foreach ($entries as $e) {
+  echo "  event_id: " . $e['event_id'] . " (type: " . gettype($e['event_id']) . ") | line: " . $e['line'] . " | swimmers: " .
+    ($e['swimmer1']?:'-') . ", " . ($e['swimmer2']?:'-') . ", " . ($e['swimmer3']?:'-') . ", " . ($e['swimmer4']?:'-') . "\n";
+}
+
+echo "\nFinal entries_index structure:\n";
+print_r($entries_index);
+
+echo "</pre>";
+// END TEMP DEBUG    
     // foreach ($event_configs[$day]['events'] as $gender_key => $event) {
     //   $entries_index[$gender_key] = [];
     //   foreach ($event_configs[$day]['lines'] as $line_key => $line_label) {
@@ -175,22 +215,48 @@ if ($edit_token) {
         $entries_index[$gender_key][$line_key] = [];
       }
     }
-
-    // Load existing entries
+// // TEMP DEBUG - remove after fixing
+// echo "<pre>";
+// echo "Day: $day\n";
+// echo "DB entries count: " . count($entries) . "\n";
+// foreach ($entries as $e) {
+//   echo "DB: event_id={$e['event_id']} (type:" . gettype($e['event_id']) . "), line={$e['line']}\n";
+// }
+// echo "Config events:\n";
+// foreach ($event_configs[$day]['events'] as $g => $list) {
+//   foreach ($list as $ev) {
+//     echo "Config: id={$ev['id']} (type:" . gettype($ev['id']) . "), name={$ev['name']}\n";
+//   }
+// }
+// echo "</pre>";
+// exit;
+    // Load existing entries - MINIMAL DEBUG VERSION TO FORCE MATCH
     foreach ($entries as $row) {
+      $db_event_id = $row['event_id'];  // "23"
+      $db_line = trim($row['line']);    // "A", "B", etc.
+
       foreach ($event_configs[$day]['events'] as $gender_key => $events_list) {
         foreach ($events_list as $event) {
-          if ($row['event_id'] == $event['id']) {
-            $line = strtolower($row['line']);
-            $entries_index[$gender_key][$line] = [
-              'scratch' => $row['scratch'],
-              'prelim'  => $row['swim_prelim'],
-              's1' => htmlspecialchars($row['swimmer1'] ?? ''),
-              's2' => htmlspecialchars($row['swimmer2'] ?? ''),
-              's3' => htmlspecialchars($row['swimmer3'] ?? ''),
-              's4' => htmlspecialchars($row['swimmer4'] ?? ''),
-            ];
-            break 2; // exit both inner loops once matched
+          $config_id_str = (string)$event['id'];   // "23"
+          $db_id_str     = (string)$db_event_id;   // "23"
+
+          // TEMP: Force log every comparison
+          error_log("Comparing config ID $config_id_str with DB ID $db_id_str for submission {$submission['id']}");
+
+          if ($config_id_str === $db_id_str) {
+            $line_key = strtolower($db_line);
+
+            if (isset($event_configs[$day]['lines'][$line_key])) {
+              $entries_index[$gender_key][$line_key] = [
+                'scratch' => (int)$row['scratch'],
+                'prelim'  => (int)$row['swim_prelim'],
+                's1' => htmlspecialchars($row['swimmer1'] ?? ''),
+                's2' => htmlspecialchars($row['swimmer2'] ?? ''),
+                's3' => htmlspecialchars($row['swimmer3'] ?? ''),
+                's4' => htmlspecialchars($row['swimmer4'] ?? ''),
+              ];
+              error_log("MATCHED! Assigned to gender $gender_key, line $line_key");
+            }
           }
         }
       }
@@ -476,9 +542,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     function checked($gender, $line, $field, $entries_index)
     {
-      return ($entries_index[$gender][$line][$field] ?? 0) == 1 ? 'checked' : '';
-    }
-    ?>
+      $value = $entries_index[$gender][$line][$field] ?? 0;
+      return $value ? 'checked' : '';
+    }    ?>
 
     <?php foreach ($config['events'] as $gender_key => $events_list): ?>
       <?php foreach ($events_list as $event): ?>
