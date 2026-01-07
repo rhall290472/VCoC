@@ -363,7 +363,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $service->spreadsheets_values->append(GOOGLE_SHEETS_SPREADSHEET_ID, GOOGLE_SHEETS_RANGE, $body, $params);
     }
   } catch (Exception $e) {
-    error_log("Google Sheets append failed: " . $e->getMessage());
+    $sheets_success = false;
+    $sheets_error = $e->getMessage();
+    error_log("Google Sheets append failed for submission ID {$submission_id}: " . $sheets_error);
+    // Do NOT rethrow or die — continue gracefully
   }
 
   // Send confirmation email
