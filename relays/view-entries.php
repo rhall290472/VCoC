@@ -78,6 +78,11 @@ if (!isset($_SESSION['relay_view_authenticated'])) {
   }
 }
 
+// Load meet config for event names and days
+$meet_slug = $_GET['meet'] ?? '2026-wz-sc';
+$meet_file = __DIR__ . '/config/meets/' . basename($meet_slug) . '.json';
+
+
 // Fetch all data
 $stmt = $pdo->prepare("
     SELECT 
