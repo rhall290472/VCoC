@@ -19,11 +19,12 @@
  * Version: 31Dec25 - Updated sidebar
  * Version: 03Jan26 - splitEventsInColumnsGHIJ Updated
  * Version: 06Jan26 - Added Protected Heat
+ * Version: 07Jan26 - Draw heat line THICK
  * 
  * 
  */
-const SCRIPT_VERSION = "06Jan26";  // Update this whenever you make changes
-const VERSION_DESCRIPTION = "Added Protected Heat";  // Optional: short note
+const SCRIPT_VERSION = "07Jan26";  // Update this whenever you make changes
+const VERSION_DESCRIPTION = "Draw heat line THICK";  // Optional: short note
 
 
 const COLOR_TIE = "#FF66FF"; // Color for ties
@@ -34,7 +35,7 @@ const COLOR_DFS = "Orange";  // Color for DFS
 const COLOR_INTENT = "Cyan"; // Color for Intent to Scr
 const COLOR_PROT = "#adff2f";  // Green for protected - adjust to your preference
 
-const SUCESS = "SUCCESS";
+const SUCCESS = "SUCCESS";
 
 
 /**
@@ -314,7 +315,7 @@ function markSwimmer(mode) {
 //   }
 //   renumberRankings();
 //   SpreadsheetApp.flush();
-//   return SUCESS;
+//   return SUCCESS;
 // }
 
 /**
@@ -369,7 +370,7 @@ function UnscratchSwimmer() {
   }
   renumberRankings();
   SpreadsheetApp.flush();
-  return SUCESS;
+  return SUCCESS;
 }
 
 /**
@@ -444,7 +445,7 @@ function IntentscrSwimmer() {
     Logger.log("Error in IntentscrSwimmer: " + error.message);
     SpreadsheetApp.getUi().alert("Error: " + error.message);
   }
-  return SUCESS;
+  return SUCCESS;
 }
 
 /**
@@ -481,7 +482,7 @@ function drawHeatLine() {
     var rowRange = sheet.getRange(row, 1, 1, numColumns);
     rowRange.setBorder(
       false, false, true, false, false, false,
-      "black", SpreadsheetApp.BorderStyle.SOLID
+      "black", SpreadsheetApp.BorderStyle.SOLID_THICK
     );
 
     SpreadsheetApp.flush();
@@ -489,7 +490,7 @@ function drawHeatLine() {
     Logger.log("Error in drawHeatLine: " + error.message);
     SpreadsheetApp.getUi().alert("Error: " + error.message);
   }
-  return SUCESS;
+  return SUCCESS;
 }
 
 /**
@@ -538,7 +539,7 @@ function findLastUsedColumn() {
     Logger.log("Error in findLastUsedColumn: " + error.message);
     throw error; // Rethrow to be caught by calling function
   }
-  return SUCESS;
+  return SUCCESS;
 }
 
 /**
@@ -575,7 +576,7 @@ function removeAllBorders() {
     Logger.log("Error in removeAllBorders: " + error.message);
     SpreadsheetApp.getUi().alert("Error: " + error.message);
   }
-  return SUCESS;
+  return SUCCESS;
 }
 
 /**
@@ -605,7 +606,7 @@ function columnLetterToIndex(columnLetter) {
     Logger.log("Error in columnLetterToIndex: " + error.message);
     throw error; // Rethrow to be caught by calling function
   }
-  return SUCESS;
+  return SUCCESS;
 }
 
 /**
@@ -635,7 +636,7 @@ function MarkEventClosed() {
     SpreadsheetApp.getUi().alert("Error inserting image from Google Drive: " + e.message);
   }
   SpreadsheetApp.flush();
-  return SUCESS;
+  return SUCCESS;
 }
 
 /**
@@ -663,7 +664,7 @@ function MarkEventRevised() {
     SpreadsheetApp.getUi().alert("Error inserting image from Google Drive: " + e.message);
   }
   SpreadsheetApp.flush();
-  return SUCESS;
+  return SUCCESS;
 }
 
 /**
@@ -943,7 +944,7 @@ function renumberRankings() {
     sheet.getRange(tiedRows[0] + 1, 1, 1, lastColumn).setBackground(null);
   }
   SpreadsheetApp.flush();
-  return SUCESS;
+  return SUCCESS;
 }
 
 /**
@@ -1112,7 +1113,7 @@ function renameSheetToEvent(sheetName, eventNum) {
 
     expandAllRows();  // Clean up the newly renamed sheet
 
-    return SUCESS;  // Consistent with other functions in your script
+    return SUCCESS;  // Consistent with other functions in your script
   } catch (error) {
     Logger.log('Rename error: ' + error);
     throw error;  // Will trigger failure handler in client
@@ -1210,7 +1211,7 @@ function onFormSubmit(e) {
   console.log("Form submitted – processing splits...");
   splitEventsInColumnsGHIJ();
   SpreadsheetApp.flush();
-  return SUCESS;
+  return SUCCESS;
 }
 
 /**
@@ -1286,7 +1287,7 @@ function onFormSubmit(e) {
 //   console.log(`Success! Sheet now has ${1 + newDataRows.length} rows (including header)`);
 
 //   SpreadsheetApp.flush();
-//   return SUCESS;
+//   return SUCCESS;
 // }
 /**
  * MAIN SPLIT FUNCTION – now completely bulletproof
