@@ -83,7 +83,6 @@ $meet_slug = $_GET['meet'] ?? '2026-wz-sc';
 $meet_file = __DIR__ . '/config/meets/' . basename($meet_slug) . '.json';
 
 
-// Fetch all data
 $stmt = $pdo->prepare("
     SELECT 
         rs.id AS submission_id,
@@ -93,10 +92,12 @@ $stmt = $pdo->prepare("
         rs.team,
         rs.day,
         rs.submitted_at,
+        re.id AS entry_id,           -- MUST HAVE THIS
         re.event_id,
         re.line,
         re.scratch,
         re.swim_prelim,
+        re.mm,
         re.swimmer1,
         re.swimmer2,
         re.swimmer3,
@@ -106,6 +107,8 @@ $stmt = $pdo->prepare("
     WHERE rs.meet_slug = ?
     ORDER BY rs.submitted_at DESC, rs.team, rs.day, re.event_id, re.line
 ");
+
+
 $stmt->execute([$meet_slug]);
 
 $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -207,31 +210,6 @@ $available_teams = $teams_from_data;
       margin-bottom: 10px;
     }
 
-    td.details-control {
-      cursor: pointer;
-      text-align: center;
-      font-weight: bold;
-      color: #007cba;
-    }
-
-    td.details-control::before {
-      content: '▶ ';
-    }
-
-    tr.shown td.details-control::before {
-      content: '▼ ';
-    }
-
-    table.child-details {
-      width: 100%;
-      background: #f5f5f5;
-      margin: 10px 0;
-    }
-
-    table.child-details td {
-      padding: 8px;
-    }
-
     .scratch-yes {
       background: #ffcccc !important;
     }
@@ -244,6 +222,10 @@ $available_teams = $teams_from_data;
       text-align: center;
       margin: 20px 0;
     }
+
+    .mm-yes {
+  background: #d0f0d0 !important;   /* light green, or choose your color */
+}
   </style>
 </head>
 
@@ -258,78 +240,96 @@ $available_teams = $teams_from_data;
     <a href="?logout=1&meet=<?= urlencode($meet_slug) ?>">Logout</a>
   </div>
 
-  <!-- Filters -->
-  <div class="filters">
-    <div class="filter-group">
-      <label for="dayFilter">Day</label>
-      <select id="dayFilter">
-        <option value="">All Days</option>
-        <?php foreach ($available_days as $day): ?>
-          <option value="<?= ucfirst($day) ?>"><?= ucfirst($day) ?></option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-    <div class="filter-group">
-      <label for="teamFilter">Team</label>
-      <select id="teamFilter">
-        <option value="">All Teams</option>
-        <?php foreach ($available_teams as $team): ?>
-          <option value="<?= htmlspecialchars($team) ?>"><?= htmlspecialchars($team) ?></option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-    <div class="filter-group">
-      <label for="eventFilter">Event</label>
-      <select id="eventFilter">
-        <option value="">All Events</option>
-        <?php foreach ($event_names as $id => $name): ?>
-          <option value="<?= htmlspecialchars($name) ?>"><?= htmlspecialchars($name) ?></option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-    <div class="filter-group">
-      <button id="resetFilters">Reset Filters</button>
-    </div>
+<div class="filters">
+  <div class="filter-group">
+    <label for="dayFilter">Day</label>
+    <select id="dayFilter">
+      <option value="">All Days</option>
+      <?php foreach ($available_days as $day): ?>
+        <option value="<?= ucfirst($day) ?>"><?= ucfirst($day) ?></option>
+      <?php endforeach; ?>
+    </select>
   </div>
 
+  <div class="filter-group">
+    <label for="teamFilter">Team</label>
+    <select id="teamFilter">
+      <option value="">All Teams</option>
+      <?php foreach ($available_teams as $team): ?>
+        <option value="<?= htmlspecialchars($team) ?>"><?= htmlspecialchars($team) ?></option>
+      <?php endforeach; ?>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label for="eventFilter">Event</label>
+    <select id="eventFilter">
+      <option value="">All Events</option>
+      <?php foreach ($event_names as $id => $name): ?>
+        <option value="<?= htmlspecialchars($name) ?>"><?= htmlspecialchars($name) ?></option>
+      <?php endforeach; ?>
+    </select>
+  </div>
+
+  <!-- NEW: MM Visibility Toggle – placed as the 4th filter group -->
+<div class="filter-group" style="display:flex; align-items:center; gap:8px;">
+  <input type="checkbox" id="showHiddenMM">
+  <label for="showHiddenMM" style="margin:0; font-weight:normal;">Show hidden MM rows</label>
+</div>
+
+
+  <div class="filter-group">
+    <label>&nbsp;</label> <!-- Spacer for alignment -->
+    <button id="resetFilters">Reset Filters</button>
+  </div>
+</div>
+
   <table id="entriesTable" class="display" style="width:100%">
-    <thead>
-      <tr>
-        <th></th> <!-- Expand control -->
-        <th>Submitted</th>
-        <th>Day</th>
-        <th>Team</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Event</th>
-        <th>Relay</th>
-        <th>Scratch</th>
-        <th>Swim Prelim</th>
-        <th>Swimmer 1</th>
-        <th>Swimmer 2</th>
-        <th>Swimmer 3</th>
-        <th>Swimmer 4</th>
-      </tr>
-    </thead>
+<thead>
+  <tr>
+    <th>Submitted</th>
+    <th>Day</th>
+    <th>Team</th>
+    <th>Name</th>
+    <th>Email</th>
+    <th>Event</th>
+    <th>Relay</th>
+    <th>Scratch</th>
+    <th>Swim Prelim</th>
+    <th>MM <br><small>(hide when checked)</small></th>                  <!-- NEW COLUMN -->
+    <th>Swimmer 1</th>
+    <th>Swimmer 2</th>
+    <th>Swimmer 3</th>
+    <th>Swimmer 4</th>
+  </tr>
+</thead>
     <tbody>
       <?php foreach ($entries as $row): ?>
-        <tr>
-          <td class="details-control"></td>
-          <td><?= htmlspecialchars($row['submitted_at']) ?></td>
-          <td><?= htmlspecialchars(ucfirst($row['day'] ?? '')) ?></td>
-          <td><?= htmlspecialchars($row['team'] ?? '') ?></td>
-          <td><?= htmlspecialchars(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?></td>
-          <td><?= htmlspecialchars($row['email'] ?? '') ?></td>
-          <td><?= htmlspecialchars($event_names[$row['event_id']] ?? 'Event ' . $row['event_id']) ?></td>
-          <td><?= htmlspecialchars($row['line'] ?? '') ?></td>
-          <td class="<?= $row['scratch'] ? 'scratch-yes' : '' ?>"><?= $row['scratch'] ? 'Yes' : 'No' ?></td>
-          <td class="<?= $row['swim_prelim'] ? 'prelim-yes' : '' ?>"><?= $row['swim_prelim'] ? 'Yes' : 'No' ?></td>
-          <td><?= htmlspecialchars($row['swimmer1'] ?? '') ?></td>
-          <td><?= htmlspecialchars($row['swimmer2'] ?? '') ?></td>
-          <td><?= htmlspecialchars($row['swimmer3'] ?? '') ?></td>
-          <td><?= htmlspecialchars($row['swimmer4'] ?? '') ?></td>
-        </tr>
-      <?php endforeach; ?>
+<tr>
+  <td><?= htmlspecialchars($row['submitted_at']) ?></td>
+  <td><?= htmlspecialchars(ucfirst($row['day'] ?? '')) ?></td>
+  <td><?= htmlspecialchars($row['team'] ?? '') ?></td>
+  <td><?= htmlspecialchars(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?></td>
+  <td><?= htmlspecialchars($row['email'] ?? '') ?></td>
+  <td><?= htmlspecialchars($event_names[$row['event_id']] ?? 'Event ' . $row['event_id']) ?></td>
+  <td><?= htmlspecialchars($row['line'] ?? '') ?></td>
+  <td class="<?= $row['scratch'] ? 'scratch-yes' : '' ?>"><?= $row['scratch'] ? 'Yes' : 'No' ?></td>
+  <td class="<?= $row['swim_prelim'] ? 'prelim-yes' : '' ?>"><?= $row['swim_prelim'] ? 'Yes' : 'No' ?></td>
+  <td style="text-align:center; vertical-align:middle;">
+  <?php if ($row['entry_id']): ?>
+    <input type="checkbox"
+           class="mm-checkbox"
+           data-entry-id="<?= (int)$row['entry_id'] ?>"
+           <?= $row['mm'] ? 'checked' : '' ?>>
+  <?php else: ?>
+    —
+  <?php endif; ?>
+</td>
+  <td><?= htmlspecialchars($row['swimmer1'] ?? '') ?></td>
+  <td><?= htmlspecialchars($row['swimmer2'] ?? '') ?></td>
+  <td><?= htmlspecialchars($row['swimmer3'] ?? '') ?></td>
+  <td><?= htmlspecialchars($row['swimmer4'] ?? '') ?></td>
+</tr>      <?php endforeach; ?>
     </tbody>
   </table>
 
@@ -337,70 +337,38 @@ $available_teams = $teams_from_data;
   <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.colVis.min.js"></script>
+<script src="js/admin-view.js"></script>
 
   <script>
-    function formatSwimmers(d) {
-      // d is the row data array
-      return '<table class="child-details" cellpadding="5" cellspacing="0">' +
-        '<tr><td><strong>Swimmer 1:</strong></td><td>' + (d[10] || '<em>—</em>') + '</td></tr>' +
-        '<tr><td><strong>Swimmer 2:</strong></td><td>' + (d[11] || '<em>—</em>') + '</td></tr>' +
-        '<tr><td><strong>Swimmer 3:</strong></td><td>' + (d[12] || '<em>—</em>') + '</td></tr>' +
-        '<tr><td><strong>Swimmer 4:</strong></td><td>' + (d[13] || '<em>—</em>') + '</td></tr>' +
-        '</table>';
+
+const table = $('#entriesTable').DataTable({
+  dom: 'Bfrtip',                  // Keep buttons (column visibility) and filters
+  buttons: [{
+    extend: 'colvis',
+    text: 'Show/Hide Columns',
+    columns: ':gt(0)'             // All columns except the first (if you had expand arrow)
+  }],
+  order: [[1, 'desc']],           // Newest first (Submitted column)
+  paging: false,                  // ← THIS REMOVES PAGINATION ENTIRELY
+  info: false,                    // Optional: removes "Showing 1 to X of Y entries"
+  pageLength: -1,                 // Still good to have
+  lengthMenu: [[-1], ["All"]],    // Keeps the "All" option if you ever re-enable paging
+  responsive: true,
+  columnDefs: [
+    {
+      targets: [8, 9],            // Scratch & Prelim columns (adjust if needed)
+      className: 'dt-center'
     }
+  ]
+});
 
-    $(document).ready(function() {
-      const table = $('#entriesTable').DataTable({
-        dom: 'Bfrtip',
-        buttons: [{
-          extend: 'colvis',
-          text: 'Show/Hide Columns',
-          columns: ':gt(0)' // All columns except the expand arrow
-        }],
-        order: [
-          [1, 'desc']
-        ], // newest first
-        pageLength: -1,
-        lengthMenu: [[-1], ["All"]],
-        responsive: true,
-        columnDefs: [{
-            targets: 0,
-            orderable: false
-          }, // expand column
-          {
-            targets: [8, 9],
-            className: 'dt-center'
-          } // Scratch & Prelim
-        ]
-      });
-
-      // Expand/collapse row details
-      $('#entriesTable tbody').on('click', 'td.details-control', function() {
-        const tr = $(this).closest('tr');
-        const row = table.row(tr);
-
-        if (row.child.isShown()) {
-          row.child.hide();
-          tr.removeClass('shown');
-        } else {
-          row.child(formatSwimmers(row.data())).show();
-          tr.addClass('shown');
-        }
-      });
-
-      // Optional: click anywhere on row to expand
-      $('#entriesTable tbody').on('click', 'tr td:not(.details-control)', function() {
-        $(this).parent().find('td.details-control').click();
-      });
-
-      // Filters
-      function applyFilters() {
-        table.column(2).search($('#dayFilter').val(), false, false); // Day
-        table.column(3).search($('#teamFilter').val(), true, false); // Team
-        table.column(6).search($('#eventFilter').val(), false, false); // Event
-        table.draw();
-      }
-
+// Filters
+function applyFilters() {
+  table.column(1).search($('#dayFilter').val(), false, false);     // Day → now column 1
+  table.column(2).search($('#teamFilter').val(), true, false);     // Team → column 2
+  table.column(5).search($('#eventFilter').val(), false, false);   // Event → column 5
+  table.draw();
+}
       $('#dayFilter, #teamFilter, #eventFilter').on('change', applyFilters);
 
       $('#resetFilters').on('click', function() {
