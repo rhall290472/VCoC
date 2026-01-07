@@ -132,8 +132,8 @@ $entries_index = [];
 
 // Determine if we are in edit mode and load existing data
 if ($edit_token) {
-  $stmt = $pdo->prepare("SELECT * FROM relay_submissions WHERE edit_token = ? AND meet_slug = ?");
-  $stmt->execute([$edit_token, $meet_slug]);
+  $stmt = $pdo->prepare("SELECT * FROM relay_submissions WHERE edit_token = ?");
+  $stmt->execute([$edit_token]);
   $submission = $stmt->fetch(PDO::FETCH_ASSOC);
 
   if ($submission) {
@@ -141,14 +141,19 @@ if ($edit_token) {
     $last_name  = htmlspecialchars($submission['last_name']);
     $email      = htmlspecialchars($submission['email']);
     $team       = htmlspecialchars($submission['team']);
-    $day        = strtolower($submission['day']);
     $is_edit_mode = true;
 
+    $day = strtolower($submission['day']);
     if (!isset($event_configs[$day])) {
-      echo "<h2>Invalid day for this submission.</h2>";
-      exit;
+      // Fallback: use a default day that exists, or show a message with available days
+      $available_days = array_keys($event_configs);
+      if (!empty($available_days)) {
+        $day = $available_days[0];  // e.g., use 'thursday' if it exists
+      } else {
+        echo "<h2>No relay configurations available for this meet.</h2>";
+        exit;
+      }
     }
-
     $stmt = $pdo->prepare("SELECT * FROM relay_entries WHERE submission_id = ?");
     $stmt->execute([$submission['id']]);
     $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
