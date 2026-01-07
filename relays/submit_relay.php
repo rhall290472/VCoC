@@ -398,7 +398,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Thank You</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:50px;}h1{color:#333;}</style></head><body><h1>Thank You!</h1><p>Your relay entry has been submitted successfully.</p><p>A confirmation email with your edit link has been sent.</p></body></html>';
     exit;
-  } catch (Exception $e) {
+  } 
+  catch (Exception $e) {
     echo "<h2>Entry submitted, but email failed.</h2><p>Error: {$mail->ErrorInfo}</p><p>You can still <a href='{$edit_url}'>edit your entry here</a>.</p>";
   }
 }
