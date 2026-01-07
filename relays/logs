@@ -181,3 +181,27 @@ Stack trace:
 [07-Jan-2026 04:08:10 UTC] PHP Warning:  Undefined variable $s1 in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 583
 [07-Jan-2026 04:08:10 UTC] PHP Warning:  Undefined variable $s1 in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 583
 [07-Jan-2026 04:08:10 UTC] PHP Warning:  Undefined variable $s1 in C:\xampp\htdocs\VCoC\relays\submit_relay.php on line 583
+[07-Jan-2026 13:37:57 Europe/Berlin] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 13:37:57 Europe/Berlin] MATCHED! Assigned to gender mixed, line a
+[07-Jan-2026 13:37:57 Europe/Berlin] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 13:37:57 Europe/Berlin] MATCHED! Assigned to gender mixed, line b
+[07-Jan-2026 13:37:57 Europe/Berlin] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 13:37:57 Europe/Berlin] MATCHED! Assigned to gender mixed, line c
+[07-Jan-2026 13:37:57 Europe/Berlin] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 13:37:57 Europe/Berlin] MATCHED! Assigned to gender mixed, line d
+[07-Jan-2026 13:37:57 Europe/Berlin] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 13:37:57 Europe/Berlin] MATCHED! Assigned to gender mixed, line e
+[07-Jan-2026 13:37:57 Europe/Berlin] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 13:37:57 Europe/Berlin] MATCHED! Assigned to gender mixed, line f
+[07-Jan-2026 13:40:22 Europe/Berlin] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 13:40:22 Europe/Berlin] MATCHED! Assigned to gender mixed, line a
+[07-Jan-2026 13:40:22 Europe/Berlin] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 13:40:22 Europe/Berlin] MATCHED! Assigned to gender mixed, line b
+[07-Jan-2026 13:40:22 Europe/Berlin] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 13:40:22 Europe/Berlin] MATCHED! Assigned to gender mixed, line c
+[07-Jan-2026 13:40:22 Europe/Berlin] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 13:40:22 Europe/Berlin] MATCHED! Assigned to gender mixed, line d
+[07-Jan-2026 13:40:22 Europe/Berlin] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 13:40:22 Europe/Berlin] MATCHED! Assigned to gender mixed, line e
+[07-Jan-2026 13:40:22 Europe/Berlin] Comparing config ID 23 with DB ID 23 for submission 4
+[07-Jan-2026 13:40:22 Europe/Berlin] MATCHED! Assigned to gender mixed, line f

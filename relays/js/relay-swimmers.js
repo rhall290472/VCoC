@@ -84,54 +84,55 @@ document.addEventListener('DOMContentLoaded', function () {
   /**
    * Initialize or reinitialize all swimmer inputs with TomSelect
    */
-  function initSwimmers() {
-    // Destroy existing TomSelect instances
-    document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]').forEach(el => {
-      if (el.tomselect) el.tomselect.destroy();
-    });
+function initSwimmers() {
+  // Destroy existing instances
+  document.querySelectorAll('input.swimmer-input').forEach(el => {
+    if (el.tomselect) el.tomselect.destroy();
+  });
 
-    const used = new Set();
-
-    // Collect any pre-filled swimmers (e.g., in edit mode)
-    document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]').forEach(field => {
+  // Collect ALL currently filled swimmer names (from DOM) to preserve them
+  const preservedValues = new Set();
+  document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]')
+    .forEach(field => {
       const val = field.value.trim();
-      if (val) used.add(val);
+      if (val) preservedValues.add(val);
     });
 
-    // Apply TomSelect to each swimmer field
-    document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]').forEach(input => {
+  // Apply TomSelect
+  document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]')
+    .forEach(input => {
       const name = input.name;
-
-      // Determine gender from field name prefix
       let gender = 'mixed';
       if (name.startsWith('women_')) gender = 'women';
       else if (name.startsWith('men_')) gender = 'men';
 
-      const opts = available[gender] || [];
+      const baseOptions = available[gender] || [];
+
+      // Ensure any pre-filled value is available as an option, even if not in roster
+      const currentValue = input.value.trim();
+      const extraOptions = [];
+      if (currentValue && !baseOptions.some(opt => opt.value === currentValue)) {
+        extraOptions.push({ value: currentValue, text: currentValue });
+      }
+
+      const allOptions = [...baseOptions, ...extraOptions];
 
       new TomSelect(input, {
-        options: opts,
-        items: input.value ? [input.value.trim()] : [],
-        create: true, // Allow typing new names
+        options: allOptions,
+        items: currentValue ? [currentValue] : [],
+        create: true,
         placeholder: 'Swimmer name...',
         load: function (query, callback) {
           if (!query.length) return callback([]);
-          const filtered = opts.filter(option =>
+          const filtered = allOptions.filter(option =>
             option.text.toLowerCase().includes(query.toLowerCase())
           );
           callback(filtered);
         },
         onItemAdd: function (value) {
           value = value.trim();
-          used.add(value);
-          this.refreshState();
-
-          // Remove from this field's available options
-          const idx = opts.findIndex(o => o.value === value);
-          if (idx > -1) opts.splice(idx, 1);
-
-          // Remove from all other fields
-          document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]').forEach(other => {
+          // Remove from other fields' dropdowns
+          document.querySelectorAll('input.swimmer-input').forEach(other => {
             if (other !== this.input && other.tomselect) {
               other.tomselect.removeOption(value);
             }
@@ -139,37 +140,29 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         onItemRemove: function (value) {
           value = value.trim();
-          used.delete(value);
-
-          // Restore to available list if it was an original roster swimmer
+          // Only restore if it was from original roster
           const original = allSwimmers[gender].find(o => o.value === value);
-          if (original && !opts.some(o => o.value === value)) {
-            opts.push(original);
-            opts.sort((a, b) => a.text.localeCompare(b.text));
-          }
-
-          // Add back to all other fields
-          document.querySelectorAll('input[type="text"][name$="_1"], input[type="text"][name$="_2"], input[type="text"][name$="_3"], input[type="text"][name$="_4"]').forEach(other => {
-            if (other.tomselect && original && !other.tomselect.options[value]) {
-              other.tomselect.addOption(original);
-            }
-          });
-        },
-        onInitialize: function () {
-          if (this.items.length) {
-            this.settings.placeholder = null;
-            this.refreshState();
+          if (original) {
+            document.querySelectorAll('input.swimmer-input').forEach(other => {
+              if (other.tomselect && !other.tomselect.options[value]) {
+                other.tomselect.addOption(original);
+              }
+            });
           }
         }
       });
+
+      // Add a class for easier selection
+      input.classList.add('swimmer-input');
     });
-  }
+}
+
 
   // Initial setup
   initSwimmers();
 
   // If a team is already selected (e.g., edit mode), trigger load
-  if (teamSelect.value) {
-    teamSelect.dispatchEvent(new Event('change'));
-  }
+  // if (teamSelect.value) {
+  //   teamSelect.dispatchEvent(new Event('change'));
+  // }
 });

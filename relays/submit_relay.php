@@ -1,45 +1,18 @@
 <?php
 ini_set('display_errors', 1);
-error_reporting(E_ALL);
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
 /**
  * submit_relay.php - Multi-day relay entry submission and edit handler
  *
- * This script handles the submission of relay team entries for a swimming competition
- * across multiple days (Thursday–Sunday). It supports:
- *   - New submissions
- *   - Editing existing submissions via a unique edit token
- *   - Validation and storage in a MySQL database
- *   - Appending entries to a Google Sheet for administrative use
- *   - Sending a richly formatted confirmation email with a one-time edit link
- *
- * Features:
- *   - Dynamic form generation based on the selected day and event configuration
- *   - Pre-filled forms when editing
- *   - Forced "Swim Prelim" checkboxes for certain relays (C on Thu/Fri, E/F on Sat/Sun)
- *   - Secure edit tokens (random_bytes)
- *   - PHPMailer for SMTP email delivery
- *   - Google Sheets API integration for real-time export
- *
- * Security considerations:
- *   - Uses prepared statements to prevent SQL injection
- *   - htmlspecialchars() on output to prevent XSS
- *   - Edit links are unguessable 32-byte tokens
- *   - Input is trimmed and validated
- *
- * Dependencies (via Composer):
- *   - phpmailer/phpmailer
- *   - google/apiclient
- *
- * Required configuration files:
- *   - config/config.php (database and SMTP constants)
- *   - config/relay-credentials.json (Google service account credentials)
+ * Handles new submissions and editing of existing relay entries for swimming meets.
+ * Supports dynamic form generation, forced prelim checkboxes, Google Sheets export,
+ * and secure one-time edit links via email.
  *
  * @author  Richard Hall
- * @version 1.0
- * @date    2026-01-05
+ * @version 1.1
+ * @date    2026-01-07
  */
-
-error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -50,9 +23,7 @@ use Google\Service\Sheets\ValueRange;
 require 'vendor/autoload.php';
 require 'config/config.php';
 
-/*
- * Establish database connection
- */
+/* Database connection */
 try {
   $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
   $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -60,30 +31,21 @@ try {
   die("Database connection failed: " . $e->getMessage());
 }
 
-/*
- * Event configuration per day
- * Defines which events exist on each day and how many relay lines (A, B, C, etc.) are available
- */
-
-// Load meet configuration
-// Determine meet_slug: use stored value in edit mode, otherwise GET param or default
+/* Load meet configuration */
 $meet_slug_from_get = $_GET['meet'] ?? null;
 $edit_token = $_GET['edit'] ?? '';
-$meet_slug = $meet_slug_from_get ?? 'csi-state-ag-sc';  // default fallback for new entries
+$meet_slug = $meet_slug_from_get ?? 'csi-state-ag-sc';
 
 if ($edit_token) {
   $stmt = $pdo->prepare("SELECT meet_slug FROM relay_submissions WHERE edit_token = ?");
   $stmt->execute([$edit_token]);
   $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
   if ($row) {
-    $meet_slug = $row['meet_slug'];  // ALWAYS use the original meet when editing
+    $meet_slug = $row['meet_slug'];
   }
-  // If token invalid, we'll catch it later in the full submission load
 }
 
 $meet_file = __DIR__ . '/config/meets/' . basename($meet_slug) . '.json';
-
 if (!file_exists($meet_file)) {
   die("Meet configuration not found for: " . htmlspecialchars($meet_slug));
 }
@@ -93,204 +55,151 @@ if (json_last_error() !== JSON_ERROR_NONE) {
   die("Invalid meet configuration JSON.");
 }
 
-/*
- * Fetch list of teams for the dropdown
- */
+/* Fetch teams */
 $stmt = $pdo->prepare("SELECT name FROM teams WHERE meet_slug = ? ORDER BY name ASC");
 $stmt->execute([$meet_slug]);
 $teams = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-
-// Convert to the format the rest of the script expects
-// Convert to consistent internal format
+/* Build event_configs */
 $event_configs = [];
 foreach ($meet_config['days'] as $day_key => $day_data) {
   $event_configs[$day_key] = [
-    'events' => [],  // will be: gender => [event1, event2, ...]
+    'events' => [],
     'lines'  => []
   ];
 
-  // Normalize events: ensure each gender has an ARRAY of events
   foreach ($day_data['events'] as $gender_key => $event_data) {
     if (isset($event_data['id']) && isset($event_data['name'])) {
-      // Old format: single object → wrap in array
+      // Legacy single event format
       $event_configs[$day_key]['events'][$gender_key] = [$event_data];
     } else {
-      // New format: already an array → use as-is
+      // Current array format
       $event_configs[$day_key]['events'][$gender_key] = $event_data;
     }
   }
 
-  // Convert lines array ["A","B","C"] → ['a'=>'A', 'b'=>'B', 'c'=>'C']
   foreach ($day_data['lines'] as $i => $label) {
     $key = strtolower(chr(97 + $i)); // a, b, c, ...
     $event_configs[$day_key]['lines'][$key] = $label;
   }
 }
 
-// Optional overrides
+/* Constants and rules */
 define('GOOGLE_SHEETS_SPREADSHEET_ID', $meet_config['google_sheet_id'] ?? GOOGLE_SHEETS_SPREADSHEET_ID);
 define('GOOGLE_SHEETS_RANGE', $meet_config['google_sheet_range'] ?? 'Sheet1!A:M');
-
 define('GOOGLE_SHEETS_CREDENTIALS_PATH', __DIR__ . '/config/relay-credentials.json');
-
-// Store forced prelim rules for later use
 $forced_prelim_rules = $meet_config['forced_prelim'] ?? [];
-/*
- * Handle edit mode – load existing submission if a valid edit token is provided
- */
-$edit_token    = $_GET['edit'] ?? '';
-$is_edit_mode  = false;
+
+/* Load submission data */
+$is_edit_mode = false;
 $first_name = $last_name = $email = $team = '';
 $day = strtolower($_GET['day'] ?? '');
 $entries_index = [];
 
-// Determine if we are in edit mode and load existing data
 if ($edit_token) {
+  // Edit mode
   $stmt = $pdo->prepare("SELECT * FROM relay_submissions WHERE edit_token = ?");
   $stmt->execute([$edit_token]);
   $submission = $stmt->fetch(PDO::FETCH_ASSOC);
 
-  if ($submission) {
-    $first_name = htmlspecialchars($submission['first_name']);
-    $last_name  = htmlspecialchars($submission['last_name']);
-    $email      = htmlspecialchars($submission['email']);
-    $team       = htmlspecialchars($submission['team']);
-    $is_edit_mode = true;
-
-    $day = strtolower($submission['day']);
-    if (!isset($event_configs[$day])) {
-      // Fallback: use a default day that exists, or show a message with available days
-      $available_days = array_keys($event_configs);
-      if (!empty($available_days)) {
-        $day = $available_days[0];  // e.g., use 'thursday' if it exists
-      } else {
-        echo "<h2>No relay configurations available for this meet.</h2>";
-        exit;
-      }
-    }
-    $stmt = $pdo->prepare("SELECT * FROM relay_entries WHERE submission_id = ?");
-    $stmt->execute([$submission['id']]);
-    $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-
-// TEMPORARY DEBUG - REMOVE AFTER FIXING
-echo "<pre style='background:#fff; padding:15px; border:1px solid #ccc; margin:20px; max-height:400px; overflow:auto;'>";
-echo "DEBUG EDIT LOAD FOR SUBMISSION ID: " . htmlspecialchars($submission['id']) . "\n";
-echo "Day: $day\n";
-echo "Number of DB entries: " . count($entries) . "\n\n";
-
-echo "Config events for $day:\n";
-foreach ($event_configs[$day]['events'] as $g => $list) {
-  foreach ($list as $ev) {
-    echo "  Gender: $g | ID: " . $ev['id'] . " (type: " . gettype($ev['id']) . ") | Name: " . $ev['name'] . "\n";
-  }
-}
-
-echo "\nDB entries:\n";
-foreach ($entries as $e) {
-  echo "  event_id: " . $e['event_id'] . " (type: " . gettype($e['event_id']) . ") | line: " . $e['line'] . " | swimmers: " .
-    ($e['swimmer1']?:'-') . ", " . ($e['swimmer2']?:'-') . ", " . ($e['swimmer3']?:'-') . ", " . ($e['swimmer4']?:'-') . "\n";
-}
-
-echo "\nFinal entries_index structure:\n";
-print_r($entries_index);
-
-echo "</pre>";
-// END TEMP DEBUG    
-    // foreach ($event_configs[$day]['events'] as $gender_key => $event) {
-    //   $entries_index[$gender_key] = [];
-    //   foreach ($event_configs[$day]['lines'] as $line_key => $line_label) {
-    //     $entries_index[$gender_key][$line_key] = [];
-    //   }
-    // }
-
-    // foreach ($entries as $row) {
-    //   foreach ($event_configs[$day]['events'] as $gender_key => $event) {
-    //     if ($row['event_id'] == $event['id']) {
-    // Initialize empty structure
-    foreach ($event_configs[$day]['events'] as $gender_key => $events_list) {
-      $entries_index[$gender_key] = [];
-      foreach ($event_configs[$day]['lines'] as $line_key => $line_label) {
-        $entries_index[$gender_key][$line_key] = [];
-      }
-    }
-// // TEMP DEBUG - remove after fixing
-// echo "<pre>";
-// echo "Day: $day\n";
-// echo "DB entries count: " . count($entries) . "\n";
-// foreach ($entries as $e) {
-//   echo "DB: event_id={$e['event_id']} (type:" . gettype($e['event_id']) . "), line={$e['line']}\n";
-// }
-// echo "Config events:\n";
-// foreach ($event_configs[$day]['events'] as $g => $list) {
-//   foreach ($list as $ev) {
-//     echo "Config: id={$ev['id']} (type:" . gettype($ev['id']) . "), name={$ev['name']}\n";
-//   }
-// }
-// echo "</pre>";
-// exit;
-    // Load existing entries - MINIMAL DEBUG VERSION TO FORCE MATCH
-    foreach ($entries as $row) {
-      $db_event_id = $row['event_id'];  // "23"
-      $db_line = trim($row['line']);    // "A", "B", etc.
-
-      foreach ($event_configs[$day]['events'] as $gender_key => $events_list) {
-        foreach ($events_list as $event) {
-          $config_id_str = (string)$event['id'];   // "23"
-          $db_id_str     = (string)$db_event_id;   // "23"
-
-          // TEMP: Force log every comparison
-          error_log("Comparing config ID $config_id_str with DB ID $db_id_str for submission {$submission['id']}");
-
-          if ($config_id_str === $db_id_str) {
-            $line_key = strtolower($db_line);
-
-            if (isset($event_configs[$day]['lines'][$line_key])) {
-              $entries_index[$gender_key][$line_key] = [
-                'scratch' => (int)$row['scratch'],
-                'prelim'  => (int)$row['swim_prelim'],
-                's1' => htmlspecialchars($row['swimmer1'] ?? ''),
-                's2' => htmlspecialchars($row['swimmer2'] ?? ''),
-                's3' => htmlspecialchars($row['swimmer3'] ?? ''),
-                's4' => htmlspecialchars($row['swimmer4'] ?? ''),
-              ];
-              error_log("MATCHED! Assigned to gender $gender_key, line $line_key");
-            }
-          }
-        }
-      }
-    }
-  } else {
+  if (!$submission) {
     echo "<h2>Sorry – this edit link is no longer valid.</h2>";
     exit;
   }
-}
-// Initialize empty structure for new submissions
-else {
+
+  $first_name = htmlspecialchars($submission['first_name']);
+  $last_name  = htmlspecialchars($submission['last_name']);
+  $email      = htmlspecialchars($submission['email']);
+  $team       = htmlspecialchars($submission['team']);
+  $is_edit_mode = true;
+  $day = strtolower($submission['day']);
+
   if (!isset($event_configs[$day])) {
-    die("Invalid or missing day parameter.");
+    $available_days = array_keys($event_configs);
+    $day = $available_days[0] ?? '';
+    if ($day === '') {
+      echo "<h2>No relay configurations available for this meet.</h2>";
+      exit;
+    }
   }
+
+  // Fetch existing entries
+  $stmt = $pdo->prepare("SELECT * FROM relay_entries WHERE submission_id = ?");
+  $stmt->execute([$submission['id']]);
+  $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+  // Initialize empty structure
+  $entries_index = [];
   foreach ($event_configs[$day]['events'] as $gender_key => $events_list) {
     $entries_index[$gender_key] = [];
     foreach ($event_configs[$day]['lines'] as $line_key => $line_label) {
-      $entries_index[$gender_key][$line_key] = [];
+      $entries_index[$gender_key][$line_key] = [
+        'scratch' => 0,
+        'prelim'  => 0,
+        's1' => '',
+        's2' => '',
+        's3' => '',
+        's4' => '',
+      ];
+    }
+  }
+
+  // Populate with saved data
+  foreach ($entries as $row) {
+    $db_event_id = $row['event_id'];
+    $db_line = trim($row['line']);
+    $line_key = strtolower($db_line);
+
+    foreach ($event_configs[$day]['events'] as $gender_key => $events_list) {
+      foreach ($events_list as $event) {
+        if ((string)$event['id'] === (string)$db_event_id && isset($event_configs[$day]['lines'][$line_key])) {
+          $entries_index[$gender_key][$line_key] = [
+            'scratch' => (int)$row['scratch'],
+            'prelim'  => (int)$row['swim_prelim'],
+            's1' => htmlspecialchars($row['swimmer1'] ?? ''),
+            's2' => htmlspecialchars($row['swimmer2'] ?? ''),
+            's3' => htmlspecialchars($row['swimmer3'] ?? ''),
+            's4' => htmlspecialchars($row['swimmer4'] ?? ''),
+          ];
+          break 2; // Match found — stop searching
+        }
+      }
+    }
+  }
+} else {
+  // New submission - unchanged
+  if (!isset($event_configs[$day])) {
+    die("Invalid or missing day parameter.");
+  }
+
+  $entries_index = [];
+  foreach ($event_configs[$day]['events'] as $gender_key => $events_list) {
+    $entries_index[$gender_key] = [];
+    foreach ($event_configs[$day]['lines'] as $line_key => $line_label) {
+      $entries_index[$gender_key][$line_key] = [
+        'scratch' => 0,
+        'prelim'  => 0,
+        's1' => '',
+        's2' => '',
+        's3' => '',
+        's4' => '',
+      ];
     }
   }
 }
 
+
 $config = $event_configs[$day];
 
-// Process form submission (new or update)
+/* Process form submission */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  // Validate required fields
   $first_name = trim($_POST['first_name'] ?? '');
   $last_name  = trim($_POST['last_name'] ?? '');
   $full_name  = $first_name . ' ' . $last_name;
   $email      = trim($_POST['email'] ?? '');
   $team       = trim($_POST['team'] ?? '');
   $post_day   = strtolower(trim($_POST['day'] ?? ''));
-  $meet_slug = $_POST["meet"] ?? $meet_slug;
+  $meet_slug  = $_POST['meet'] ?? $meet_slug;
 
   if (empty($first_name) || empty($last_name) || empty($email) || empty($team) || !isset($event_configs[$post_day])) {
     die("Required fields are missing or invalid day.");
@@ -303,23 +212,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $submission_id = null;
   $edit_token = $existing_token;
 
-  // Handle update vs insert logic
   if ($is_edit_mode && $existing_token === $edit_token && isset($submission)) {
-    // Update existing submission
+    // Update existing
     $submission_id = $submission['id'];
     $stmt = $pdo->prepare("UPDATE relay_submissions SET meet_slug = ?, first_name = ?, last_name = ?, email = ?, team = ?, submitted_at = NOW() WHERE id = ? AND edit_token = ?");
     $stmt->execute([$meet_slug, $first_name, $last_name, $email, $team, $submission_id, $edit_token]);
+
     $stmt = $pdo->prepare("DELETE FROM relay_entries WHERE submission_id = ?");
     $stmt->execute([$submission_id]);
   } else {
-    // Create new submission with fresh edit token
+    // New submission
     $edit_token = bin2hex(random_bytes(32));
     $stmt = $pdo->prepare("INSERT INTO relay_submissions (meet_slug, first_name, last_name, email, team, day, edit_token, submitted_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
     $stmt->execute([$meet_slug, $first_name, $last_name, $email, $team, $day, $edit_token]);
     $submission_id = $pdo->lastInsertId();
   }
 
-  // Helper functions for checkbox and swimmer fields
+  // Helpers
   function chk($name)
   {
     return isset($_POST[$name]) && $_POST[$name] === 'on' ? 'Yes' : 'No';
@@ -329,7 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     return trim($_POST[$name] ?? '');
   }
 
-  // Insert relay entries into database
+  // Save all relay entries
   foreach ($config['events'] as $gender_key => $events_list) {
     foreach ($events_list as $event) {
       $event_id = $event['id'];
@@ -342,12 +251,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $s4 = swimmer("{$gender_key}_{$line_key}_4");
 
         $stmt = $pdo->prepare("INSERT INTO relay_entries (submission_id, event_id, line, scratch, swim_prelim, swimmer1, swimmer2, swimmer3, swimmer4) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$submission_id, $event_id, $line_label, ($scratch === 'Yes' ? 1 : 0), ($prelim === 'Yes' ? 1 : 0), $s1, $s2, $s3, $s4]);
+        $stmt->execute([
+          $submission_id,
+          $event_id,
+          $line_label,
+          ($scratch === 'Yes' ? 1 : 0),
+          ($prelim === 'Yes' ? 1 : 0),
+          $s1,
+          $s2,
+          $s3,
+          $s4
+        ]);
       }
     }
   }
 
-
+  // Build data for email and Google Sheets
   $relay_data = [];
   foreach ($config['events'] as $gender_key => $events_list) {
     foreach ($events_list as $event) {
@@ -375,46 +294,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   }
 
-
   $edit_url = EDIT_URL . $edit_token;
   $timezone = new DateTimeZone('-07:00');
   $submittedTime = new DateTime('now', $timezone);
   $formattedSubmitted = $submittedTime->format('Y-m-d H:i:s') . ' (UTC-7)';
-
   $day_cap = ucfirst($day);
+
+  // Email body
   $email_body = "<html><head><title>Your $day_cap Relay Entry Confirmation</title></head><body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-  <h2>Thank you for your $day_cap Relay entry" . ($is_edit_mode ? " (updated)" : "") . ", {$full_name}!</h2>
-  <p><strong>Team:</strong> {$team}<br><strong>Email:</strong> {$email}<br><strong>Submitted:</strong> {$formattedSubmitted}</p>
-  <h3>Your Relay Entries</h3>";
+    <h2>Thank you for your $day_cap Relay entry" . ($is_edit_mode ? " (updated)" : "") . ", {$full_name}!</h2>
+    <p><strong>Team:</strong> {$team}<br><strong>Email:</strong> {$email}<br><strong>Submitted:</strong> {$formattedSubmitted}</p>
+    <h3>Your Relay Entries</h3>";
 
   if (empty($relay_data)) {
     $email_body .= "<p><em>No relay entries were submitted.</em></p>";
   } else {
     foreach ($relay_data as $event => $lines) {
       $email_body .= "<h4>{$event}</h4><table border='1' cellpadding='8' cellspacing='0' style='border-collapse: collapse; width: 100%; margin-bottom: 30px;'>
-      <tr style='background-color: #f0f0f0;'><th>Relay</th><th>Scratch</th><th>Swim Prelim</th><th>Swimmer 1</th><th>Swimmer 2</th><th>Swimmer 3</th><th>Swimmer 4</th></tr>";
+            <tr style='background-color: #f0f0f0;'><th>Relay</th><th>Scratch</th><th>Swim Prelim</th><th>Swimmer 1</th><th>Swimmer 2</th><th>Swimmer 3</th><th>Swimmer 4</th></tr>";
       foreach ($lines as $line => $data) {
         $email_body .= "<tr><td style='text-align: center; font-weight: bold;'>{$line}</td><td style='text-align: center;'>{$data['Scratch']}</td><td style='text-align: center;'>{$data['Swim Prelim']}</td>
-        <td>{$data['Swimmer 1']}</td><td>{$data['Swimmer 2']}</td><td>{$data['Swimmer 3']}</td><td>{$data['Swimmer 4']}</td></tr>";
+                <td>{$data['Swimmer 1']}</td><td>{$data['Swimmer 2']}</td><td>{$data['Swimmer 3']}</td><td>{$data['Swimmer 4']}</td></tr>";
       }
       $email_body .= "</table>";
     }
   }
 
   $email_body .= "<p>If you need to make changes, use this personal edit link:</p>
-  <p style='font-size: 18px;'><strong><a href='{$edit_url}'>Click here to edit your relay entry</a></strong></p>
-  <p><em>Save this email — this is the only time you'll receive this link.</em></p>
-  <p>Thank you for relay entries</p></body></html>";
+    <p style='font-size: 18px;'><strong><a href='{$edit_url}'>Click here to edit your relay entry</a></strong></p>
+    <p><em>Save this email — this is the only time you'll receive this link.</em></p>
+    <p>Thank you for your relay entries</p></body></html>";
 
+  // Google Sheets append
   try {
     $client = new Client();
     $client->setApplicationName('Relay Entries');
     $client->setScopes([Sheets::SPREADSHEETS]);
     $client->setAuthConfig(GOOGLE_SHEETS_CREDENTIALS_PATH);
-
-    // Remove or comment out impersonation unless you know it's configured
-    // $client->setSubject('adminref@swimcolorado.org');
-
     $service = new Sheets($client);
 
     $rowsToAppend = [];
@@ -446,25 +362,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $params = ['valueInputOption' => 'RAW'];
       $service->spreadsheets_values->append(GOOGLE_SHEETS_SPREADSHEET_ID, GOOGLE_SHEETS_RANGE, $body, $params);
     }
-  } catch (Google\Service\Exception $e) {
-    // Parse the JSON error payload from the message to get the HTTP code
-    $errorPayload = json_decode($e->getMessage(), true);
-    $statusCode = $errorPayload['error']['code'] ?? 0;
-
-    if ($statusCode === 403 || stripos($e->getMessage(), 'permission') !== false) {
-      // Gracefully skip for permission-denied cases (common with restricted Workspace sheets)
-      error_log("Google Sheets append skipped (permission denied): " . $e->getMessage() . " | Sheet ID: " . GOOGLE_SHEETS_SPREADSHEET_ID);
-      // No user-facing notice needed – entry is still saved to DB and emailed
-    } else {
-      // Log other Google API errors (e.g., rate limit, invalid range)
-      error_log("Google Sheets append failed (HTTP {$statusCode}): " . $e->getMessage());
-    }
   } catch (Exception $e) {
-    // Catch any other unexpected errors
-    error_log('Unexpected error during Google Sheets append: ' . $e->getMessage());
+    error_log("Google Sheets append failed: " . $e->getMessage());
   }
 
-
+  // Send confirmation email
   $mail = new PHPMailer(true);
   try {
     $mail->isSMTP();
@@ -477,22 +379,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $mail->setFrom(SMTP_USER, ucfirst($day) . ' Relays - ' . htmlspecialchars($team));
     $mail->addAddress($email, $full_name);
-    //$mail->addBCC('acescsiar+relays@gmail.com');
-    // Add BCC addresses from the config (supports single or multiple)
-    if (isset($meet_config['bcc']) && is_array($meet_config['bcc'])) {
+
+    if (!empty($meet_config['bcc'] ?? [])) {
       foreach ($meet_config['bcc'] as $bccEmail) {
         if (!empty(trim($bccEmail))) {
-          $mail->addBCC(trim($bccEmail)); // Optional: add a name as second param, e.g. addBCC($bccEmail, 'Name')
+          $mail->addBCC(trim($bccEmail));
         }
       }
     }
+
     $mail->isHTML(true);
     $mail->Subject = ucfirst($day) . ' Relay Entry Confirmation & Edit Link - ' . $team;
     $mail->Body    = $email_body;
     $mail->send();
 
     echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Thank You</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:50px;}h1{color:#333;}</style></head><body><h1>Thank You!</h1><p>Your relay entry has been submitted successfully.</p><p>A confirmation email with your edit link has been sent.</p></body></html>';
-    exit();
+    exit;
   } catch (Exception $e) {
     echo "<h2>Entry submitted, but email failed.</h2><p>Error: {$mail->ErrorInfo}</p><p>You can still <a href='{$edit_url}'>edit your entry here</a>.</p>";
   }
@@ -526,7 +428,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <label for="email" class="required">Email</label>
     <input type="email" name="email" id="email" value="<?= $email ?>" placeholder="example@example.com" autocomplete="email" required>
-    <p class="help-text"><strong>Important:</strong> A personal edit link will be sent to this email address after submission. Ensure you have access to this email.</p>
+    <p class="help-text"><strong>Important:</strong> A personal edit link will be sent to this email address after submission.</p>
 
     <label for="team" class="required">Team</label>
     <select name="team" required>
@@ -544,7 +446,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     {
       $value = $entries_index[$gender][$line][$field] ?? 0;
       return $value ? 'checked' : '';
-    }    ?>
+    }
+    ?>
 
     <?php foreach ($config['events'] as $gender_key => $events_list): ?>
       <?php foreach ($events_list as $event): ?>
@@ -591,14 +494,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <?php endforeach; ?>
     <?php endforeach; ?>
 
-
     <div class="submit-btn">
       <input type="submit" value="<?= $is_edit_mode ? 'Update Entry' : 'Submit Entry' ?>">
     </div>
   </form>
 
   <script src="js/relay-swimmers.js"></script>
-
 </body>
 
 </html>
