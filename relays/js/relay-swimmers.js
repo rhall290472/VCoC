@@ -1,3 +1,4 @@
+console.log('relay-swimmers.js loaded successfully');
 document.addEventListener('DOMContentLoaded', function () {
   const teamSelect = document.querySelector('select[name="team"]');
   if (!teamSelect) return;
@@ -17,7 +18,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Extract meet_slug from URL (e.g., ?meet=2026-wz-sc or ?meet=csi-state-ag-sc)
   const urlParams = new URLSearchParams(window.location.search);
-  const meet_slug = urlParams.get('meet') || '';
+  //const meet_slug = urlParams.get('meet') || '';
+  const meet_slug = document.querySelector('input[name="meet"]').value || '';
 
   let allSwimmers = { women: [], men: [], mixed: [] };
   let available = { women: [], men: [], mixed: [] };
@@ -162,7 +164,10 @@ function initSwimmers() {
   initSwimmers();
 
   // If a team is already selected (e.g., edit mode), trigger load
-  // if (teamSelect.value) {
-  //   teamSelect.dispatchEvent(new Event('change'));
-  // }
+  console.log('Team value on load:', teamSelect.value);
+  if (teamSelect.value) {
+    setTimeout(() => {
+      teamSelect.dispatchEvent(new Event('change'));
+    }, 100);
+  }
 });

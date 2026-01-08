@@ -19,6 +19,8 @@ use PHPMailer\PHPMailer\Exception;
 use Google\Client;
 use Google\Service\Sheets;
 use Google\Service\Sheets\ValueRange;
+use Google\Service\Sheets as GoogleSheets;
+
 
 require 'vendor/autoload.php';
 require 'config/config.php';
@@ -330,7 +332,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   try {
     $client = new Client();
     $client->setApplicationName('Relay Entries');
-    $client->setScopes([Sheets::SPREADSHEETS]);
+    $client->setScopes(['https://www.googleapis.com/auth/spreadsheets']);
     $client->setAuthConfig(GOOGLE_SHEETS_CREDENTIALS_PATH);
     $service = new Sheets($client);
 
@@ -368,6 +370,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sheets_error = $e->getMessage();
     error_log("Google Sheets append failed for submission ID {$submission_id}: " . $sheets_error);
     // Do NOT rethrow or die — continue gracefully
+    echo $e->getMessage();
   }
 
   // Send confirmation email
@@ -391,7 +394,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
       }
     }
-
+    $mail->CharSet = 'UTF-8';
     $mail->isHTML(true);
     $mail->Subject = ucfirst($day) . ' Relay Entry Confirmation & Edit Link - ' . $team;
     $mail->Body    = $email_body;
