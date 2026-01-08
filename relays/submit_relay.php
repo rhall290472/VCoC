@@ -87,7 +87,8 @@ foreach ($meet_config['days'] as $day_key => $day_data) {
 /* Constants and rules */
 define('GOOGLE_SHEETS_SPREADSHEET_ID', $meet_config['google_sheet_id'] ?? GOOGLE_SHEETS_SPREADSHEET_ID);
 define('GOOGLE_SHEETS_RANGE', $meet_config['google_sheet_range'] ?? 'Sheet1!A:M');
-define('GOOGLE_SHEETS_CREDENTIALS_PATH', __DIR__ . '/config/relay-credentials.json');
+define('GOOGLE_SHEETS_CREDENTIALS_PATH', __DIR__ . '/config/aces-relay-credentials.json');
+//define('SPREADSHEETS');
 $forced_prelim_rules = $meet_config['forced_prelim'] ?? [];
 
 /* Load submission data */
