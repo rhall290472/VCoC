@@ -1,23 +1,16 @@
-// admin-view.js - MM checkbox handling and row visibility ONLY
-// NO DataTables calls whatsoever!
+// admin-view.js - MM checkbox handling, row visibility, and database updates
 
 function updateMM(entryId, newValue) {
   fetch('update_mm.php', {
     method: 'POST',
-    credentials: 'same-origin',  // ← THIS IS THE KEY LINE
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: 'entry_id=' + encodeURIComponent(entryId) + '&mm=' + (newValue ? 1 : 0)
   })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('HTTP ' + response.status);
-    }
-    return response.json();
-  })
+  .then(response => response.json())
   .then(data => {
-    console.log('MM update response:', data);  // ← Keep this for debugging
     if (!data.success) {
       alert('Failed to save MM: ' + (data.error || 'Unknown'));
       // Revert checkbox
@@ -27,15 +20,17 @@ function updateMM(entryId, newValue) {
   })
   .catch(err => {
     console.error('MM update error:', err);
-    alert('Connection/error saving MM — check console');
+    alert('Error saving MM');
     const cb = document.querySelector(`input.mm-checkbox[data-entry-id="${entryId}"]`);
     if (cb) cb.checked = !newValue;
   });
 }
 
 $(document).ready(function() {
-  // Initial hide of MM-checked rows
-  $('#entriesTable tbody tr').each(function() {
+  const $table = $('#entriesTable');
+
+  // Initial hide of rows where MM is checked
+  $table.find('tbody tr').each(function() {
     const $row = $(this);
     const $cb = $row.find('input.mm-checkbox');
     if ($cb.length && $cb.is(':checked')) {
@@ -43,17 +38,17 @@ $(document).ready(function() {
     }
   });
 
-  // Checkbox change handler
-  $('#entriesTable tbody').on('change', 'input.mm-checkbox', function(e) {
-    e.stopPropagation();
-
+  // Use delegated event on the table (works even after DataTables redraws)
+  $table.on('change', 'input.mm-checkbox', function() {
     const $checkbox = $(this);
     const entryId = $checkbox.data('entry-id');
     const newValue = $checkbox.is(':checked');
     const $row = $checkbox.closest('tr');
 
+    // Save to database
     updateMM(entryId, newValue);
 
+    // Visual hide/show
     if (newValue) {
       $row.fadeOut(400);
     } else {
@@ -61,10 +56,10 @@ $(document).ready(function() {
     }
   });
 
-  // Show/hide hidden MM rows toggle
+  // Toggle visibility of hidden (MM-checked) rows
   $('#showHiddenMM').on('change', function() {
     const show = this.checked;
-    $('#entriesTable tbody tr').each(function() {
+    $table.find('tbody tr').each(function() {
       const $row = $(this);
       const $cb = $row.find('input.mm-checkbox');
       if ($cb.length && $cb.is(':checked')) {
@@ -72,35 +67,4 @@ $(document).ready(function() {
       }
     });
   });
-
-$(document).ready(function() {
-  $('#entriesTable').on('change', '.mm-checkbox', function() {
-    const checkbox = $(this);
-    const entryId = checkbox.data('entry-id');
-    const mmValue = checkbox.is(':checked') ? 1 : 0;
-
-    $.post('update_mm.php', {
-      entry_id: entryId,
-      mm: mmValue
-    })
-    .done(function(response) {
-      if (response.success) {
-        // Optional: visual feedback
-        checkbox.closest('td').css('background-color', mmValue ? '#d0f0d0' : '');
-      } else {
-        alert('Failed to save MM: ' + (response.error || 'Unknown error'));
-        // Revert checkbox on failure
-        checkbox.prop('checked', !checkbox.is(':checked'));
-      }
-    })
-    .fail(function() {
-      alert('Request failed – possible session issue. Try logging in again.');
-      checkbox.prop('checked', !checkbox.is(':checked'));
-    });
-  });
-
-  // Existing filters / table code can go here too if needed
-});
-
-
 });

@@ -282,7 +282,14 @@ $available_teams = $teams_from_data;
       <label>&nbsp;</label>
       <button id="exportPdf">Export to PDF</button>
     </div>
+
+    <div class="filter-group">
+      <label>&nbsp;</label>
+      <button id="deleteAllRelays" style="background:#dc3545; border:none;">Delete All Relays</button>
+    </div>
+
   </div>
+
 
   <table id="entriesTable" class="display" style="width:100%">
     <thead>
@@ -432,6 +439,44 @@ $available_teams = $teams_from_data;
       <?php session_destroy(); ?>
       window.location.href = window.location.pathname + '?meet=<?= urlencode($meet_slug) ?>';
     <?php endif; ?>
+
+    // RED Delete All Relays button
+    $('#deleteAllRelays').on('click', function() {
+      if (!confirm('WARNING: This will PERMANENTLY delete ALL relay entries for this meet (<?= htmlspecialchars(basename($meet_slug)) ?>).\n\nThere is NO UNDO.\n\nAre you absolutely sure you want to continue?')) {
+        return;
+      }
+
+      if (!confirm('FINAL CONFIRMATION: This action cannot be reversed.\n\nType "DELETE" to confirm.')) {
+        return;
+      }
+
+      if (prompt('Type "DELETE" (all caps) to confirm:') !== 'DELETE') {
+        alert('Deletion cancelled.');
+        return;
+      }
+
+      const btn = $(this);
+      const originalText = btn.text();
+      btn.text('Deleting...').prop('disabled', true);
+
+      $.post('delete_all_relays.php', {
+          meet: '<?= addslashes($meet_slug) ?>'
+        })
+        .done(function(response) {
+          if (response.success) {
+            alert('All relay entries have been deleted.');
+            location.reload(); // Refresh to show empty table
+          } else {
+            alert('Error: ' + (response.error || 'Unknown error'));
+          }
+        })
+        .fail(function() {
+          alert('Request failed. Check connection or console.');
+        })
+        .always(function() {
+          btn.text(originalText).prop('disabled', false);
+        });
+    });
   </script>
 </body>
 
