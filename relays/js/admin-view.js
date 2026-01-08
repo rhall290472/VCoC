@@ -72,4 +72,34 @@ $(document).ready(function() {
       }
     });
   });
+
+$(document).ready(function() {
+  $('#entriesTable').on('change', '.mm-checkbox', function() {
+    const checkbox = $(this);
+    const entryId = checkbox.data('entry-id');
+    const mmValue = checkbox.is(':checked') ? 1 : 0;
+
+    $.post('update_mm.php', {
+      entry_id: entryId,
+      mm: mmValue
+    })
+    .done(function(response) {
+      if (response.success) {
+        // Optional: visual feedback
+        checkbox.closest('td').css('background-color', mmValue ? '#d0f0d0' : '');
+      } else {
+        alert('Failed to save MM: ' + (response.error || 'Unknown error'));
+        // Revert checkbox on failure
+        checkbox.prop('checked', !checkbox.is(':checked'));
+      }
+    })
+    .fail(function() {
+      alert('Request failed – possible session issue. Try logging in again.');
+      checkbox.prop('checked', !checkbox.is(':checked'));
+    });
+  });
+
+  // Existing filters / table code can go here too if needed
+});
+
 });

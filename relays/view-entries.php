@@ -345,8 +345,7 @@ $available_teams = $teams_from_data;
       dom: 'Bfrtip', // Keep buttons (column visibility) and filters
       buttons: [{
         extend: 'colvis',
-        text: 'Show/Hide Columns',
-        columns: ':gt(0)' // All columns except the first (if you had expand arrow)
+        text: 'Show/Hide Columns'
       }],
       order: [
         [1, 'desc']
