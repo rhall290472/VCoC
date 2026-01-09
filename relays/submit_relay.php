@@ -131,6 +131,29 @@ if ($edit_token) {
   $stmt->execute([$submission['id']]);
   $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+  // === ADD THIS BLOCK HERE ===
+  // Store original values for change detection (only in edit mode)
+  $original_entries = [];
+  if ($is_edit_mode) {
+    foreach ($entries as $row) {
+      $key = $row['event_id'] . '_' . strtolower(trim($row['line']));
+      $original_entries[$key] = [
+        'scratch'   => (int)$row['scratch'],
+        'prelim'    => (int)$row['swim_prelim'],
+        'mm'        => (int)$row['mm'] ?? 0,         // Preserve current mm value
+        'swimmers'  => [
+          $row['swimmer1'] ?? '',
+          $row['swimmer2'] ?? '',
+          $row['swimmer3'] ?? '',
+          $row['swimmer4'] ?? '',
+        ]
+      ];
+    }
+  }
+  // === END OF NEW BLOCK ===
+
+
+
   // Initialize empty structure
   $entries_index = [];
   foreach ($event_configs[$day]['events'] as $gender_key => $events_list) {
@@ -241,34 +264,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     return trim($_POST[$name] ?? '');
   }
 
-  // Save all relay entries
-  foreach ($config['events'] as $gender_key => $events_list) {
+// Save all relay entries
+foreach ($config['events'] as $gender_key => $events_list) {
     foreach ($events_list as $event) {
-      $event_id = $event['id'];
-      foreach ($config['lines'] as $line_key => $line_label) {
-        $scratch = chk("{$gender_key}_{$line_key}_scratch");
-        $prelim  = chk("{$gender_key}_{$line_key}_prelim");
-        $s1 = swimmer("{$gender_key}_{$line_key}_1");
-        $s2 = swimmer("{$gender_key}_{$line_key}_2");
-        $s3 = swimmer("{$gender_key}_{$line_key}_3");
-        $s4 = swimmer("{$gender_key}_{$line_key}_4");
+        $event_id = $event['id'];
+        foreach ($config['lines'] as $line_key => $line_label) {
+            $scratch = chk("{$gender_key}_{$line_key}_scratch");
+            $prelim  = chk("{$gender_key}_{$line_key}_prelim");
+            $s1 = swimmer("{$gender_key}_{$line_key}_1");
+            $s2 = swimmer("{$gender_key}_{$line_key}_2");
+            $s3 = swimmer("{$gender_key}_{$line_key}_3");
+            $s4 = swimmer("{$gender_key}_{$line_key}_4");
 
-        $stmt = $pdo->prepare("INSERT INTO relay_entries (submission_id, event_id, line, scratch, swim_prelim, swimmer1, swimmer2, swimmer3, swimmer4) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([
-          $submission_id,
-          $event_id,
-          $line_label,
-          ($scratch === 'Yes' ? 1 : 0),
-          ($prelim === 'Yes' ? 1 : 0),
-          $s1,
-          $s2,
-          $s3,
-          $s4
-        ]);
-      }
+            // Determine if this row has changed
+            $row_key = $event_id . '_' . strtolower($line_key);
+            $has_changed = true;  // default: assume changed (safe for new submissions)
+            $new_mm = 0;          // default for new or changed rows
+
+            if ($is_edit_mode && isset($original_entries[$row_key])) {
+                $orig = $original_entries[$row_key];
+
+                $orig_swimmers = $orig['swimmers'];
+                $current_swimmers = [$s1, $s2, $s3, $s4];
+
+                $scratch_changed = ($scratch === 'Yes' ? 1 : 0) !== $orig['scratch'];
+                $prelim_changed  = ($prelim  === 'Yes' ? 1 : 0) !== $orig['prelim'];
+                $swimmers_changed = false;
+                for ($i = 0; $i < 4; $i++) {
+                    if (trim($current_swimmers[$i]) !== trim($orig_swimmers[$i] ?? '')) {
+                        $swimmers_changed = true;
+                        break;
+                    }
+                }
+
+                $has_changed = $scratch_changed || $prelim_changed || $swimmers_changed;
+                $new_mm = $has_changed ? 0 : $orig['mm'];  // Only preserve mm if NOTHING changed
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO relay_entries (submission_id, event_id, line, scratch, swim_prelim, mm, swimmer1, swimmer2, swimmer3, swimmer4) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $submission_id,
+                $event_id,
+                $line_label,
+                ($scratch === 'Yes' ? 1 : 0),
+                ($prelim === 'Yes' ? 1 : 0),
+                $new_mm,                    // This is the key: reset to 0 only on change
+                $s1,
+                $s2,
+                $s3,
+                $s4
+            ]);
+        }
     }
-  }
-
+}
   // Build data for email and Google Sheets
   $relay_data = [];
   foreach ($config['events'] as $gender_key => $events_list) {
@@ -402,8 +450,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Thank You</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:50px;}h1{color:#333;}</style></head><body><h1>Thank You!</h1><p>Your relay entry has been submitted successfully.</p><p>A confirmation email with your edit link has been sent.</p></body></html>';
     exit;
-  } 
-  catch (Exception $e) {
+  } catch (Exception $e) {
     echo "<h2>Entry submitted, but email failed.</h2><p>Error: {$mail->ErrorInfo}</p><p>You can still <a href='{$edit_url}'>edit your entry here</a>.</p>";
   }
 }
@@ -508,6 +555,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </form>
 
   <script src="js/relay-swimmers.js"></script>
+
+  <!-- Loading overlay with spinner -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+</div>
+<script>
+  document.querySelector('form').addEventListener('submit', function(e) {
+    // Only proceed if form is valid (browsers handle basic validation)
+    if (this.checkValidity()) {
+      // Show overlay
+      document.getElementById('loading-overlay').style.display = 'flex';
+
+      // Disable submit button to prevent double-clicks
+      const submitBtn = this.querySelector('.submit-btn input[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.value = 'Submitting...';
+      }
+    }
+    // Do NOT preventDefault() — we want the form to submit normally
+  });
+</script>
 </body>
 
 </html>
