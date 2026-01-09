@@ -148,6 +148,7 @@ $available_teams = $teams_from_data;
   <title>Relay Entries - Full View</title>
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -278,7 +279,7 @@ $available_teams = $teams_from_data;
       <button id="resetFilters">Reset Filters</button>
     </div>
 
-    <div class="filter-group">
+    <!-- <div class="filter-group">
       <label>&nbsp;</label>
       <button id="exportPdf">Export to PDF</button>
     </div>
@@ -286,9 +287,31 @@ $available_teams = $teams_from_data;
     <div class="filter-group">
       <label>&nbsp;</label>
       <button id="deleteAllRelays" style="background:#dc3545; border:none;">Delete All Relays</button>
-    </div>
+    </div> -->
 
   </div>
+
+  <!-- NEW: Separate row for Export to PDF and Delete All Relays buttons -->
+  <div class="filters">
+    <div class="filter-group">
+      <button type="button" id="exportPdf"><i class="fa-solid fa-file-pdf"></i>Export to PDF</button>
+    </div>
+    <div class="filter-group">
+      <button type="button" id="manualRefresh" class="btn btn-primary">
+        <i class="fas fa-sync-alt me-1"></i> Refresh Now
+      </button>
+    </div>
+    <div class="filter-group">
+      <button type="button" id="toggleAutoRefresh" class="btn btn-warning" data-auto="true">
+        <i class="fas fa-pause me-1"></i> Pause Auto-Refresh
+      </button>
+    </div>
+    <div class="filter-group">
+      <button id="deleteAllRelays" style="background:#dc3545; border:none;"><i class="fa-solid fa-trash-can"></i>Delete All Relays</button>
+    </div>
+  </div>
+  </div>
+
 
 
   <table id="entriesTable" class="display" style="width:100%">
@@ -349,6 +372,8 @@ $available_teams = $teams_from_data;
 
   <script>
     const table = $('#entriesTable').DataTable({
+      stateSave: true, // <-- Remember state across reloads
+      stateDuration: -1, // <-- Keep forever (or use 3600 for 1 hour, etc.)
       dom: 'Bfrtip',
       buttons: [{
         extend: 'colvis',
@@ -477,6 +502,41 @@ $available_teams = $teams_from_data;
           btn.text(originalText).prop('disabled', false);
         });
     });
+
+    // Simple auto-refresh logic (DataTables handles column state automatically)
+    let autoRefreshInterval = null;
+    const refreshIntervalMs = 30000; // 30 seconds
+
+    function startAutoRefresh() {
+      if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+      autoRefreshInterval = setInterval(() => {
+        location.reload();
+      }, refreshIntervalMs);
+      $('#toggleAutoRefresh').html('<i class="fas fa-pause me-1"></i> Pause Auto-Refresh').data('auto', true);
+      $('#refreshStatus').text('Auto-refresh: ON (every 30s)');
+    }
+
+    function stopAutoRefresh() {
+      if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+      autoRefreshInterval = null;
+      $('#toggleAutoRefresh').html('<i class="fas fa-play me-1"></i> Resume Auto-Refresh').data('auto', false);
+      $('#refreshStatus').text('Auto-refresh: OFF');
+    }
+
+    $('#manualRefresh').on('click', function() {
+      location.reload();
+    });
+
+    $('#toggleAutoRefresh').on('click', function() {
+      if ($(this).data('auto')) {
+        stopAutoRefresh();
+      } else {
+        startAutoRefresh();
+      }
+    });
+
+    // Start on load
+    startAutoRefresh();
   </script>
 </body>
 
