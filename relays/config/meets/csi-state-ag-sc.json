@@ -42,29 +42,29 @@
         "women": [
           {
             "id": 63,
-            "name": "Event 27 Women 12-U 200 Free Relay"
+            "name": "Event 63 Women 12-U 200 Free Relay"
           },
           {
             "id": 65,
-            "name": "Event 29 Women 14-U 400 Free Relay"
+            "name": "Event 65 Women 14-U 400 Free Relay"
           },
           {
             "id": 67,
-            "name": "Event 31 Women 10-U 400 Free Relay"
+            "name": "Event 67 Women 10-U 400 Free Relay"
           }
         ],
         "men": [
           {
             "id": 64,
-            "name": "Event 28 Men 12-U 200 Free Relay"
+            "name": "Event 64 Men 12-U 200 Free Relay"
           },
           {
             "id": 66,
-            "name": "Event 30 Men 14-U 400 Free Relay"
+            "name": "Event 66 Men 14-U 400 Free Relay"
           },
           {
             "id": 68,
-            "name": "Event 32 Men 10-U 400 Free Relay"
+            "name": "Event 68 Men 10-U 400 Free Relay"
           }
         ]
       },
