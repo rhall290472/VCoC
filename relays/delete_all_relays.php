@@ -28,8 +28,8 @@ try {
   $stmt->execute([$meet_slug]);
 
   // Optionally also delete submissions if you want everything gone
-  // $stmt2 = $pdo->prepare("DELETE FROM relay_submissions WHERE meet_slug = ?");
-  // $stmt2->execute([$meet_slug]);
+  $stmt2 = $pdo->prepare("DELETE FROM relay_submissions WHERE meet_slug = ?");
+  $stmt2->execute([$meet_slug]);
 
   echo json_encode(['success' => true, 'deleted' => $stmt->rowCount()]);
 } catch (Exception $e) {
