@@ -4,6 +4,7 @@
  * Version: 08Aug25 - Circlle seeding fix
  * Version: 13Aug25 - Add function updateAllEventSummaryTables
  * Version: 30Dec25 - Released
+ * Version: 12Jan26 - Changed breakOutByEvent to skip event if theres a sheet.
  * 
  * 
  * 
@@ -32,8 +33,8 @@
  * @property {number} table.minSwimmersPerHeat - Minimum swimmers per heat
  */
 
-const SCRIPT_VERSION = "30Dec25";  // Update this whenever you make changes
-const VERSION_DESCRIPTION = "Released";  // Optional: short note
+const SCRIPT_VERSION = "12Jan26";  // Update this whenever you make changes
+const VERSION_DESCRIPTION = "Changed breakOutByEvent to skip event if theres a sheet.";  // Optional: short note
 
 
 const CONFIG = {
@@ -159,7 +160,12 @@ function breakOutByEvent() {
       throw new Error(`No valid events found in "${CONFIG.sourceSheetName}"!\nExpected rows in Column A starting with "Event " followed by a number.`);
     }
 
-    events.forEach(event => processEvent(spreadsheet, event, numLanes));
+    events.forEach(event => {
+      const eventNum = event.eventName.match(/\d+/)[0];
+      if (!spreadsheet.getSheetByName(eventNum)) {
+        processEvent(spreadsheet, event, numLanes);
+      }
+    });
   } catch (error) {
     handleError(error.message, 'breakOutByEvent');
   }
