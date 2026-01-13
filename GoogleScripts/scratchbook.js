@@ -5,6 +5,7 @@
  * Version: 13Aug25 - Add function updateAllEventSummaryTables
  * Version: 30Dec25 - Released
  * Version: 12Jan26 - Changed breakOutByEvent to skip event if theres a sheet.
+ * Version: 13Jan26 - Correct athlete count if psych sheet contain records or time standards
  * 
  * 
  * 
@@ -34,7 +35,7 @@
  */
 
 const SCRIPT_VERSION = "12Jan26";  // Update this whenever you make changes
-const VERSION_DESCRIPTION = "Changed breakOutByEvent to skip event if theres a sheet.";  // Optional: short note
+const VERSION_DESCRIPTION = "Correct athlete count if psych sheet contain records or time standards";  // Optional: short note
 
 
 const CONFIG = {
