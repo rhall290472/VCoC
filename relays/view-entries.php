@@ -1,5 +1,15 @@
 <?php
 
+// Secure session start
+if (session_status() === PHP_SESSION_NONE) {
+  session_start([
+    'cookie_httponly' => true,
+    'use_strict_mode' => true,
+    'cookie_secure' => isset($_SERVER['HTTPS'])
+  ]);
+}
+
+
 /**
  * view_entries.php - Enhanced admin view with filters and PDF export
  */
@@ -16,7 +26,6 @@ try {
 // Simple password protection - CHANGE THIS TO A STRONG PASSWORD!
 $view_password = 'VCoC';
 
-session_start();
 if (!isset($_SESSION['relay_view_authenticated'])) {
   if (isset($_POST['password']) && $_POST['password'] === $view_password) {
     $_SESSION['relay_view_authenticated'] = true;

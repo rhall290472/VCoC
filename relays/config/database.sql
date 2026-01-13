@@ -10,6 +10,7 @@ CREATE TABLE relay_submissions (
     team VARCHAR(100) NOT NULL,
     day VARCHAR(20) NOT NULL,
     edit_token VARCHAR(64) UNIQUE,      -- Added here
+    meet_slug VARCHAR(50) NOT NULL DEFAULT '';
     submitted_at DATETIME NOT NULL
 );
 
@@ -31,6 +32,7 @@ CREATE TABLE relay_entries (
 CREATE TABLE teams (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
+    meet_slug VARCHAR(50) NOT NULL DEFAULT '';
     abbreviation VARCHAR(10)  -- Optional, e.g., 'BEST'
 );
 
@@ -41,15 +43,7 @@ CREATE TABLE swimmers (
     lsc VARCHAR(255) NOT NULL,
     gender ENUM('F', 'M') NOT NULL,
     age TINYINT UNSIGNED NOT NULL,  -- Recommended: change to this
+    meet_slug VARCHAR(50) NOT NULL DEFAULT '';
     -- If you need text ages, use: age VARCHAR(10) NOT NULL,
     INDEX idx_team_gender (team, gender)  -- Named composite index for faster queries
 );
-
-ALTER TABLE teams ADD COLUMN meet_slug VARCHAR(50) NOT NULL DEFAULT '';
-ALTER TABLE swimmers ADD COLUMN meet_slug VARCHAR(50) NOT NULL DEFAULT '';
-ALTER TABLE relay_submissions ADD COLUMN meet_slug VARCHAR(50) NOT NULL DEFAULT '';
-
-
-ALTER TABLE relay_entries ADD COLUMN mm TINYINT(1) DEFAULT 0;
-
-
