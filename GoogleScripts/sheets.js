@@ -20,11 +20,12 @@
  * Version: 03Jan26 - splitEventsInColumnsGHIJ Updated
  * Version: 06Jan26 - Added Protected Heat
  * Version: 07Jan26 - Draw heat line THICK
+ * Version: 17Jan26 - getViewOnlySheetUrl
  * 
  * 
  */
-const SCRIPT_VERSION = "07Jan26";  // Update this whenever you make changes
-const VERSION_DESCRIPTION = "Draw heat line THICK";  // Optional: short note
+const SCRIPT_VERSION = "17Jan26";  // Update this whenever you make changes
+const VERSION_DESCRIPTION = "getViewOnlySheetUrl";  // Optional: short note
 
 
 const COLOR_TIE = "#FF66FF"; // Color for ties
@@ -1133,11 +1134,12 @@ function getViewOnlySheetUrl() {
     }
 
     const sheetName = sheet.getName();
-    const sheetId = sheet.getSheetId();
-    const editUrl = ss.getUrl();
+    const sheetId = sheet.getSheetId();           // This is correct — gid value
+    const editUrl = ss.getUrl();                   // e.g. https://docs.google.com/spreadsheets/d/ABC123/edit
 
-    // View-only URL with direct tab link
-    const viewOnlyUrl = editUrl.replace(/\/edit.*$/, '/preview') + `#gid=${sheetId}`;
+    // Reliable view-only URL with direct tab jump (works as of 2026)
+    let baseUrl = editUrl.replace(/\/edit.*$/, ''); // strip /edit#gid=... etc.
+    const viewOnlyUrl = `${baseUrl}/preview#gid=${sheetId}`;
 
     // Create HTML dialog with copy button
     const html = HtmlService.createHtmlOutput(`
@@ -1178,11 +1180,10 @@ ${viewOnlyUrl}
 
     SpreadsheetApp.getUi().showModalDialog(html, 'View-Only Sheet URL - Click to Copy');
 
-    // Also log it
-    Logger.log("View-Only Sheet URL: " + viewOnlyUrl);
+    Logger.log(`View-Only URL for "${sheetName}" (gid=${sheetId}): ${viewOnlyUrl}`);
 
   } catch (error) {
-    Logger.log("Error in getViewOnlySheetUrl: " + error.message);
+    Logger.log("Error: " + error.message);
     SpreadsheetApp.getUi().alert("Error: " + error.message);
   }
 }
