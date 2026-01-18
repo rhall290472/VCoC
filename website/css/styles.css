@@ -1,0 +1,22 @@
+body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+header { text-align: center; background: #f0f0f0; padding: 20px; }
+nav ul { list-style: none; padding: 0; display: flex; justify-content: center; }
+nav li { margin: 0 15px; }
+section { margin: 20px; padding: 20px; border: 1px solid #ddd; }
+img { max-width: 100%; height: auto; }
+footer { text-align: center; padding: 10px; background: #f0f0f0; }
+.day-block {
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+.day-block h3 {
+  margin-top: 0;
+  color: #0066cc;
+}
+.day-block ul {
+  list-style-type: disc;
+  padding-left: 20px;
+}

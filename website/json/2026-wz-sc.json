@@ -1,0 +1,58 @@
+{
+  
+  "schedule": {
+    "title": "Meet Schedule",
+    "intro": "All times are Pacific Time. Prelims in the morning, Finals in the evening. Check daily psych sheets and results below.",
+    "days": [
+      {
+        "day": "Thursday",
+        "date": "July 31, 2025",
+        "sessions": [
+          {
+            "time": "Warm-up: 7:00 AM | Prelims: 9:00 AM",
+            "description": "Preliminaries - All events"
+          },
+          {
+            "time": "Warm-up: 4:30 PM | Finals: 6:00 PM",
+            "description": "Finals - Top 8/16 qualifiers"
+          }
+        ],
+        "links": [
+          {"text": "Thursday Psych Sheet (PDF)", "url": "docs/thursday-psych.pdf"},
+          {"text": "Thursday Heat Sheet", "url": "docs/thursday-heats.pdf"},
+          {"text": "Thursday Results", "url": "docs/thursday-results.pdf"}
+        ]
+      },
+      {
+        "day": "Friday",
+        "date": "August 1, 2025",
+        "sessions": [
+          {
+            "time": "Warm-up: 7:00 AM | Prelims: 9:00 AM",
+            "description": "Preliminaries - Remaining events"
+          },
+          {
+            "time": "Warm-up: 4:30 PM | Finals: 6:00 PM",
+            "description": "Championship Finals"
+          }
+        ],
+        "links": [
+          {"text": "Friday Psych Sheet", "url": "docs/friday-psych.pdf"},
+          {"text": "Live Results - Friday", "url": "https://example.com/live-results-friday"}
+        ]
+      },
+      {
+        "day": "Saturday",
+        "date": "August 2, 2025",
+        "sessions": [...],
+        "links": [...]
+      },
+      {
+        "day": "Sunday",
+        "date": "August 3, 2025",
+        "sessions": [...],
+        "links": [...]
+      }
+    ]
+  }
+}
