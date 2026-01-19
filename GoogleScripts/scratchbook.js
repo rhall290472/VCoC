@@ -6,6 +6,7 @@
  * Version: 30Dec25 - Released
  * Version: 12Jan26 - Changed breakOutByEvent to skip event if theres a sheet.
  * Version: 13Jan26 - Correct athlete count if psych sheet contain records or time standards
+ * Version: 18Jan26 - Import psych sheet
  * 
  * 
  * 
@@ -34,12 +35,12 @@
  * @property {number} table.minSwimmersPerHeat - Minimum swimmers per heat
  */
 
-const SCRIPT_VERSION = "12Jan26";  // Update this whenever you make changes
-const VERSION_DESCRIPTION = "Correct athlete count if psych sheet contain records or time standards";  // Optional: short note
+const SCRIPT_VERSION = "18Jan26";  // Update this whenever you make changes
+const VERSION_DESCRIPTION = "Import psych sheet";  // Optional: short note
 
 
 const CONFIG = {
-  sourceSheetName: 'Sheet1',
+  sourceSheetName: 'psych',
   colors: { 
     scratch: 'Yellow',
     top: '#b7e1cd',
@@ -129,6 +130,8 @@ function onOpen(e) {
     const ui = SpreadsheetApp.getUi();
     if (!ui) throw new Error('Unable to access UI.');
     ui.createMenu('VCoC')
+      .addItem('Import psych sheet', 'importPsychSheet')
+      .addSeparator()
       .addItem('Break out by event', 'breakOutByEvent')
       .addItem('Delete all sheets except source', 'deleteAllSheetsExceptSource')
       .addSeparator()
@@ -646,4 +649,244 @@ function showVersion() {
   var message = `Virtual Clerk of Course (VCoC)\n\nVersion: ${SCRIPT_VERSION}\n${VERSION_DESCRIPTION}\n\n`;
 
   ui.alert('VCoC Version', message, ui.ButtonSet.OK);
+}
+
+
+/**
+ * Menu item: Inline modal dialog → ask for filename → run import
+ */
+function importPsychSheet() {
+  console.log("importSheetByName started as: " + Session.getActiveUser().getEmail());
+
+  const html = HtmlService.createHtmlOutput(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <base target="_top">
+        <style>
+          body { font-family: Arial, sans-serif; padding: 24px; margin: 0; }
+          h2 { margin: 0 0 16px; color: #202124; }
+          p { margin: 0 0 16px; }
+          input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            box-sizing: border-box;
+          }
+          #status { 
+            margin: 16px 0; 
+            min-height: 24px; 
+            color: #5f6368; 
+          }
+          #error { 
+            color: #d93025; 
+            margin: 12px 0; 
+            display: none; 
+          }
+          .buttons { 
+            text-align: right; 
+            margin-top: 24px; 
+          }
+          button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-left: 12px;
+          }
+          #submitBtn {
+            background: #1a73e8;
+            color: white;
+          }
+          #submitBtn:disabled {
+            background: #a5c7f7;
+            cursor: not-allowed;
+          }
+          #cancelBtn {
+            background: #f1f3f4;
+            color: #202124;
+          }
+        </style>
+      </head>
+      <body>
+        <h2>Import Event by Name</h2>
+        <p>Enter the exact filename (with extension) located in the same Drive folder:</p>
+        
+        <input type="text" id="filename" placeholder="e.g. e21.xlsx or Event 42 Prelims.csv" autofocus>
+        <div id="status"></div>
+        <div id="error"></div>
+
+        <div class="buttons">
+          <button id="cancelBtn" onclick="google.script.host.close()">Cancel</button>
+          <button id="submitBtn" onclick="startImport()">Import</button>
+        </div>
+
+        <script>
+          let isRunning = false;
+
+          function startImport() {
+            if (isRunning) return;
+            
+            const btn = document.getElementById('submitBtn');
+            const input = document.getElementById('filename');
+            const status = document.getElementById('status');
+            const error = document.getElementById('error');
+            const value = input.value.trim();
+
+            if (!value) {
+              error.textContent = "Please enter a filename.";
+              error.style.display = 'block';
+              return;
+            }
+
+            error.style.display = 'none';
+            status.textContent = "Importing... Please wait.";
+            btn.disabled = true;
+            isRunning = true;
+
+            google.script.run
+              .withSuccessHandler(function(result) {
+                isRunning = false;
+                btn.disabled = false;
+                if (result && result.success) {
+                  status.textContent = result.message || "Import completed successfully.";
+                  setTimeout(() => google.script.host.close(), 1200);
+                } else {
+                  error.textContent = result?.message || "Import failed – unknown response.";
+                  error.style.display = 'block';
+                  status.textContent = "";
+                }
+              })
+              .withFailureHandler(function(err) {
+                isRunning = false;
+                btn.disabled = false;
+                error.textContent = "Server error: " + (err.message || "Unknown error");
+                error.style.display = 'block';
+                status.textContent = "";
+              })
+              .processImport(value);
+          }
+
+          // Allow Enter key to submit
+          document.getElementById('filename').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !isRunning) {
+              startImport();
+            }
+          });
+
+          // Auto-focus
+          document.getElementById('filename').focus();
+        </script>
+      </body>
+    </html>
+  `)
+    .setWidth(480)
+    .setHeight(320);
+
+  SpreadsheetApp.getUi().showModalDialog(html, 'Import Event Sheet');
+}
+
+/**
+ * Called from HTML dialog - performs the actual import ONLY
+ * After success, client-side code will handle the event number prompt
+ */
+/**
+ * Performs the import and returns the name of the last imported sheet
+ */
+function processImport(fileNameToImport) {
+  try {
+    if (!fileNameToImport || fileNameToImport.trim() === '') {
+      return { success: false, message: 'No file name provided.' };
+    }
+
+    fileNameToImport = fileNameToImport.trim();
+
+    const currentSs = SpreadsheetApp.getActiveSpreadsheet();
+    const currentFile = DriveApp.getFileById(currentSs.getId());
+    const parentFolder = currentFile.getParents().next();
+
+    const files = parentFolder.getFilesByName(fileNameToImport);
+    let sourceFile = null;
+    while (files.hasNext()) {
+      const file = files.next();
+      if (file.getName() === fileNameToImport) {
+        sourceFile = file;
+        break;
+      }
+    }
+
+    if (!sourceFile) {
+      return { success: false, message: `No file named "${fileNameToImport}" found in the same folder.` };
+    }
+
+    const isExcel = [MimeType.MICROSOFT_EXCEL, MimeType.MICROSOFT_EXCEL_LEGACY].includes(sourceFile.getMimeType());
+
+    let sourceSs;
+    let tempFileId = null;
+    if (!isExcel) {
+      sourceSs = SpreadsheetApp.openById(sourceFile.getId());
+    } else {
+      const resource = {
+        name: 'Temp_Import_' + sourceFile.getName().replace(/\.[^/.]+$/, ""),
+        mimeType: MimeType.GOOGLE_SHEETS,
+        parents: [{ id: parentFolder.getId() }]
+      };
+      const convertedFile = Drive.Files.create(resource, sourceFile.getBlob(), { convert: true });
+      tempFileId = convertedFile.id;
+      sourceSs = SpreadsheetApp.openById(tempFileId);
+    }
+
+    const sourceSheets = sourceSs.getSheets();
+    if (sourceSheets.length === 0) {
+      return { success: false, message: 'The file has no tabs to import.' };
+    }
+
+    let importedCount = 0;
+    let lastCopiedSheet = null;
+
+sourceSheets.forEach(sheet => {
+      lastCopiedSheet = sheet.copyTo(currentSs);
+      importedCount++;
+    });
+
+    // Cleanup temp file
+    if (tempFileId) {
+      try { DriveApp.getFileById(tempFileId).setTrashed(true); } catch (e) { }
+    }
+
+    SpreadsheetApp.flush();
+
+    // ──────────────────────────────────────────────
+    // Rename the last copied sheet to "psych"
+    // ──────────────────────────────────────────────
+    let finalSheetName = "psych";
+    if (lastCopiedSheet) {
+      // Avoid name conflict — add number if "psych" already exists
+      let counter = 1;
+      let proposedName = finalSheetName;
+      while (currentSs.getSheetByName(proposedName)) {
+        proposedName = `${finalSheetName} ${counter}`;
+        counter++;
+      }
+      lastCopiedSheet.setName(proposedName);
+      finalSheetName = proposedName;  // remember what we actually used
+    }
+
+    const message = importedCount === 1 
+      ? `Imported and renamed sheet to "${finalSheetName}"`
+      : `Imported ${importedCount} sheets — last one renamed to "${finalSheetName}"`;
+
+    return { 
+      success: true, 
+      message: message,
+      sheetName: finalSheetName   // optional — can be used later if needed
+    };
+
+  } catch (error) {
+    Logger.log('Import Error: ' + error.message + '\n' + error.stack);
+    return { success: false, message: 'Import failed: ' + error.message };
+  }
 }
