@@ -98,7 +98,7 @@ function onOpen(e) {
  */
 function showVersion() {
   var ui = SpreadsheetApp.getUi();
-  var message = `Virtual Clerk of Course (VCoC)\n\nVersion: ${SCRIPT_VERSION}\n${VERSION_DESCRIPTION}\n\n`;
+  var message = `Virtual Clerk of Course (VCoC)-sheets.js\n\nVersion: ${SCRIPT_VERSION}\n${VERSION_DESCRIPTION}\n\n`;
 
   ui.alert('VCoC Version', message, ui.ButtonSet.OK);
 }
