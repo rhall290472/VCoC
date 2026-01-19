@@ -1,12 +1,37 @@
 {
-  
+  "eventName": "2026 Western Zone Short Course Championships",
+  "dates": "March 19 - 22, 2026",
+  "location": "Skyline Aquatic Center, Mesa, AZ",
+  "logoUrl": "images/WesternZone.png",
+  "navigation": [
+    {"id": "schedule", "text": "Schedule"},
+    {"id": "results", "text": "Results"},
+    {"id": "psych-sheets", "text": "Psych Sheets"}
+  ],
+"sections": [
+  {
+    "id": "info",
+    "title": "Meet Information",
+    "content": "<p>Welcome to the 2026 Western Zone SCY Championships. More details coming soon.</p>"
+  },
+  {
+    "id": "results",
+    "title": "Results",
+    "content": "<p>Official results will be posted here after each session. <br>Coming soon!</p>"
+  },
+  {
+    "id": "psych-sheets",
+    "title": "Psych Sheets",
+    "content": "<p>Psych sheets and entries will be available closer to the meet date.</p>"
+  }
+],
   "schedule": {
     "title": "Meet Schedule",
-    "intro": "All times are Pacific Time. Prelims in the morning, Finals in the evening. Check daily psych sheets and results below.",
+    "intro": "All times are Mountain Time. Prelims in the morning, Finals in the evening. Check daily psych sheets and results below.",
     "days": [
       {
         "day": "Thursday",
-        "date": "July 31, 2025",
+        "date": "March 19, 2026",
         "sessions": [
           {
             "time": "Warm-up: 7:00 AM | Prelims: 9:00 AM",
@@ -25,7 +50,7 @@
       },
       {
         "day": "Friday",
-        "date": "August 1, 2025",
+        "date": "March 20, 2026",
         "sessions": [
           {
             "time": "Warm-up: 7:00 AM | Prelims: 9:00 AM",
@@ -43,16 +68,41 @@
       },
       {
         "day": "Saturday",
-        "date": "August 2, 2025",
-        "sessions": [...],
-        "links": [...]
+        "date": "March 21, 2026",
+        "sessions": [
+          {
+            "time": "Warm-up: 7:00 AM | Prelims: 9:00 AM",
+            "description": "Preliminaries"
+          },
+          {
+            "time": "Warm-up: 4:30 PM | Finals: 6:00 PM",
+            "description": "Finals"
+          }
+        ],
+        "links": [
+          {"text": "Saturday Psych Sheet", "url": "docs/saturday-psych.pdf"}
+        ]
       },
       {
         "day": "Sunday",
-        "date": "August 3, 2025",
-        "sessions": [...],
-        "links": [...]
+        "date": "March 22, 2026",
+        "sessions": [
+          {
+            "time": "Warm-up: 7:00 AM | Prelims: 9:00 AM",
+            "description": "Prelims / Timed Finals"
+          },
+          {
+            "time": "Warm-up: 4:00 PM | Finals: 5:30 PM",
+            "description": "Championship Finals"
+          }
+        ],
+        "links": [
+          {"text": "Sunday Psych Sheet", "url": "docs/sunday-psych.pdf"}
+        ]
       }
     ]
+  },
+  "footer": {
+    "text": "© 2026 DeckMaster.US | Contact: webmaster@deckmaster.us"
   }
 }

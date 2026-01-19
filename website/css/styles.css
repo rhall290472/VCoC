@@ -5,6 +5,10 @@ nav li { margin: 0 15px; }
 section { margin: 20px; padding: 20px; border: 1px solid #ddd; }
 img { max-width: 100%; height: auto; }
 footer { text-align: center; padding: 10px; background: #f0f0f0; }
+html {
+  scroll-behavior: smooth;          /* nice smooth scrolling */
+  scroll-padding-top: 80px;         /* adjust to your header/nav height, e.g. 60–100px */
+}
 .day-block {
   margin: 20px 0;
   padding: 15px;
