@@ -20,12 +20,12 @@
  * Version: 03Jan26 - splitEventsInColumnsGHIJ Updated
  * Version: 06Jan26 - Added Protected Heat
  * Version: 07Jan26 - Draw heat line THICK
- * Version: 17Jan26 - getViewOnlySheetUrl
+ * Version: 18Jan26 - extractEventNumberFromFilename
  * 
  * 
  */
-const SCRIPT_VERSION = "17Jan26";  // Update this whenever you make changes
-const VERSION_DESCRIPTION = "getViewOnlySheetUrl";  // Optional: short note
+const SCRIPT_VERSION = "18Jan26";  // Update this whenever you make changes
+const VERSION_DESCRIPTION = "extractEventNumberFromFilename";  // Optional: short note
 
 
 const COLOR_TIE = "#FF66FF"; // Color for ties
@@ -66,8 +66,8 @@ function onOpen(e) {
     ui.createMenu('VCoC')
       .addItem('Open VCoC Sidebar', 'showSidebar')
       .addSeparator()
-      .addItem('Import Sheet by Name...', 'importSheetByName')
-      .addItem('Publish sheet...', 'getViewOnlySheetUrl')
+      .addItem('Import Event by Name...', 'importSheetByName')
+      .addItem('Publish Event...', 'getViewOnlySheetUrl')
       .addSeparator()
       .addItem('Scr current swimmer', 'scrSwimmer')
       .addItem('Intent to Scratch', 'IntentscrSwimmer')
@@ -129,6 +129,7 @@ function showSidebar() {
 function expandAllRows() {
   const DEFAULT_ROW_HEIGHT = 21;
 
+  console.log("expandAllRows");
   try {
     // Get active spreadsheet and sheet with null checks
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -989,6 +990,7 @@ function renumberRankings() {
  * Menu item: Open HTML dialog for file name input, then import sheets
  */
 function importSheetByName() {
+  console.log("Running as: " + Session.getActiveUser().getEmail());
   const html = HtmlService.createHtmlOutputFromFile('ImportDialog')
     .setWidth(400)
     .setHeight(200);
@@ -1067,24 +1069,109 @@ function processImport(fileNameToImport) {
 
     // Return the name of the newly copied sheet (usually the only/main one)
     const lastSheetName = lastCopiedSheet ? lastCopiedSheet.getName() : null;
+
+// Try to auto-detect event number
+  let autoEventNum = extractEventNumberFromFilename(fileNameToImport);
+  console.log('fileNameToImport == ' + fileNameToImport + 'autoEventNum == ' + autoEventNum)
+
+  if (autoEventNum) {
+    // We found a plausible number → use it automatically
+    try {
+      renameSheetToEvent(lastSheetName, autoEventNum);
+      // Optionally show a small toast / message
+      SpreadsheetApp.getActiveSpreadsheet().toast(
+        `Event number ${autoEventNum} auto-detected from filename`,
+        "Import complete",
+        4
+      );
+      expandAllRows();   // already called inside renameSheetToEvent in your version
+      return { success: true, message: `Imported and auto-renamed to Event ${autoEventNum}` };
+    } catch (err) {
+      Logger.log("Auto-rename failed: " + err);
+      // fall back to asking user
+    }
+  }
+  else{
     showEventNumberPrompt(lastSheetName);
+  }
+ 
+  return { success: true, message: `Imported ${importedCount} Event. Waiting for event number...` };
 
-    return {
-      success: true,
-      message: `Imported ${importedCount} sheet(s) successfully!`,
-      lastSheetName: lastSheetName
-    };
-
-  } catch (error) {
+  }catch (error) {
     Logger.log('Import Error: ' + error.message + '\n' + error.stack);
     return { success: false, message: 'Import failed: ' + error.message };
   }
 }
 
 /**
+ * Get the event number from the filename
+*/
+/**
+ * Tries to guess event number from filename
+ * Returns number (as string) or null if couldn't extract
+ */
+function extractEventNumberFromFilename(filename) {
+  if (!filename || typeof filename !== 'string') return null;
+  
+  // Normalize: remove extension, extra spaces, make lowercase for matching
+  let name = filename
+    .replace(/\.[^.]+$/, '')           // remove .xlsx / .pdf etc.
+    .replace(/\s+/g, ' ')              // normalize spaces
+    .trim()
+    .toLowerCase();
+
+  // ──────────────────────────────────────────────
+  // New Strategy: "e21" or "E157" style (shorthand for Event XX)
+  // ──────────────────────────────────────────────
+  const eMatch = name.match(/^e(\d{1,4})/);
+  if (eMatch && eMatch[1]) {
+    return eMatch[1];
+  }
+
+  // ──────────────────────────────────────────────
+  // Strategy 1: "Event 42 ..." or "event 157 prelim"
+  // ──────────────────────────────────────────────
+  const eventMatch = name.match(/event\s*(\d+)/i);
+  if (eventMatch && eventMatch[1]) {
+    return eventMatch[1];
+  }
+
+  // ──────────────────────────────────────────────
+  // Strategy 2: Leading number like "042 - ..." or "89 Girls..."
+  // ──────────────────────────────────────────────
+  const leadingMatch = name.match(/^(\d{1,4})/);
+  if (leadingMatch && leadingMatch[1]) {
+    // Only use if it's 3 digits or less (avoid taking year like 20250117)
+    if (parseInt(leadingMatch[1], 10) <= 999) {
+      return leadingMatch[1];
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // Strategy 3: Number right before dash or common separator
+  // ──────────────────────────────────────────────
+  const dashMatch = name.match(/(\d{1,4})\s*[-–—]\s*/);
+  if (dashMatch && dashMatch[1]) {
+    return dashMatch[1];
+  }
+
+  // ──────────────────────────────────────────────
+  // Last resort: any standalone 2–3 digit number
+  // (less safe — only if previous failed)
+  // ──────────────────────────────────────────────
+  const anyNumber = name.match(/\b(\d{2,3})\b/);
+  if (anyNumber && anyNumber[1]) {
+    return anyNumber[1];
+  }
+
+  return null;
+}
+
+/**
  * Shows the Event Number dialog and passes the sheet name safely
  */
 function showEventNumberPrompt(lastSheetName) {
+  console.log("showEventNumberPrompt");
   const template = HtmlService.createTemplateFromFile('EventNumberDialog');
   template.sheetName = lastSheetName || '';
   const html = template.evaluate()
@@ -1111,7 +1198,7 @@ function renameSheetToEvent(sheetName, eventNum) {
     const newName = 'Event ' + eventNum;
     sheet.setName(newName);
     ss.setActiveSheet(sheet);
-
+    console.log("renameSheetToEvent");
     expandAllRows();  // Clean up the newly renamed sheet
 
     return SUCCESS;  // Consistent with other functions in your script
@@ -1187,7 +1274,6 @@ ${viewOnlyUrl}
     SpreadsheetApp.getUi().alert("Error: " + error.message);
   }
 }
-
 
 /**
  * These function will split out multiple scratch into indivdaul scratches
