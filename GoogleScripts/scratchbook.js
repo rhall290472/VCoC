@@ -712,10 +712,10 @@ function importPsychSheet() {
         </style>
       </head>
       <body>
-        <h2>Import Event by Name</h2>
+        <h2>Import Psych sheet</h2>
         <p>Enter the exact filename (with extension) located in the same Drive folder:</p>
         
-        <input type="text" id="filename" placeholder="e.g. e21.xlsx or Event 42 Prelims.csv" autofocus>
+        <input type="text" id="filename" placeholder="e.g. pysch.xls" autofocus>
         <div id="status"></div>
         <div id="error"></div>
 
@@ -786,7 +786,7 @@ function importPsychSheet() {
     .setWidth(480)
     .setHeight(320);
 
-  SpreadsheetApp.getUi().showModalDialog(html, 'Import Event Sheet');
+  SpreadsheetApp.getUi().showModalDialog(html, 'Import Psych Sheet');
 }
 
 /**
