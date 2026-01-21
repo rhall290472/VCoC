@@ -7,6 +7,7 @@
  * Version: 12Jan26 - Changed breakOutByEvent to skip event if theres a sheet.
  * Version: 13Jan26 - Correct athlete count if psych sheet contain records or time standards
  * Version: 18Jan26 - Import psych sheet
+ * Version: 20Jan26 - deleteAllSheetsExceptSource
  * 
  * 
  * 
@@ -35,8 +36,8 @@
  * @property {number} table.minSwimmersPerHeat - Minimum swimmers per heat
  */
 
-const SCRIPT_VERSION = "18Jan26";  // Update this whenever you make changes
-const VERSION_DESCRIPTION = "Import psych sheet";  // Optional: short note
+const SCRIPT_VERSION = "20Jan26";  // Update this whenever you make changes
+const VERSION_DESCRIPTION = "deleteAllSheetsExceptSource";  // Optional: short note
 
 
 const CONFIG = {
@@ -489,21 +490,78 @@ function deleteAllSheetsExceptSource() {
   try {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const sourceSheet = spreadsheet.getSheetByName(CONFIG.sourceSheetName);
-    if (!sourceSheet) throw new Error(`Source sheet "${CONFIG.sourceSheetName}" not found!`);
+    
+    if (!sourceSheet) {
+      throw new Error(`Source sheet "${CONFIG.sourceSheetName}" not found!`);
+    }
 
     const sheets = spreadsheet.getSheets();
-    if (sheets.length === 1) {
-      Logger.log('Only one sheet exists. No sheets deleted.');
+    
+    if (sheets.length <= 1) {
+      Logger.log('Only one sheet exists → nothing to delete.');
       return;
     }
 
-    sheets.forEach(sheet => {
-      if (sheet.getName() !== CONFIG.sourceSheetName) {
+    let deletedCount = 0;
+    // Work on a copy to avoid modification-during-iteration issues
+    const sheetsToCheck = [...sheets];
+
+    sheetsToCheck.forEach(sheet => {
+      const sheetName = sheet.getName();
+      
+      // Never delete the source sheet
+      if (sheetName === CONFIG.sourceSheetName) {
+        Logger.log(`Keeping source sheet: "${sheetName}"`);
+        return;
+      }
+
+      // ────────────────────────────────────────────────
+      // Critical: Skip sheets linked to a Google Form
+      // ────────────────────────────────────────────────
+      const formUrl = sheet.getFormUrl();
+      if (formUrl) {
+        Logger.log(`Skipping "${sheetName}" — linked to Google Form (${formUrl})`);
+        return;
+      }
+
+      // Optional extra safety checks you might still want:
+      // 1. Protected sheet
+      const protections = sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET);
+      if (protections.length > 0) {
+        Logger.log(`Skipping protected sheet: "${sheetName}"`);
+        return;
+      }
+
+      // 2. Charts linked to other sheets
+      const charts = sheet.getCharts();
+      let hasExternalChartLink = false;
+      for (const chart of charts) {
+        const ranges = chart.getRanges();
+        for (const range of ranges) {
+          if (range.getSheet().getSheetId() !== sheet.getSheetId()) {
+            hasExternalChartLink = true;
+            break;
+          }
+        }
+        if (hasExternalChartLink) break;
+      }
+      if (hasExternalChartLink) {
+        Logger.log(`Skipping "${sheetName}" — contains chart(s) linked to other sheet(s)`);
+        return;
+      }
+
+      // If we get here → safe to delete
+      try {
         spreadsheet.deleteSheet(sheet);
+        deletedCount++;
+        Logger.log(`Deleted sheet: "${sheetName}"`);
+      } catch (e) {
+        Logger.log(`Failed to delete "${sheetName}": ${e.message}`);
       }
     });
 
-    Logger.log(`All sheets deleted except "${CONFIG.sourceSheetName}"`);
+    Logger.log(`Finished. Deleted ${deletedCount} sheet(s). Kept source sheet "${CONFIG.sourceSheetName}".`);
+
   } catch (error) {
     handleError(error.message, 'deleteAllSheetsExceptSource');
   }
