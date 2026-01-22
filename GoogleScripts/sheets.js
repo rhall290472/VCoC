@@ -638,19 +638,31 @@ function drawHeatLine() {
       throw new Error("No active sheet found.");
     }
 
-    var row = sheet.getActiveCell().getRow();
+    var range = sheet.getActiveRange();
+    if (!range) {
+      throw new Error("No active range selected.");
+    }
+
+    var row = range.getRow();
     if (row < 1) {
       throw new Error("Invalid row selected.");
     }
 
-    var lastColumn = sheet.getLastColumn();
-    if (lastColumn < 1) {
+    var lastRow = sheet.getLastRow();
+    if (lastRow < row) {
+      throw new Error("Selected row is beyond the last used row.");
+    }
+
+    var numColumns = sheet.getLastColumn();
+    if (numColumns < 1) {
       throw new Error("Sheet has no columns.");
     }
 
-    var range = sheet.getRange(row, 1, 1, lastColumn);
-
-    range.setBorder(true, null, null, null, null, null, "black", SpreadsheetApp.BorderStyle.SOLID_THICK);
+    var rowRange = sheet.getRange(row, 1, 1, numColumns);
+    rowRange.setBorder(
+      false, false, true, false, false, false,
+      "black", SpreadsheetApp.BorderStyle.SOLID_THICK
+    );
 
     SpreadsheetApp.flush();
   } catch (error) {
@@ -660,28 +672,37 @@ function drawHeatLine() {
   return SUCCESS;
 }
 
+
 /**
  * Remove all borders (heat lines) from the sheet.
  * 
  */
-function removeAllBorders(sheet = SpreadsheetApp.getActiveSheet()) {
+function removeAllBorders() {
   try {
+    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    if (!spreadsheet) {
+      throw new Error("No active spreadsheet found.");
+    }
+
+    var sheet = spreadsheet.getActiveSheet();
     if (!sheet) {
       throw new Error("No active sheet found.");
     }
 
     var lastRow = sheet.getLastRow();
-    var lastColumn = sheet.getLastColumn();
+    if (lastRow < 1) {
+      throw new Error("Sheet is empty or has no data rows.");
+    }
 
-    if (lastRow < 1 || lastColumn < 1) {
-      Logger.log("Empty sheet; no borders to remove.");
-      return SUCCESS;
+    var lastColumn = sheet.getLastColumn();
+    if (lastColumn < 1) {
+      throw new Error("Sheet has no columns.");
     }
 
     var range = sheet.getRange(1, 1, lastRow, lastColumn);
-    range.setBorder(null, null, null, null, null, null);
+    range.setBorder(false, false, false, false, false, false);
 
-    SpreadsheetApp.flush();
+    SpreadsheetApp.flush(); SpreadsheetApp.flush();
   } catch (error) {
     Logger.log("Error in removeAllBorders: " + error.message);
     SpreadsheetApp.getUi().alert("Error: " + error.message);
@@ -689,167 +710,134 @@ function removeAllBorders(sheet = SpreadsheetApp.getActiveSheet()) {
   return SUCCESS;
 }
 
+
 /**
  * Mark event as Closed.
  * 
  */
 function MarkEventClosed() {
-  try {
-    var sheet = SpreadsheetApp.getActiveSheet();
-    if (!sheet) {
-      throw new Error("No active sheet found.");
-    }
+  // Define the spreadsheet and sheet
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = SpreadsheetApp.getActiveSheet();
 
-    sheet.getRange(1, 1).setValue("Closed");
-    SpreadsheetApp.flush();
-  } catch (error) {
-    Logger.log("Error in MarkEventClosed: " + error.message);
-    SpreadsheetApp.getUi().alert("Error: " + error.message);
+  // Define the cell position (e.g., B2 -> column 2, row 2)
+  var column = 15;
+  var row = 1;
+
+
+  /**
+   * Insert image from Google Drive
+   * 
+   */
+  var fileId = "1YBIydDBt0aB7qOPXx4GGxrHY3DmZHC54"; // Replace with your Google Drive file ID
+  try {
+    var file = DriveApp.getFileById(fileId);
+    var blob = file.getBlob();
+    sheet.insertImage(blob, column, row);
+  } catch (e) {
+    SpreadsheetApp.getUi().alert("Error inserting image from Google Drive: " + e.message);
   }
+  SpreadsheetApp.flush();
   return SUCCESS;
 }
+
 
 /**
  * Mark event as Revised.
  * 
  */
 function MarkEventRevised() {
-  try {
-    var sheet = SpreadsheetApp.getActiveSheet();
-    if (!sheet) {
-      throw new Error("No active sheet found.");
-    }
+  // Define the spreadsheet and sheet
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = SpreadsheetApp.getActiveSheet();
 
-    sheet.getRange(1, 1).setValue("Revised");
-    SpreadsheetApp.flush();
-  } catch (error) {
-    Logger.log("Error in MarkEventRevised: " + error.message);
-    SpreadsheetApp.getUi().alert("Error: " + error.message);
+  // Define the cell position (e.g., B2 -> column 2, row 2)
+  var column = 15;
+  var row = 2;
+
+
+  // Method 2: Insert image from Google Drive (uncomment to use)
+
+  var fileId = "1yYFXZL6fHdxvJS6LrpQ9wiMSooZCrmmY"; // Replace with your Google Drive file ID
+  try {
+    var file = DriveApp.getFileById(fileId);
+    var blob = file.getBlob();
+    sheet.insertImage(blob, column, row);
+  } catch (e) {
+    SpreadsheetApp.getUi().alert("Error inserting image from Google Drive: " + e.message);
   }
+  SpreadsheetApp.flush();
   return SUCCESS;
 }
+
 
 /**
  * Insert announced time as image over sheet.
  * 
  */
 function insertTimesImageOverSheet() {
-  const html = HtmlService.createHtmlOutput(`
-<!DOCTYPE html>
-<html>
-  <head>
-    <base target="_top">
-    <style>
-      body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
-      input { width: 100%; padding: 10px; margin: 15px 0; font-size: 16px; box-sizing: border-box; }
-      button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
-      #okBtn { background: #4285f4; color: white; border: none; }
-      #cancelBtn { background: #f1f1f1; border: 1px solid #ddd; }
-    </style>
-  </head>
-  <body>
-    <p>Enter Announced time (e.g., 10:30 AM):</p>
-    <input type="text" id="timeInput" placeholder="10:30 AM" autofocus>
-    <br>
-    <button id="okBtn">OK</button>
-    <button id="cancelBtn">Cancel</button>
-
-    <script>
-      document.getElementById('okBtn').onclick = function() {
-        const time = document.getElementById('timeInput').value.trim();
-        if (!time) {
-          alert('Please enter a time.');
-          return;
-        }
-        google.script.host.close();
-        google.script.run
-          .withSuccessHandler(() => { /* Success handled in server */ })
-          .processAnnouncedTime(time);
-      };
-
-      document.getElementById('cancelBtn').onclick = function() {
-        google.script.host.close();
-      };
-
-      document.getElementById('timeInput').addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') document.getElementById('okBtn').click();
-      });
-
-      document.getElementById('timeInput').focus();
-    </script>
-  </body>
-</html>
-  `)
-    .setWidth(300)
-    .setHeight(200);
-  SpreadsheetApp.getUi().showModalDialog(html, 'Announced Time');
-}
-
-/**
- * Process announced time (stub - implement as needed).
- * 
- */
-function processAnnouncedTime(time1) {
-  var sheet = SpreadsheetApp.getActiveSheet();
-
-  // Target a safe empty cell: Column AK (37), Row 1 (top-right, unlikely to have data)
-  var targetCell = sheet.getRange('AK1');  // Change to another empty cell if needed (e.g., 'AL1')
-
-  // Clear any previous content/formula in target cell
-  targetCell.clearContent();
-
-  // Remove any old floating images (just in case)
-  sheet.getImages().forEach(function (img) { img.remove(); });
-
-  var time2 = addThirtyMinutes(time1);  // Your existing helper function
-
+  // Get the active spreadsheet and sheet
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getActiveSheet();
+  
+  // Prompt user for announced time
+  var ui = SpreadsheetApp.getUi();
+  var response1 = ui.prompt('Enter Announced time (e.g., 10:30 AM):', ui.ButtonSet.OK_CANCEL);
+  if (response1.getSelectedButton() !== ui.Button.OK) return;
+  var time1 = response1.getResponseText();
+  
+  // Calculate time2 by adding 30 minutes to time1
+  var time2 = addThirtyMinutes(time1);
+  
   try {
-    // Temporary data in far-away cells (two columns for clean table layout)
+    // Write times to a temporary range for chart data
     sheet.getRange('A131:B133').setValues([
       ['Announced:', 'Time'],
-      ['Read:', time1],
-      ['Closes:', time2]
+      ['Read:    ', time1],
+      ['Closes:  ', time2]
     ]);
-
-    // Create chart blob (good visible size)
+    
+    // Create a data table chart
     var chart = sheet.newChart()
       .setChartType(Charts.ChartType.TABLE)
-      .addRange(sheet.getRange('A131:B133'))
-      .setPosition(5, 5, 0, 0)
-      .setOption('width', 240)
-      .setOption('height', 120)
+      .addRange(sheet.getRange('A131:B133')) // Updated range to match data
+      .setPosition(5, 5, 0, 0) // Temporary position
+      .setOption('width', 200)
+      .setOption('height', 100)
       .build();
-
+    
+    // Insert the chart temporarily to get its image
     sheet.insertChart(chart);
+    
+    // Get the chart as a blob
     var imageBlob = chart.getBlob();
+    
+    // Remove the temporary chart
     sheet.removeChart(chart);
-
-    // Clear temp data
+    
+    // Clear temporary data
     sheet.getRange('A131:B133').clearContent();
-
-    // Upload to Drive for direct view URL
-    var tempFile = DriveApp.getRootFolder().createFile(imageBlob.setName('announced_time_temp.png'));
-    tempFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    var imageUrl = 'https://drive.google.com/uc?export=view&id=' + tempFile.getId();
-
-    // CRITICAL: Set fixed cell dimensions BEFORE inserting formula (prevents auto-expansion)
-    sheet.setRowHeight(1, 130);      // Fixed height with padding
-    sheet.setColumnWidth(37, 260);   // Column AK (37) – wide enough for table
-
-    // Insert in-cell image: Mode 1 = stretch/resize to exactly fit the cell
-    targetCell.setFormula('=IMAGE("' + imageUrl + '", 1)');
-
-    // Clean up temporary Drive file after delay
-    Utilities.sleep(2000);
-    tempFile.setTrashed(true);
-
+    
+    // Insert the image over the sheet at column 2, row 2
+    var image = sheet.insertImage(imageBlob, 30, 2);
+    
+    // Set image size
+    image.setWidth(200).setHeight(100);
   } catch (e) {
-    SpreadsheetApp.getUi().alert('Error creating announced time: ' + e.message);
-  }
+    ui.alert('Error creating image: ' + e.message);
 
-  SpreadsheetApp.flush();
-  return "SUCCESS";
+    // Force sheet to re-render
+    SpreadsheetApp.flush();
+
+    return;
+  }
 }
+
+
+
+
+
+
 function addThirtyMinutes(timeStr) {
   // Parse the input time string
   var parts = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
