@@ -624,13 +624,93 @@ function insertTimesImageOverSheet() {
  * Process announced time (stub - implement as needed).
  * 
  */
-function processAnnouncedTime(time) {
+function processAnnouncedTime(time1) {
+  var sheet = SpreadsheetApp.getActiveSheet();
+
+  // Target a safe empty cell: Column AK (37), Row 1 (top-right, unlikely to have data)
+  var targetCell = sheet.getRange('AK1');  // Change to another empty cell if needed (e.g., 'AL1')
+
+  // Clear any previous content/formula in target cell
+  targetCell.clearContent();
+
+  // Remove any old floating images (just in case)
+  sheet.getImages().forEach(function (img) { img.remove(); });
+
+  var time2 = addThirtyMinutes(time1);  // Your existing helper function
+
   try {
-    // Implement your logic here, e.g., insert image or text
-    SpreadsheetApp.getUi().alert(`Announced time set to: ${time}`);
-  } catch (error) {
-    Logger.log("Error in processAnnouncedTime: " + error.message);
+    // Temporary data in far-away cells (two columns for clean table layout)
+    sheet.getRange('A131:B133').setValues([
+      ['Announced:', 'Time'],
+      ['Read:', time1],
+      ['Closes:', time2]
+    ]);
+
+    // Create chart blob (good visible size)
+    var chart = sheet.newChart()
+      .setChartType(Charts.ChartType.TABLE)
+      .addRange(sheet.getRange('A131:B133'))
+      .setPosition(5, 5, 0, 0)
+      .setOption('width', 240)
+      .setOption('height', 120)
+      .build();
+
+    sheet.insertChart(chart);
+    var imageBlob = chart.getBlob();
+    sheet.removeChart(chart);
+
+    // Clear temp data
+    sheet.getRange('A131:B133').clearContent();
+
+    // Upload to Drive for direct view URL
+    var tempFile = DriveApp.getRootFolder().createFile(imageBlob.setName('announced_time_temp.png'));
+    tempFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var imageUrl = 'https://drive.google.com/uc?export=view&id=' + tempFile.getId();
+
+    // CRITICAL: Set fixed cell dimensions BEFORE inserting formula (prevents auto-expansion)
+    sheet.setRowHeight(1, 130);      // Fixed height with padding
+    sheet.setColumnWidth(37, 260);   // Column AK (37) – wide enough for table
+
+    // Insert in-cell image: Mode 1 = stretch/resize to exactly fit the cell
+    targetCell.setFormula('=IMAGE("' + imageUrl + '", 1)');
+
+    // Clean up temporary Drive file after delay
+    Utilities.sleep(2000);
+    tempFile.setTrashed(true);
+
+  } catch (e) {
+    SpreadsheetApp.getUi().alert('Error creating announced time: ' + e.message);
   }
+
+  SpreadsheetApp.flush();
+  return "SUCCESS";
+}
+function addThirtyMinutes(timeStr) {
+  // Parse the input time string
+  var parts = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!parts) return "Invalid time format";
+
+  var hours = parseInt(parts[1]);
+  var minutes = parseInt(parts[2]);
+  var period = parts[3].toUpperCase();
+
+  // Add 30 minutes
+  minutes += 30;
+
+  // Handle minute overflow
+  if (minutes >= 60) {
+    minutes -= 60;
+    hours += 1;
+  }
+
+  // Handle hour overflow and AM/PM switch
+  if (hours >= 12) {
+    if (hours > 12) hours -= 12;
+    period = (period === "AM") ? "PM" : "AM";
+  }
+
+  // Format the time string
+  return hours + ":" + (minutes < 10 ? "0" + minutes : minutes) + " " + period;
 }
 
 /**
@@ -710,21 +790,111 @@ function importSheetByName() {
 }
 
 /**
- * Process import (stub - implement as needed).
- * 
+ * Searches Drive for a spreadsheet containing the given name (most recent match),
+ * copies its first sheet into the current spreadsheet, cleans it up, and tries
+ * to detect event number from the original sheet name.
  */
-function processImport(fileName) {
+/**
+ * Performs the import and returns the name of the last imported sheet
+ */
+function processImport(fileNameToImport) {
   try {
-    // Implement import logic here
-    // For example, copy sheet from another spreadsheet
-    const result = {
-      success: true,
-      message: `Imported ${fileName}`,
-      lastSheetName: fileName // or actual sheet name
-    };
-    return result;
-  } catch (error) {
-    return { success: false, message: error.message };
+    if (!fileNameToImport || fileNameToImport.trim() === '') {
+      return { success: false, message: 'No file name provided.' };
+    }
+
+    fileNameToImport = fileNameToImport.trim();
+
+    const currentSs = SpreadsheetApp.getActiveSpreadsheet();
+    const currentFile = DriveApp.getFileById(currentSs.getId());
+    const parentFolder = currentFile.getParents().next();  // assumes same folder
+
+    const files = parentFolder.getFilesByName(fileNameToImport);
+    let sourceFile = null;
+    while (files.hasNext()) {
+      const file = files.next();
+      if (file.getName() === fileNameToImport) {
+        sourceFile = file;
+        break;
+      }
+    }
+
+    if (!sourceFile) {
+      return { success: false, message: `No exact match for "${fileNameToImport}" in this folder.` };
+    }
+
+    // Handle Google Sheet or Excel
+    const isExcel = [MimeType.MICROSOFT_EXCEL, MimeType.MICROSOFT_EXCEL_LEGACY].includes(sourceFile.getMimeType());
+    let sourceSs;
+    let tempFileId = null;
+
+    if (!isExcel) {
+      sourceSs = SpreadsheetApp.openById(sourceFile.getId());
+    } else {
+      const resource = {
+        name: 'Temp_Import_' + sourceFile.getName().replace(/\.[^/.]+$/, ""),
+        mimeType: MimeType.GOOGLE_SHEETS,
+        parents: [{ id: parentFolder.getId() }]
+      };
+      const converted = Drive.Files.create(resource, sourceFile.getBlob(), { convert: true });
+      tempFileId = converted.id;
+      sourceSs = SpreadsheetApp.openById(tempFileId);
+    }
+
+    const sourceSheets = sourceSs.getSheets();
+    if (sourceSheets.length === 0) {
+      return { success: false, message: 'Source file has no sheets.' };
+    }
+
+    // Copy ONLY the first sheet — most heat sheets have one main tab
+    const sourceSheet = sourceSheets[0];
+    const copiedSheet = sourceSheet.copyTo(currentSs);
+
+    // Immediate unique temp name to avoid "Copy of" prefix issues
+    const ts = Utilities.formatDate(new Date(), 'GMT', 'yyyyMMdd_HHmmssSSS');
+    const tempName = `Imported_${ts}`;
+    copiedSheet.setName(tempName);
+
+    currentSs.setActiveSheet(copiedSheet);
+    SpreadsheetApp.flush();
+
+    // Clean up any temp conversion file
+    if (tempFileId) {
+      try { DriveApp.getFileById(tempFileId).setTrashed(true); } catch (e) { }
+    }
+
+    // Try extraction — prefer source sheet name over filename
+    const nameForExtraction = sourceSheet.getName().trim() || fileNameToImport;
+    // ─── Extraction & rename decision ───
+    const detected = extractEventNumberFromFilename(fileNameToImport);
+
+    const ui = SpreadsheetApp.getUi();
+    let feedback = `Filename: "${fileNameToImport}"\nDetected event number: ${detected || "NONE"}`;
+
+    if (detected) {
+      const newName = 'Event ' + detected;
+      try {
+        copiedSheet.setName(newName);
+        expandAllRows();
+        feedback += `\n\nSUCCESS: Sheet renamed to "${newName}"`;
+        //ui.alert('Auto-rename successful', feedback, ui.ButtonSet.OK);
+        return { success: true, message: feedback, autoRenamed: true };
+      } catch (e) {
+        feedback += `\n\nRename FAILED: ${e.message}\nKept as: ${tempName}`;
+        ui.alert('Auto-rename failed', feedback, ui.ButtonSet.OK);
+        // Do NOT call showEventNumberPrompt here
+        return { success: true, message: feedback };
+      }
+    } else {
+      feedback += '\n\nNo event number found in filename → manual entry required';
+      ui.alert('No auto-detection', feedback, ui.ButtonSet.OK);
+      showEventNumberPrompt(tempName);
+      return { success: true, message: feedback };
+    }
+
+  } catch (err) {
+    Logger.log('Critical import error: ' + err);
+    return { success: false, message: err.message };
   }
 }
 
@@ -733,10 +903,16 @@ function processImport(fileName) {
  * 
  */
 function extractEventNumberFromFilename(name) {
+  console.log("extractEventNumberFromFilename: " + name);
   if (!name) return null;
 
   name = name.trim().toLowerCase();
 
+  // New: match patterns like e21, E45, evt09, etc.
+  const quickEvent = name.match(/^(?:e|evt|event)?\s*(\d{1,3})\b/i);
+  if (quickEvent && quickEvent[1]) {
+    return quickEvent[1];
+  }
   // Strategy 1: "event xx" pattern
   const eventMatch = name.match(/event\s*(\d+)/i);
   if (eventMatch && eventMatch[1]) {
