@@ -404,61 +404,174 @@ function findLastUsedColumn() {
  * 
  */
 function renumberRankings() {
-  console.log("renumberRankings");
-  try {
-    var sheet = SpreadsheetApp.getActiveSheet();
-    if (!sheet) {
-      throw new Error("No active sheet found.");
-    }
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getActiveSheet();
+  var sheetName = sheet.getName();
 
-    var lastRow = sheet.getLastRow();
-    if (lastRow < 2) {
-      Logger.log("No swimmers to rank.");
-      return SUCCESS;
-    }
-
-    var dataRange = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn());
-    var data = dataRange.getValues();
-    var backgrounds = dataRange.getBackgrounds();
-
-    var rank = 1;
-    var heat = 1;
-    var lane = 5; // Starting lane
-    var swimmersPerHeat = 10; // Assuming 10 lanes per heat
-
-    for (var i = 0; i < data.length; i++) {
-      var row = data[i];
-      var bg = backgrounds[i];
-
-      // Skip if row is colored (scratched, etc.)
-      if (bg[0] !== "#ffffff") { // Assuming white is default
-        data[i][0] = ""; // Clear rank
-        data[i][1] = ""; // Clear heat/lane
-        continue;
-      }
-
-      // Assign rank
-      data[i][0] = rank++;
-
-      // Assign heat and lane
-      data[i][1] = "H" + heat + "/L" + lane;
-
-      // Update lane
-      lane--;
-      if (lane < 1) {
-        lane = 10; // Reset to last lane
-        heat++; // Next heat
-      }
-    }
-
-    // Write back the updated values
-    dataRange.setValues(data);
-
-    SpreadsheetApp.flush();
-  } catch (error) {
-    Logger.log("Error in renumberRankings: " + error.message);
-    SpreadsheetApp.getUi().alert("Error: " + error.message);
+  // Process only if the active sheet is named "Event X"
+  if (!sheetName.match(/^Event \d+$/)) {
+    SpreadsheetApp.getUi().alert("Active sheet is not an 'Event' sheet! Please select a sheet named 'Event X'.");
+    return;
   }
+
+  var data = sheet.getDataRange().getValues();
+  var prelimRow = -1;
+
+  // Find the first "Preliminaries" row
+  for (var row = 0; row < data.length; row++) {
+    if (data[row][0] === "Preliminaries") {
+      prelimRow = row;
+      break;
+    }
+  }
+
+  if (prelimRow === -1) {
+    SpreadsheetApp.getUi().alert("No 'Preliminaries' row found in the active sheet!");
+    return;
+  }
+
+  var rankColumn = 0; // Column B (0-based index)
+  var timeColumn1 = 25; // Prelim Time (0-based index)
+  var timeColumn2 = 40; // Alternate Prelim Time
+  var scrColumn1 = 33; // Scr column
+  var scrColumn2 = 47; // Alternate Scr column
+  var timeColumn, scrColumn;
+  var lastColumn = sheet.getLastColumn();
+
+  // Initialize variables
+  var currentRank = 1;
+  var lastTime = null;
+  var tiedRows = [];
+
+  // Function to find the time column with a period
+  function findTimeColumnWithPeriod(activeRow, lastColumn) {
+    var rowValues = sheet.getRange(activeRow, 1, 1, lastColumn).getValues()[0];
+    for (var col = lastColumn - 1; col >= 0; col--) {
+      var value = rowValues[col];
+      if (value && value.toString().includes('.')) {
+        timeColumn = col;
+        switch (col) {
+          case 40:
+            scrColumn = 47;
+            break;
+          case 25:
+            scrColumn = 33;
+            break;
+          case 35:
+            scrColumn = 43;
+            break;
+          default:
+            scrColumn = null; // Handle unexpected columns
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Process rows starting from the row after the first "Preliminaries"
+  for (var row = prelimRow + 1; row < data.length; row++) {
+    // Check for another "Preliminaries" row
+    if (data[row][0] === "Preliminaries") {
+      // Process any pending tied rows
+      if (tiedRows.length > 1) {
+        for (var tiedRow of tiedRows) {
+          sheet.getRange(tiedRow + 1, rankColumn + 1).setValue("*" + currentRank);
+          sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground(COLOR_TIE);
+        }
+        currentRank += tiedRows.length;
+      } else if (tiedRows.length === 1) {
+        sheet.getRange(tiedRows[0] + 1, rankColumn + 1).setValue(currentRank);
+        sheet.getRange(tiedRows[0] + 1, 1, 1, lastColumn).setBackground(null);
+        currentRank += 1;
+      }
+      // Reset rank and tied rows for new section
+      currentRank = 1;
+      lastTime = null;
+      tiedRows = [];
+      // Find new time and scr columns for this section
+      if (!findTimeColumnWithPeriod(row + 2, lastColumn)) {
+        SpreadsheetApp.getUi().alert("No valid time column found after 'Preliminaries' at row " + (row + 1));
+        return;
+      }
+      continue;
+    }
+
+    // Find time and scr columns for the first section
+    if (row === prelimRow + 1) {
+      if (!findTimeColumnWithPeriod(row + 1, lastColumn)) {
+        SpreadsheetApp.getUi().alert("No valid time column found after 'Preliminaries' at row " + (prelimRow + 1));
+        return;
+      }
+    }
+
+    var timeCell = data[row][timeColumn];
+    var scrCell = data[row][scrColumn];
+    var rankCell = data[row][rankColumn];
+
+    // Skip rows with no time or marked as Scr, DFS, DQ, NS
+    if (!timeCell || timeCell === "" || scrCell === "Scr" || timeCell === "DFS" || timeCell === "DQ" || timeCell === "NS" || timeCell === "DNF" ||
+      scrCell == "Prot") {
+      // Clear rank if it exists
+      if (rankCell !== "") {
+        sheet.getRange(row + 1, rankColumn + 1).setValue("");
+      }
+      // Set background colors for DFS, DQ, DNF, NS, Scr
+      var normalizedTimeCell = timeCell ? timeCell.toString().trim().toUpperCase() : "";
+      var normalizedScrCell = scrCell ? scrCell.toString().trim().toUpperCase() : "";
+      if (normalizedTimeCell === "DFS") {
+        sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_DFS);
+      } else if (normalizedTimeCell === "DQ") {
+        sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_DQ);
+      } else if (normalizedTimeCell === "DNF") {
+        sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_DQ);
+      } else if (normalizedTimeCell === "NS") {
+        sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_NS);
+      } else if (normalizedScrCell === "SCR") {
+        sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_SCR);
+      } else if (normalizedScrCell === "Prot") {
+        sheet.getRange(row + 1, 1, 1, lastColumn).setBackground(COLOR_PROT);
+      }
+      continue;
+    }
+
+
+
+    // Check for tie (same time as previous valid row)
+    if (lastTime !== null && timeCell === lastTime) {
+      tiedRows.push(row); // Add to tied group
+    } else {
+      // Process previous tied group, if any
+      if (tiedRows.length > 1) {
+        // Assign asterisk and current rank to all tied rows, highlight in yellow
+        for (var tiedRow of tiedRows) {
+          sheet.getRange(tiedRow + 1, rankColumn + 1).setValue("*" + currentRank);
+          sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground(COLOR_TIE);
+        }
+        currentRank += tiedRows.length; // Increment rank by number of tied rows
+      } else if (tiedRows.length === 1) {
+        // Single row (no tie), assign rank without asterisk
+        sheet.getRange(tiedRows[0] + 1, rankColumn + 1).setValue(currentRank);
+        sheet.getRange(tiedRows[0] + 1, 1, 1, lastColumn).setBackground(null); // Clear highlighting
+        currentRank += 1;
+      }
+      tiedRows = [row]; // Start new group with current row
+    }
+
+    lastTime = timeCell; // Update lastTime for next iteration
+  }
+
+  // Process any remaining tied rows
+  if (tiedRows.length > 1) {
+    for (var tiedRow of tiedRows) {
+      sheet.getRange(tiedRow + 1, rankColumn + 1).setValue("*" + currentRank);
+      sheet.getRange(tiedRow + 1, 1, 1, lastColumn).setBackground(COLOR_TIE);
+    }
+  } else if (tiedRows.length === 1) {
+    sheet.getRange(tiedRows[0] + 1, rankColumn + 1).setValue(currentRank);
+    sheet.getRange(tiedRows[0] + 1, 1, 1, lastColumn).setBackground(null);
+  }
+  SpreadsheetApp.flush();
   return SUCCESS;
 }
 
