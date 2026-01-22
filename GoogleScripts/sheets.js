@@ -332,52 +332,72 @@ function UnscratchSwimmer() {
  */
 function IntentscrSwimmer() {
   try {
-    var sheet = SpreadsheetApp.getActiveSheet();
-    if (!sheet) {
-      throw new Error("No active sheet found.");
+    var ui = SpreadsheetApp.getUi();
+    if (!ui) {
+      throw new Error("Unable to access UI.");
     }
 
-    var cell = sheet.getActiveCell();
-    if (!cell) {
-      throw new Error("No active cell selected.");
+    var result = ui.prompt(
+      'Event Number Entry',
+      'Please enter the swimmer\'s last event number:',
+      ui.ButtonSet.OK_CANCEL
+    );
+
+    var button = result.getSelectedButton();
+    var eventNumber = result.getResponseText();
+
+    if (button === ui.Button.OK) {
+      if (!eventNumber || isNaN(eventNumber) || eventNumber.trim() === "") {
+        throw new Error("Please enter a valid number.");
+      }
+
+      var sheet = SpreadsheetApp.getActiveSheet();
+      if (!sheet) {
+        throw new Error("No active sheet found.");
+      }
+
+      var cell = sheet.getActiveCell();
+      if (!cell) {
+        throw new Error("No active cell selected.");
+      }
+
+      var row = cell.getRow();
+      if (row < 1) {
+        throw new Error("Invalid row selected.");
+      }
+
+      var lastRow = sheet.getLastRow();
+      if (lastRow < row) {
+        throw new Error("Selected row is beyond the last used row.");
+      }
+
+      var lastColumn = sheet.getLastColumn();
+      if (lastColumn < 1) {
+        throw new Error("Sheet has no columns.");
+      }
+
+      sheet.getRange(row, 1, 1, lastColumn).setBackground(COLOR_INTENT);
+
+      if (typeof findLastUsedColumn !== "function") {
+        throw new Error("Function findLastUsedColumn is not defined.");
+      }
+      var lastUsedColumn = findLastUsedColumn();
+      if (lastUsedColumn < 1 || lastUsedColumn > lastColumn) {
+        throw new Error("Invalid last used column: " + lastUsedColumn);
+      }
+
+      sheet.getRange(row, lastUsedColumn)
+        .setValue("Intent " + eventNumber)
+        .setHorizontalAlignment("left");
+
+      SpreadsheetApp.flush();
+    } else if (button === ui.Button.CANCEL) {
+      Logger.log("Intent scratch operation cancelled.");
     }
-
-    var row = cell.getRow();
-    if (row < 1) {
-      throw new Error("Invalid row selected.");
-    }
-
-    var lastRow = sheet.getLastRow();
-    if (lastRow < row) {
-      throw new Error("Selected row is beyond the last used row.");
-    }
-
-    sheet.getRange(row, 1, 1, 2).clearContent();
-
-    var lastColumn = sheet.getLastColumn();
-    if (lastColumn < 1) {
-      throw new Error("Sheet has no columns.");
-    }
-
-    sheet.getRange(row, 1, 1, lastColumn).setBackground(COLOR_INTENT);
-
-    if (typeof findLastUsedColumn !== "function") {
-      throw new Error("Function findLastUsedColumn is not defined.");
-    }
-    var lastUsedColumn = findLastUsedColumn();
-    if (lastUsedColumn < 1 || lastUsedColumn > lastColumn) {
-      throw new Error("Invalid last used column: " + lastUsedColumn);
-    }
-
-    sheet.getRange(row, lastUsedColumn).setValue("Intent to Scr");
-
-    SpreadsheetApp.flush();
   } catch (error) {
     Logger.log("Error in IntentscrSwimmer: " + error.message);
     SpreadsheetApp.getUi().alert("Error: " + error.message);
   }
-  renumberRankings();
-  SpreadsheetApp.flush();
   return SUCCESS;
 }
 
@@ -386,18 +406,50 @@ function IntentscrSwimmer() {
  * @returns {number} The column number of the last used column.
  */
 function findLastUsedColumn() {
-  var sheet = SpreadsheetApp.getActiveSheet();
-  var lastColumn = sheet.getLastColumn();
-  var values = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
-
-  for (var col = lastColumn; col >= 1; col--) {
-    if (values[col - 1] !== "") {
-      return col;
+  try {
+    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    if (!spreadsheet) {
+      throw new Error("No active spreadsheet found.");
     }
-  }
 
-  return 1; // Default to column 1 if no used columns found
+    var sheet = spreadsheet.getActiveSheet();
+    if (!sheet) {
+      throw new Error("No active sheet found.");
+    }
+
+    var currentRow = sheet.getActiveCell().getRow();
+    if (currentRow < 1) {
+      throw new Error("Invalid active row.");
+    }
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow < currentRow) {
+      throw new Error("Active row is beyond the last used row.");
+    }
+
+    var lastColumn = sheet.getLastColumn();
+    if (lastColumn < 1) {
+      throw new Error("Sheet has no columns.");
+    }
+
+    var rowData = sheet.getRange(currentRow, 1, 1, lastColumn).getValues()[0];
+    var lastUsedColumn = 1;
+    for (var i = rowData.length - 1; i >= 0; i--) {
+      if (rowData[i] !== "" && rowData[i] !== null) {
+        lastUsedColumn = i + 1;
+        break;
+      }
+    }
+
+    sheet.setColumnWidth(lastUsedColumn, 33);
+    return lastUsedColumn;
+  } catch (error) {
+    Logger.log("Error in findLastUsedColumn: " + error.message);
+    throw error; // Rethrow to be caught by calling function
+  }
+  return SUCCESS;
 }
+
 
 /**
  * Renumber rankings for swimmers.
